@@ -1,0 +1,8 @@
+{
+  "name": "Anbit Node Admin",
+  "description": "Mission Control interface for Anbit Wallet shop owners. Manage orders, squads, and missions in a high-end RPG-style dashboard.",
+  "requestFramePermissions": [
+    "camera",
+    "geolocation"
+  ]
+}

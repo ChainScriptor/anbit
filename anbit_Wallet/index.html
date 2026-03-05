@@ -1,0 +1,307 @@
+
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>Anbit | The Big Dashboard</title>
+    
+    <!-- PWA Primary Meta Tags -->
+    <meta name="theme-color" content="#09090b" id="theme-color-meta" />
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="Anbit" />
+    <link rel="manifest" href="manifest.json" />
+    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png" />
+
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <script>
+      tailwind.config = {
+        theme: {
+          extend: {
+            colors: {
+              'anbit-bg': 'var(--anbit-bg)',
+              'anbit-card': 'var(--anbit-card)',
+              'anbit-border': 'var(--anbit-border)',
+              'anbit-yellow': 'var(--anbit-yellow)',
+              'anbit-yellow-content': 'var(--anbit-yellow-content)',
+              'anbit-muted': 'var(--anbit-muted)',
+              'anbit-text': 'var(--anbit-text)',
+              'brand-red': '#E63533',
+              'brand-black': '#333333',
+            },
+            fontFamily: {
+              sans: ['Inter', 'sans-serif'],
+              heading: ['Oswald', 'sans-serif'],
+              urban: ['Roboto', 'sans-serif'],
+            },
+          },
+        },
+      }
+    </script>
+    <style>
+      :root {
+        --sat: env(safe-area-inset-top);
+        --sar: env(safe-area-inset-right);
+        --sab: env(safe-area-inset-bottom);
+        --sal: env(safe-area-inset-left);
+      }
+
+      /* Dark theme (default) – κίτρινο accent #ca8a04 */
+      :root,
+      [data-theme="dark"] {
+        --anbit-bg: #09090b;
+        --anbit-card: #121214;
+        --anbit-border: #27272a;
+        --anbit-yellow: #ca8a04;
+        --anbit-yellow-content: #18181b;
+        --anbit-muted: #71717a;
+        --anbit-text: #ffffff;
+        --anbit-nav-bg: rgba(9, 9, 11, 0.95);
+      }
+
+      /* Light theme – Pax Burgers style: pure white, brand red, urban typography */
+      [data-theme="light"] {
+        --anbit-bg: #FFFFFF;
+        --anbit-card: #FFFFFF;
+        --anbit-border: rgba(0, 0, 0, 0.08);
+        --anbit-yellow: #E63533;
+        --anbit-yellow-content: #ffffff;
+        --anbit-muted: #666666;
+        --anbit-text: #333333;
+        --anbit-nav-bg: rgba(255, 255, 255, 0.95);
+      }
+
+      body {
+        background-color: var(--anbit-bg);
+        color: var(--anbit-text);
+        font-size: 14px;
+        -webkit-tap-highlight-color: transparent;
+        overscroll-behavior-y: contain;
+        user-select: none;
+        -webkit-user-select: none;
+        padding-top: var(--sat);
+        padding-bottom: var(--sab);
+      }
+
+      /* Light mode: Urban / Pax Burgers typography & component styling */
+      [data-theme="light"] h1,
+      [data-theme="light"] h2,
+      [data-theme="light"] h3,
+      [data-theme="light"] .font-heading {
+        font-family: 'Oswald', sans-serif;
+        font-weight: 700;
+      }
+      [data-theme="light"] .dashboard-card {
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+        border-radius: 8px;
+      }
+      [data-theme="light"] .dashboard-card:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+      }
+      [data-theme="light"] .glass-nav {
+        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+      }
+
+      /* Section titles: μαύρα, Ubuntu, bold, μικρά με τόνους – reference Χαλάνδρι */
+      .section-title {
+        font-family: 'Ubuntu', sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        font-size: 1.125rem;
+      }
+      [data-theme="light"] .section-title {
+        color: #000000 !important;
+      }
+      .section-title-lg {
+        font-family: 'Ubuntu', sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.025em;
+        font-size: 1.5rem;
+      }
+      [data-theme="light"] .section-title-lg {
+        color: #000000 !important;
+      }
+
+      /* Fixed navbar: solid red background on scroll only in light mode (Pax-style) */
+      [data-theme="light"] .glass-nav.navbar-scrolled {
+        background: #C2002A;
+        border-bottom-color: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-text,
+      [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-muted {
+        color: #fff !important;
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled button:not([class*="rounded-lg overflow-hidden"]) {
+        color: #fff;
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled nav {
+        border-color: rgba(255, 255, 255, 0.25);
+        background: rgba(255, 255, 255, 0.08);
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled nav button.bg-anbit-border {
+        background: rgba(255, 255, 255, 0.2);
+        color: #fff;
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-yellow:not(.fill-anbit-yellow) {
+        color: #fff !important;
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled .fill-anbit-yellow {
+        fill: #fff;
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled [class*="border-anbit"] {
+        border-color: rgba(255, 255, 255, 0.25);
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled h1,
+      [data-theme="light"] .glass-nav.navbar-scrolled .font-black {
+        color: #fff !important;
+      }
+      /* Dark mode: on scroll keep same dark nav background (no red) */
+      [data-theme="dark"] .glass-nav.navbar-scrolled {
+        background: var(--anbit-nav-bg);
+        border-bottom-color: var(--anbit-border);
+      }
+
+      .no-scrollbar {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+      }
+      .no-scrollbar::-webkit-scrollbar {
+        display: none;
+      }
+
+      .dashboard-card {
+        background: var(--anbit-card);
+        border: 1px solid var(--anbit-border);
+        border-radius: 16px;
+        transition: all 0.3s ease;
+      }
+
+      .dashboard-card:hover {
+        border-color: var(--anbit-yellow);
+        transform: translateY(-2px);
+      }
+
+      .glass-nav {
+        background: var(--anbit-nav-bg);
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+        border-bottom: 1px solid var(--anbit-border);
+      }
+
+      /* Fix for iOS PWA address bar overlap */
+      @supports (padding: env(safe-area-inset-top)) {
+        header {
+          padding-top: calc(0.5rem + env(safe-area-inset-top)) !important;
+        }
+      }
+
+      input, textarea {
+        user-select: text !important;
+        -webkit-user-select: text !important;
+      }
+
+      h2, h3, h1 { letter-spacing: -0.02em; }
+
+      /* FrostedHoverNav */
+      .frosted-hover-nav {
+        position: relative;
+        overflow: hidden;
+        border-radius: 16px;
+        border: 1px solid var(--anbit-border);
+        width: 100%;
+        aspect-ratio: 4/3;
+        max-height: 360px;
+        min-height: 280px;
+        transition: filter 0.35s ease;
+      }
+      .frosted-hover-nav:has(.frosted-hover-area:hover) {
+        filter: url(#frosted-filter);
+      }
+      .frosted-hover-nav img {
+        display: block;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        object-position: center;
+        pointer-events: none;
+      }
+      .frosted-hover-area {
+        position: absolute;
+        inset: 0;
+        display: grid;
+        grid-template-columns: repeat(var(--max-a, 30), 1fr);
+        grid-template-rows: repeat(var(--max-a, 30), 1fr);
+        pointer-events: auto;
+      }
+      .frosted-hover-area i {
+        display: block;
+        min-width: 0;
+        min-height: 0;
+      }
+
+      /* Simple float animation for cafe hero annotations */
+      @keyframes float {
+        0%, 100% {
+          transform: translateY(0px);
+        }
+        50% {
+          transform: translateY(-10px);
+        }
+      }
+      .animate-float {
+        animation: float 3s ease-in-out infinite;
+      }
+      .animate-float-delayed {
+        animation: float 3s ease-in-out infinite;
+        animation-delay: 1.5s;
+      }
+    </style>
+    <script>
+      (function() {
+        var stored = localStorage.getItem('anbit-theme');
+        var theme = (stored === 'light' || stored === 'dark') ? stored : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        document.documentElement.setAttribute('data-theme', theme);
+        var meta = document.getElementById('theme-color-meta');
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#09090b');
+      })();
+    </script>
+    <script type="importmap">
+    {
+      "imports": {
+        "react/": "https://esm.sh/react@^19.2.4/",
+        "react": "https://esm.sh/react@^19.2.4",
+        "framer-motion": "https://esm.sh/framer-motion@^12.30.0",
+        "lucide-react": "https://esm.sh/lucide-react@^0.563.0",
+        "react-dom/": "https://esm.sh/react-dom@^19.2.4/"
+      }
+    }
+    </script>
+  <link rel="stylesheet" href="/index.css">
+</head>
+  <body>
+    <div id="root"></div>
+    <script>
+      // Service Worker Registration
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').then(registration => {
+            console.log('SW registered: ', registration);
+          }).catch(registrationError => {
+            console.log('SW registration failed: ', registrationError);
+          });
+        });
+      }
+
+      // Detect PWA mode
+      if (window.matchMedia('(display-mode: standalone)').matches) {
+        console.log('Running in PWA mode');
+      }
+    </script>
+  <script type="module" src="/index.tsx"></script>
+</body>
+</html>

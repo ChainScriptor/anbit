@@ -1,0 +1,7 @@
+{
+  "name": "Anbit Wallet - Gamified Loyalty Dashboard",
+  "description": "A high-end RPG-style fintech dashboard for a revolutionary loyalty platform in Thessaloniki, featuring XP tracking, quests, 3D reward cards, and a social leaderboard.",
+  "requestFramePermissions": [
+    "camera"
+  ]
+}

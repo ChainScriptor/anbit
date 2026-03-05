@@ -1,0 +1,313 @@
+{
+  "activities": [
+    {
+      "id": "act_001",
+      "type": "earn",
+      "partner": "THE COFFEE HUB",
+      "partnerId": "p1",
+      "xp": 50,
+      "timestamp": "2 ΩΡΕΣ ΠΡΙΝ",
+      "icon": "☕"
+    },
+    {
+      "id": "act_002",
+      "type": "earn",
+      "partner": "MEAT THE KING",
+      "partnerId": "p2",
+      "xp": 120,
+      "timestamp": "ΧΘΕΣ",
+      "icon": "🍔"
+    },
+    {
+      "id": "act_003",
+      "type": "redeem",
+      "partner": "THE COFFEE HUB",
+      "partnerId": "p1",
+      "xp": 70,
+      "timestamp": "3 ΗΜΕΡΕΣ ΠΡΙΝ",
+      "icon": "🎁",
+      "reward": "ΔΩΡΕΑΝ ESPRESSO"
+    },
+    {
+      "id": "act_004",
+      "type": "quest",
+      "xp": 150,
+      "timestamp": "5 ΗΜΕΡΕΣ ΠΡΙΝ",
+      "icon": "⭐",
+      "title": "COFFEE LOVER CHALLENGE"
+    }
+  ],
+  "quests": [
+    {
+      "id": "quest_001",
+      "title": "COFFEE LOVER CHALLENGE",
+      "description": "ΑΓΟΡΑΣΕ 3 ΚΑΦΕΔΕΣ ΑΥΤΗ ΤΗΝ ΕΒΔΟΜΑΔΑ ΚΑΙ ΚΕΡΔΙΣΕ EXTRA ΠΟΝΤΟΥΣ",
+      "progress": 2,
+      "total": 3,
+      "reward": 150,
+      "expiresIn": "3 ΗΜΕΡΕΣ",
+      "icon": "☕",
+      "weather": "sun"
+    },
+    {
+      "id": "quest_002",
+      "title": "BURGER WEEK",
+      "description": "ΠΑΡΑΓΓΕΙΛΕ 2 BURGERS ΣΕ 7 ΗΜΕΡΕΣ ΚΑΙ ΚΕΡΔΙΣΕ 100 ΠΟΝΤΟΥΣ",
+      "progress": 1,
+      "total": 2,
+      "reward": 100,
+      "expiresIn": "5 ΗΜΕΡΕΣ",
+      "icon": "🍔",
+      "weather": "cloud"
+    },
+    {
+      "id": "quest_003",
+      "title": "ΝΕΟ ΜΕΛΟΣ ΔΙΚΤΥΟΥ",
+      "description": "ΕΠΙΣΚΕΨΟΥ 3 ΔΙΑΦΟΡΕΤΙΚΑ ΚΑΤΑΣΤΗΜΑΤΑ ΑΥΤΟ ΤΟ ΜΗΝΑ",
+      "progress": 2,
+      "total": 3,
+      "reward": 200,
+      "expiresIn": "12 ΗΜΕΡΕΣ",
+      "icon": "🗺️",
+      "weather": "partly-cloudy"
+    }
+  ],
+  "rewards": [
+    {
+      "id": "reward_001",
+      "partner": "THE COFFEE HUB",
+      "partnerId": "p1",
+      "title": "ΔΩΡΕΑΝ ESPRESSO",
+      "xpCost": 70,
+      "status": "available",
+      "image": "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=400"
+    },
+    {
+      "id": "reward_002",
+      "partner": "MEAT THE KING",
+      "partnerId": "p2",
+      "title": "ΔΩΡΕΑΝ BURGER",
+      "xpCost": 150,
+      "status": "locked",
+      "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400"
+    },
+    {
+      "id": "reward_003",
+      "partner": "THE COFFEE HUB",
+      "partnerId": "p1",
+      "title": "ΔΩΡΕΑΝ FREDDO",
+      "xpCost": 100,
+      "status": "available",
+      "image": "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&q=80&w=400"
+    },
+    {
+      "id": "reward_004",
+      "partner": "BLUE CUP",
+      "partnerId": "p5",
+      "title": "10% ΕΚΠΤΩΣΗ",
+      "xpCost": 50,
+      "status": "available",
+      "image": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=400"
+    }
+  ],
+  "partners": [
+    {
+      "id": "p1",
+      "name": "THE COFFEE HUB",
+      "category": "Coffee",
+      "image": "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=600",
+      "bonusXp": 25,
+      "location": "ΤΣΙΜΙΣΚΗ 45",
+      "rating": 4.8,
+      "reviewCount": 2126,
+      "deliveryTime": "55' - 60'",
+      "minOrder": "7,00€",
+      "menu": [
+        {
+          "id": "c1",
+          "name": "Premium Espresso",
+          "description": "Double shot specialty blend.",
+          "price": 2.5,
+          "xpReward": 10,
+          "category": "Coffee",
+          "image": "https://images.unsplash.com/photo-1510591509098-f4fdc6d0ff04?auto=format&fit=crop&q=80&w=400",
+          "ingredients": [
+            "100% Arabica"
+          ],
+          "allergens": [
+            "None"
+          ]
+        },
+        {
+          "id": "c2",
+          "name": "Freddo Espresso",
+          "description": "Iced espresso with crema.",
+          "price": 3.5,
+          "xpReward": 15,
+          "category": "Coffee",
+          "image": "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&q=80&w=400",
+          "ingredients": [
+            "Espresso",
+            "Ice"
+          ],
+          "allergens": [
+            "None"
+          ]
+        },
+        {
+          "id": "c3",
+          "name": "Caramel Latte",
+          "description": "Milk with caramel.",
+          "price": 4.2,
+          "xpReward": 20,
+          "category": "Coffee",
+          "image": "https://images.unsplash.com/photo-1536939459926-301728717817?auto=format&fit=crop&q=80&w=400",
+          "ingredients": [
+            "Espresso",
+            "Milk",
+            "Caramel"
+          ],
+          "allergens": [
+            "Dairy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p2",
+      "name": "MEAT THE KING",
+      "category": "Food",
+      "image": "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&q=80&w=600",
+      "bonusXp": 50,
+      "location": "ΠΛΑΤΕΙΑ ΑΡΙΣΤΟΤΕΛΟΥΣ",
+      "rating": 4.9,
+      "reviewCount": 1842,
+      "deliveryTime": "40' - 50'",
+      "minOrder": "9,00€",
+      "menu": [
+        {
+          "id": "f1",
+          "name": "Classic Burger",
+          "description": "Triple beef, secret sauce.",
+          "price": 9.5,
+          "xpReward": 50,
+          "category": "Main",
+          "image": "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400",
+          "ingredients": [
+            "Beef",
+            "Cheddar",
+            "Brioche"
+          ],
+          "allergens": [
+            "Gluten",
+            "Dairy"
+          ]
+        },
+        {
+          "id": "f2",
+          "name": "Cheese Fries",
+          "description": "Crispy fries with cheese.",
+          "price": 4.5,
+          "xpReward": 20,
+          "category": "Sides",
+          "image": "https://images.unsplash.com/photo-1573080496219-bb080dd4f877?auto=format&fit=crop&q=80&w=400",
+          "ingredients": [
+            "Potato",
+            "Cheese"
+          ],
+          "allergens": [
+            "Dairy"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "p3",
+      "name": "ZEN SPA & FITNESS",
+      "category": "Lifestyle",
+      "image": "https://images.unsplash.com/photo-1544161515-450a91adbd05?auto=format&fit=crop&q=80&w=600",
+      "location": "ΛΕΩΦΟΡΟΣ ΝΙΚΗΣ",
+      "rating": 4.7,
+      "reviewCount": 318,
+      "deliveryTime": "—",
+      "minOrder": "—",
+      "menu": []
+    },
+    {
+      "id": "p4",
+      "name": "TECH REPAIR PRO",
+      "category": "Services",
+      "image": "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=600",
+      "bonusXp": 15,
+      "location": "ΕΓΝΑΤΙΑ 112",
+      "rating": 4.5,
+      "reviewCount": 89,
+      "deliveryTime": "—",
+      "minOrder": "—",
+      "menu": []
+    },
+    {
+      "id": "p5",
+      "name": "BLUE CUP",
+      "category": "Coffee",
+      "image": "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=600",
+      "bonusXp": 30,
+      "location": "ΛΑΔΑΔΙΚΑ",
+      "rating": 4.9,
+      "reviewCount": 520,
+      "deliveryTime": "30' - 35'",
+      "minOrder": "5,00€",
+      "menu": [
+        {
+          "id": "b1",
+          "name": "Cold Brew",
+          "description": "24h cold extraction.",
+          "price": 4.0,
+          "xpReward": 18,
+          "category": "Coffee",
+          "image": "https://images.unsplash.com/photo-1517701550927-30cf4ba1dba5?auto=format&fit=crop&q=80&w=400",
+          "ingredients": [
+            "Arabica",
+            "Cold Water"
+          ],
+          "allergens": [
+            "None"
+          ]
+        }
+      ]
+    }
+  ],
+  "leaderboard": [
+    {
+      "rank": 1,
+      "name": "ΔΗΜΗΤΡΗΣ",
+      "level": 12,
+      "xp": 5420
+    },
+    {
+      "rank": 2,
+      "name": "ΜΑΡΙΑ",
+      "level": 10,
+      "xp": 4890
+    },
+    {
+      "rank": 3,
+      "name": "ΝΙΚΟΣ",
+      "level": 9,
+      "xp": 4120
+    },
+    {
+      "rank": 4,
+      "name": "ΕΛΕΝΗ",
+      "level": 8,
+      "xp": 3750
+    },
+    {
+      "rank": 5,
+      "name": "STATHIS",
+      "level": 5,
+      "xp": 1250,
+      "isCurrentUser": true
+    }
+  ]
+}
