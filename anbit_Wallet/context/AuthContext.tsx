@@ -1,14 +1,14 @@
-
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import { UserData } from '../types';
-import { api } from '../services/api';
+import { api, loginResponseToUserData } from '../services/api';
 
 interface AuthContextType {
   user: UserData | null;
   token: string | null;
   isAuthenticated: boolean;
   isLoading: boolean;
-  login: (email: string, pass: string) => Promise<void>;
+  login: (usernameOrEmail: string, password: string) => Promise<void>;
+  register: (username: string, email: string, password: string) => Promise<void>;
   logout: () => void;
   updateUser: (updates: Partial<UserData>) => void;
 }
@@ -24,14 +24,11 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     const initializeAuth = async () => {
       if (token) {
         try {
-          // In a real app, verify the token or fetch profile
-          // const userData = await api.getUserProfile();
-          // setUser(userData);
-          
-          // For now, we'll keep the mock logic if the token exists
-          const mockUser = JSON.parse(localStorage.getItem('anbit_user') || 'null');
-          if (mockUser) setUser(mockUser);
-        } catch (error) {
+          const savedUser = localStorage.getItem('anbit_user');
+          if (savedUser) {
+            setUser(JSON.parse(savedUser));
+          }
+        } catch {
           logout();
         }
       }
@@ -41,20 +38,28 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     initializeAuth();
   }, [token]);
 
-  const login = async (email: string, pass: string) => {
+  const login = async (usernameOrEmail: string, password: string) => {
     setIsLoading(true);
     try {
-      const response: any = await api.login({ email, password: pass });
+      const response = await api.login({
+        username: usernameOrEmail,
+        password,
+      });
       setToken(response.token);
-      setUser(response.user);
+      const userData = loginResponseToUserData(response);
+      setUser(userData);
       localStorage.setItem('anbit_token', response.token);
-      localStorage.setItem('anbit_user', JSON.stringify(response.user));
+      localStorage.setItem('anbit_user', JSON.stringify(userData));
     } catch (error) {
       console.error('Login failed', error);
       throw error;
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const register = async (username: string, email: string, password: string) => {
+    await api.register({ username, email, password });
   };
 
   const logout = () => {
@@ -74,15 +79,18 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
   };
 
   return (
-    <AuthContext.Provider value={{ 
-      user, 
-      token, 
-      isAuthenticated: !!token, 
-      isLoading, 
-      login, 
-      logout,
-      updateUser,
-    }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        token,
+        isAuthenticated: !!token,
+        isLoading,
+        login,
+        register,
+        logout,
+        updateUser,
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

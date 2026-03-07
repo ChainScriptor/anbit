@@ -66,6 +66,8 @@ const translations: Translations = {
   searchPartners: { en: 'Search by store or category...', el: 'Αναζήτηση καταστήματος ή κατηγορίας...' },
   viewMenu: { en: 'Order', el: 'Παράγγειλε' },
   checkIn: { en: 'Booking', el: 'κράτηση' },
+  orderBtn: { en: 'Order', el: 'Παραγγελία' },
+  reservationBtn: { en: 'Reservation', el: 'Κράτηση' },
   battleMap: { en: 'Store Map', el: 'Χάρτης καταστημάτων' },
   launchMap: { en: 'Launch Map', el: 'Εμφάνιση χάρτη' },
   partnerStores: { en: 'Partner Stores', el: 'Συνεργαζόμενα καταστήματα' },

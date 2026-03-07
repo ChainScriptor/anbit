@@ -17,7 +17,10 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -37,6 +40,9 @@
               sans: ['Inter', 'sans-serif'],
               heading: ['Oswald', 'sans-serif'],
               urban: ['Roboto', 'sans-serif'],
+              greek: ['Noto Sans Display', 'Inter', 'sans-serif'],
+              logo: ['Great Vibes', 'cursive'],
+              logoBold: ['Poppins', 'sans-serif'],
             },
           },
         },
@@ -61,6 +67,7 @@
         --anbit-muted: #71717a;
         --anbit-text: #ffffff;
         --anbit-nav-bg: rgba(9, 9, 11, 0.95);
+        --anbit-input: rgba(255, 255, 255, 0.04);
       }
 
       /* Light theme – Pax Burgers style: pure white, brand red, urban typography */
@@ -73,6 +80,7 @@
         --anbit-muted: #666666;
         --anbit-text: #333333;
         --anbit-nav-bg: rgba(255, 255, 255, 0.95);
+        --anbit-input: #f5f5f5;
       }
 
       body {
@@ -166,12 +174,163 @@
         border-bottom-color: var(--anbit-border);
       }
 
+      /* Logo Anbit – χρώμα ανά theme */
+      .logo-anbit {
+        font-family: 'Poppins', sans-serif;
+        font-weight: 800;
+        letter-spacing: -0.03em;
+        transition: color 0.2s ease;
+      }
+      [data-theme="dark"] .logo-anbit {
+        color: #ffffff;
+      }
+      [data-theme="dark"] .logo-anbit:hover {
+        color: var(--anbit-yellow);
+      }
+      [data-theme="light"] .logo-anbit {
+        color: #333333;
+      }
+      [data-theme="light"] .logo-anbit:hover {
+        color: var(--anbit-yellow);
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit {
+        color: #ffffff;
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit:hover {
+        color: rgba(255, 255, 255, 0.9);
+      }
+
       .no-scrollbar {
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
       .no-scrollbar::-webkit-scrollbar {
         display: none;
+      }
+
+      /* Auth page – Lysium-style: floating panel + immersive right */
+      .auth-page-bg {
+        background: var(--anbit-bg);
+      }
+      [data-theme="dark"] .auth-page-bg {
+        background: linear-gradient(160deg, #09090b 0%, #0c0c0e 40%, #0a0a0c 100%);
+      }
+      [data-theme="light"] .auth-page-bg {
+        background: linear-gradient(160deg, #f8f8f8 0%, #f0f0f0 50%, #e8e8e8 100%);
+      }
+      .auth-panel-floating {
+        background: var(--anbit-card);
+        border: 1px solid var(--anbit-border);
+        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03);
+      }
+      [data-theme="light"] .auth-panel-floating {
+        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+      }
+      .auth-form-panel {
+        background: var(--anbit-card);
+      }
+      [data-theme="dark"] .auth-form-panel {
+        background: linear-gradient(180deg, #141416 0%, #121214 100%);
+      }
+      [data-theme="light"] .auth-form-panel {
+        background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
+      }
+      .auth-input {
+        background-color: var(--anbit-input) !important;
+      }
+      .auth-input::placeholder {
+        color: var(--anbit-muted);
+      }
+      .auth-input:focus {
+        box-shadow: 0 0 0 2px var(--anbit-yellow);
+      }
+      [data-theme="dark"] .auth-logo-wrap {
+        background: var(--anbit-yellow);
+        box-shadow: 0 0 24px rgba(202, 138, 4, 0.4);
+      }
+      [data-theme="light"] .auth-logo-wrap {
+        background: var(--anbit-yellow);
+        box-shadow: 0 0 20px rgba(230, 53, 51, 0.35);
+      }
+      .auth-logo-text {
+        text-shadow: 0 0 20px rgba(202, 138, 4, 0.2);
+      }
+      [data-theme="light"] .auth-logo-text {
+        color: var(--anbit-text);
+      }
+      .auth-btn-primary {
+        background: linear-gradient(180deg, var(--anbit-yellow) 0%, color-mix(in srgb, var(--anbit-yellow) 85%, black) 100%);
+        color: var(--anbit-yellow-content);
+        box-shadow: 0 4px 14px rgba(202, 138, 4, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .auth-btn-primary:hover:not(:disabled) {
+        transform: translateY(-1px);
+        box-shadow: 0 6px 20px rgba(202, 138, 4, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+      [data-theme="light"] .auth-btn-primary {
+        box-shadow: 0 4px 14px rgba(230, 53, 51, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      }
+      [data-theme="light"] .auth-btn-primary:hover:not(:disabled) {
+        box-shadow: 0 6px 20px rgba(230, 53, 51, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      }
+      .auth-btn-secondary {
+        background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
+        color: #fff;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+        box-shadow: 0 2px 10px rgba(88, 101, 242, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .auth-btn-secondary:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 16px rgba(88, 101, 242, 0.4);
+      }
+      .auth-toggle-dot {
+        background: var(--anbit-yellow-content);
+      }
+      [data-theme="light"] .auth-toggle-dot {
+        background: #fff;
+      }
+      .auth-shard {
+        position: absolute;
+        width: 80px;
+        height: 80px;
+        border-radius: 8px;
+        background: linear-gradient(135deg, var(--anbit-yellow) 0%, transparent 70%);
+        opacity: 0.12;
+        filter: blur(20px);
+        pointer-events: none;
+      }
+      .auth-shard-1 { top: 15%; left: 8%; transform: rotate(-15deg); }
+      .auth-shard-2 { top: 60%; right: 5%; transform: rotate(25deg); width: 60px; height: 60px; }
+      .auth-shard-3 { bottom: 20%; left: 15%; transform: rotate(10deg); width: 50px; height: 50px; }
+      [data-theme="light"] .auth-shard {
+        opacity: 0.08;
+      }
+      .auth-hero-panel {
+        background: #0a0a0c;
+      }
+      .auth-hero-gradient {
+        background: linear-gradient(160deg, rgba(9, 9, 11, 0.95) 0%, rgba(202, 138, 4, 0.08) 50%, rgba(9, 9, 11, 0.98) 100%);
+      }
+      [data-theme="light"] .auth-hero-gradient {
+        background: linear-gradient(160deg, #1a1a1e 0%, rgba(230, 53, 51, 0.06) 50%, #141418 100%);
+      }
+      .auth-hero-number {
+        color: #fff;
+        text-shadow: 0 0 40px rgba(202, 138, 4, 0.25);
+      }
+      [data-theme="light"] .auth-hero-number {
+        text-shadow: 0 0 30px rgba(230, 53, 51, 0.2);
+      }
+      .auth-hero-label {
+        color: var(--anbit-yellow);
+      }
+      [data-theme="light"] .auth-hero-label {
+        color: rgba(255, 255, 255, 0.9);
+      }
+      .auth-modal-input {
+        background-color: var(--anbit-input) !important;
       }
 
       .dashboard-card {
@@ -206,6 +365,18 @@
       }
 
       h2, h3, h1 { letter-spacing: -0.02em; }
+
+      /* Ελληνικό κείμενο – πιο έντονα, ευανάγνωστα (καταστήματα, κατηγορίες) */
+      .font-greek {
+        font-family: 'Noto Sans Display', 'Inter', sans-serif;
+        font-weight: 600;
+        letter-spacing: -0.02em;
+      }
+      .font-greek-bold {
+        font-family: 'Noto Sans Display', 'Inter', sans-serif;
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
 
       /* FrostedHoverNav */
       .frosted-hover-nav {

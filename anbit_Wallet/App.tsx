@@ -1,6 +1,6 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Routes, Route, Navigate, useLocation, useNavigate } from 'react-router-dom';
 import Header from './components/Header';
 import XPProgressCircle from './components/XPProgressCircle';
 import { FrostedHoverNav } from './components/ui/FrostedHoverNav';
@@ -18,7 +18,7 @@ import PartnerMenuModal from './components/PartnerMenuModal';
 import StoreMenuPage from './components/StoreMenuPage';
 import ActiveOperations from './components/ActiveOperations';
 import RedemptionActiveModal from './components/RedemptionActiveModal';
-import LoginPage from './components/LoginPage';
+import AuthModal from './components/AuthModal';
 import { useAuth } from './context/AuthContext';
 import { useLanguage } from './context/LanguageContext';
 import { Partner, UserData, Reward } from './types';
@@ -32,9 +32,10 @@ import { GREEK_OFFERS } from './data/greekOffers';
 const App: React.FC = () => {
   const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
   const { t } = useLanguage();
+  const location = useLocation();
+  const navigate = useNavigate();
   const dashboardFeed = useDashboardData();
   const [isLoaded, setIsLoaded] = useState(false);
-  const [activeTab, setActiveTab] = useState('Dashboard');
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isRedemptionModalOpen, setIsRedemptionModalOpen] = useState(false);
   const [selectedReward, setSelectedReward] = useState<Reward | null>(null);
@@ -43,9 +44,14 @@ const App: React.FC = () => {
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
   const [isPartnerMenuOpen, setIsPartnerMenuOpen] = useState(false);
   const [storeMenuPartner, setStoreMenuPartner] = useState<Partner | null>(null);
-  useEffect(() => { if (user) setUserData(user); }, [user]);
+  const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  useEffect(() => { setUserData(user ?? null); }, [user]);
+
+  const openLogin = () => { setAuthModalMode('login'); setAuthModalOpen(true); };
+  const openRegister = () => { setAuthModalMode('register'); setAuthModalOpen(true); };
   useEffect(() => { if (!isAuthLoading) setTimeout(() => setIsLoaded(true), 600); }, [isAuthLoading]);
-  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [activeTab]);
+  useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [location.pathname]);
 
   const handleOpenPartnerMenu = (partner: Partner) => { setSelectedPartner(partner); setIsPartnerMenuOpen(true); };
   const handleRedeemClick = (reward: Reward) => { 
@@ -83,93 +89,100 @@ const App: React.FC = () => {
     }, 2000);
   }, [userData, selectedPartner]);
 
-  if (!isAuthenticated && !isAuthLoading) return <LoginPage />;
-
-  const renderContent = () => {
-    if (!userData) return null;
-    switch (activeTab) {
-      case 'Scanner': return <ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />;
-      case 'Network':
-        if (storeMenuPartner) {
-          return (
-            <StoreMenuPage
-              partner={storeMenuPartner}
-              onBack={() => setStoreMenuPartner(null)}
-              onOrderComplete={(xpEarned) => {
-                setSelectedPartner(storeMenuPartner);
-                handleOrderComplete(xpEarned);
-                setStoreMenuPartner(null);
-              }}
-            />
-          );
-        }
-        return (
-          <NetworkPage
-            partners={dashboardFeed.partners}
-            storeXP={userData.storeXP}
-            onOpenQR={() => setIsQRModalOpen(true)}
-            onOrderComplete={handleOrderComplete}
-            onOpenStoreMenu={(partner) => {
-              setSelectedPartner(partner);
-              setStoreMenuPartner(partner);
-            }}
-          />
-        );
-      case 'Quests': return <QuestsPage quests={dashboardFeed.quests} user={userData} />;
-      case 'Profile': return <ProfilePage user={userData} partners={dashboardFeed.partners} />;
-      case 'Settings': return <SettingsPage user={userData} />;
-      case 'Security': return <SecurityPage user={userData} />;
-      default:
-        return (
-          <>
-            <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6 lg:mb-8">
-              <AnbitCafeDemoScene />
-            </div>
-            <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
-            <div className="xl:col-span-8 space-y-8 lg:space-y-12">
-              <AnimatePresence>{activeOrderPartner && <ActiveOperations partnerName={activeOrderPartner} />}</AnimatePresence>
-              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-                <div className="lg:col-span-7"><XPProgressCircle user={userData} /></div>
-                <div className="lg:col-span-5 dashboard-card p-6 lg:p-10 flex flex-col justify-between relative overflow-hidden group min-h-[300px]">
-                   <div className="relative z-10 space-y-4">
-                     <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 bg-anbit-yellow rounded-full animate-pulse" />
-                        <span className="section-title text-anbit-muted text-[10px] lg:text-xs">{t('warriorNetwork')}</span>
-                     </div>
-                     <h2 className="section-title-lg text-anbit-text leading-tight">
-                       {t('masterLegacy')}
-                     </h2>
-                     <p className="text-anbit-muted text-xs lg:text-sm font-medium leading-relaxed max-w-[200px]">
-                       {userData.name}, {t('watchingProgress')}
-                     </p>
-                   </div>
-                   <button onClick={() => setActiveTab('Quests')} className="w-full bg-anbit-card border border-anbit-border text-anbit-text py-3 lg:py-4 rounded-xl font-semibold text-xs lg:text-sm tracking-wide hover:bg-anbit-yellow hover:text-anbit-yellow-content transition-all">
-                     {t('commandCenter')}
-                   </button>
+  const dashboardContent = userData ? (
+    <>
+      <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6 lg:mb-8">
+        <AnbitCafeDemoScene />
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
+        <div className="xl:col-span-8 space-y-8 lg:space-y-12">
+          <AnimatePresence>{activeOrderPartner && <ActiveOperations partnerName={activeOrderPartner} />}</AnimatePresence>
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7"><XPProgressCircle user={userData} /></div>
+            <div className="lg:col-span-5 dashboard-card p-6 lg:p-10 flex flex-col justify-between relative overflow-hidden group min-h-[300px]">
+              <div className="relative z-10 space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-anbit-yellow rounded-full animate-pulse" />
+                  <span className="section-title text-anbit-muted text-[10px] lg:text-xs">{t('warriorNetwork')}</span>
                 </div>
+                <h2 className="section-title-lg text-anbit-text leading-tight">
+                  {t('masterLegacy')}
+                </h2>
+                <p className="text-anbit-muted text-xs lg:text-sm font-medium leading-relaxed max-w-[200px]">
+                  {userData.name}, {t('watchingProgress')}
+                </p>
               </div>
-              <RewardSection rewards={dashboardFeed.rewards} onViewAll={() => setActiveTab('Profile')} />
-              <section className="space-y-4">
-                <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('dealsOfTheDay')}</h2>
-                <OfferCarousel offers={GREEK_OFFERS} />
-              </section>
-            </div>
-            <div className="xl:col-span-4 space-y-6 lg:space-y-8">
-              <div className="w-full overflow-hidden rounded-2xl">
-                <FrostedHoverNav />
-              </div>
-              <div className="dashboard-card overflow-hidden"><Leaderboard entries={dashboardFeed.leaderboard} /></div>
-              <div className="bg-anbit-bg border border-anbit-border rounded-3xl p-6 lg:p-8 text-center space-y-3">
-                 <h4 className="section-title text-anbit-text text-sm lg:text-base">{t('becomeMerchant')}</h4>
-                 <p className="text-anbit-muted text-[10px] lg:text-xs font-medium">{t('joinEcosystem')}</p>
-                 <a href={DASHBOARD_URL} target="_blank" rel="noopener noreferrer" className="text-anbit-text font-semibold text-[8px] lg:text-[10px] tracking-wide border-b border-anbit-yellow pb-0.5 hover:text-anbit-yellow transition-colors">{t('applyNow')}</a>
-              </div>
+              <button onClick={() => navigate('/quests')} className="w-full bg-anbit-card border border-anbit-border text-anbit-text py-3 lg:py-4 rounded-xl font-semibold text-xs lg:text-sm tracking-wide hover:bg-anbit-yellow hover:text-anbit-yellow-content transition-all">
+                {t('commandCenter')}
+              </button>
             </div>
           </div>
-          </>
-        );
-    }
-  };
+          <RewardSection rewards={dashboardFeed.rewards} onViewAll={() => navigate('/profile')} />
+          <section className="space-y-4">
+            <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('dealsOfTheDay')}</h2>
+            <OfferCarousel offers={GREEK_OFFERS} />
+          </section>
+        </div>
+        <div className="xl:col-span-4 space-y-6 lg:space-y-8">
+          <div className="w-full overflow-hidden rounded-2xl">
+            <FrostedHoverNav />
+          </div>
+          <div className="dashboard-card overflow-hidden"><Leaderboard entries={dashboardFeed.leaderboard} /></div>
+          <div className="bg-anbit-bg border border-anbit-border rounded-3xl p-6 lg:p-8 text-center space-y-3">
+            <h4 className="section-title text-anbit-text text-sm lg:text-base">{t('becomeMerchant')}</h4>
+            <p className="text-anbit-muted text-[10px] lg:text-xs font-medium">{t('joinEcosystem')}</p>
+            <a href={DASHBOARD_URL} target="_blank" rel="noopener noreferrer" className="text-anbit-text font-semibold text-[8px] lg:text-[10px] tracking-wide border-b border-anbit-yellow pb-0.5 hover:text-anbit-yellow transition-colors">{t('applyNow')}</a>
+          </div>
+        </div>
+      </div>
+    </>
+  ) : (
+    /* Αρχική σελίδα για επισκέπτη (χωρίς σύνδεση) */
+    <>
+      <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6 lg:mb-8">
+        <AnbitCafeDemoScene />
+      </div>
+      <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
+        <div className="xl:col-span-8 space-y-8 lg:space-y-12">
+          <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <div className="lg:col-span-7 dashboard-card p-6 lg:p-10 flex flex-col justify-center items-center min-h-[280px] text-center">
+              <p className="text-anbit-muted text-sm lg:text-base mb-4">{t('warriorNetwork')}</p>
+              <h2 className="section-title-lg text-anbit-text leading-tight mb-2">{t('masterLegacy')}</h2>
+              <p className="text-anbit-muted text-xs lg:text-sm max-w-[260px] mb-6">Συνδέσου για να δεις την πρόοδό σου και τα rewards σου.</p>
+              <button onClick={openLogin} className="py-3 px-6 bg-anbit-yellow text-anbit-yellow-content rounded-xl font-bold text-sm hover:opacity-90">Σύνδεση</button>
+            </div>
+            <div className="lg:col-span-5 dashboard-card p-6 lg:p-10 flex flex-col justify-between min-h-[280px]">
+              <div className="relative z-10 space-y-4">
+                <div className="flex items-center gap-2">
+                  <div className="w-2 h-2 bg-anbit-yellow rounded-full animate-pulse" />
+                  <span className="section-title text-anbit-muted text-[10px] lg:text-xs">{t('warriorNetwork')}</span>
+                </div>
+                <h2 className="section-title-lg text-anbit-text leading-tight">{t('masterLegacy')}</h2>
+                <p className="text-anbit-muted text-xs lg:text-sm font-medium leading-relaxed max-w-[200px]">Συνδέσου για να ξεκλειδώσεις το κέντρο επιβράβευσης.</p>
+              </div>
+              <button onClick={openRegister} className="w-full bg-anbit-card border border-anbit-border text-anbit-text py-3 lg:py-4 rounded-xl font-semibold text-xs lg:text-sm hover:bg-anbit-yellow hover:text-anbit-yellow-content transition-all">Εγγραφή</button>
+            </div>
+          </div>
+          <RewardSection rewards={dashboardFeed.rewards} onViewAll={openRegister} />
+          <section className="space-y-4">
+            <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('dealsOfTheDay')}</h2>
+            <OfferCarousel offers={GREEK_OFFERS} />
+          </section>
+        </div>
+        <div className="xl:col-span-4 space-y-6 lg:space-y-8">
+          <div className="w-full overflow-hidden rounded-2xl">
+            <FrostedHoverNav />
+          </div>
+          <div className="dashboard-card overflow-hidden"><Leaderboard entries={dashboardFeed.leaderboard} /></div>
+          <div className="bg-anbit-bg border border-anbit-border rounded-3xl p-6 lg:p-8 text-center space-y-3">
+            <h4 className="section-title text-anbit-text text-sm lg:text-base">{t('becomeMerchant')}</h4>
+            <p className="text-anbit-muted text-[10px] lg:text-xs font-medium">{t('joinEcosystem')}</p>
+            <a href={DASHBOARD_URL} target="_blank" rel="noopener noreferrer" className="text-anbit-text font-semibold text-[8px] lg:text-[10px] tracking-wide border-b border-anbit-yellow pb-0.5 hover:text-anbit-yellow transition-colors">{t('applyNow')}</a>
+          </div>
+        </div>
+      </div>
+    </>
+  );
 
   return (
     <div className="min-h-screen bg-anbit-bg text-anbit-text font-sans antialiased overflow-x-hidden">
@@ -183,9 +196,53 @@ const App: React.FC = () => {
           </motion.div>
         ) : (
           <motion.div key="app-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-screen">
-            {userData && <Header activeTab={activeTab} setActiveTab={setActiveTab} onOpenQR={() => setIsQRModalOpen(true)} totalXP={userData.totalXP} />}
-            <main className="flex-1 w-full max-w-[1600px] mx-auto pt-20 px-4 lg:px-8 pb-4 lg:pb-8">{renderContent()}</main>
-            <FooterTaped setActiveTab={setActiveTab} t={t} />
+            <Header
+              isAuthenticated={!!userData}
+              onOpenQR={userData ? () => setIsQRModalOpen(true) : undefined}
+              totalXP={userData?.totalXP ?? 0}
+              onOpenLogin={!userData ? openLogin : undefined}
+              onOpenRegister={!userData ? openRegister : undefined}
+            />
+            <main className="flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8">
+              <Routes>
+                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/dashboard" element={dashboardContent} />
+                <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
+                <Route path="/network" element={
+                  storeMenuPartner ? (
+                    <StoreMenuPage
+                      partner={storeMenuPartner}
+                      onBack={() => setStoreMenuPartner(null)}
+                      onOrderComplete={(xpEarned) => {
+                        if (userData && selectedPartner) {
+                          setSelectedPartner(storeMenuPartner);
+                          handleOrderComplete(xpEarned);
+                        }
+                        setStoreMenuPartner(null);
+                      }}
+                    />
+                  ) : (
+                    <NetworkPage
+                      partners={dashboardFeed.partners}
+                      storeXP={userData?.storeXP ?? {}}
+                      onOpenQR={userData ? () => setIsQRModalOpen(true) : openLogin}
+                      onOrderComplete={userData ? handleOrderComplete : openLogin}
+                      onOpenStoreMenu={(partner) => {
+                        setSelectedPartner(partner);
+                        setStoreMenuPartner(partner);
+                      }}
+                    />
+                  )
+                } />
+                <Route path="/quests" element={userData ? <QuestsPage quests={dashboardFeed.quests} user={userData} /> : <Navigate to="/dashboard" replace />} />
+                <Route path="/profile" element={userData ? <ProfilePage user={userData} partners={dashboardFeed.partners} /> : <Navigate to="/dashboard" replace />} />
+                <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/dashboard" replace />} />
+                <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/dashboard" replace />} />
+                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+              </Routes>
+            </main>
+            <FooterTaped t={t} />
+            <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} mode={authModalMode} onSwitchMode={setAuthModalMode} />
             {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
             <PartnerMenuModal isOpen={isPartnerMenuOpen} onClose={() => setIsPartnerMenuOpen(false)} partner={selectedPartner} onOrderComplete={handleOrderComplete} />
             <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />

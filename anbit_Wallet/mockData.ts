@@ -2,7 +2,7 @@
 import { DashboardData, Product } from './types';
 
 const generateMockMenu = (category: string): Product[] => {
-  if (category === 'Coffee') {
+  if (category === 'coffee') {
     return [
       { 
         id: 'c1', 
@@ -186,7 +186,7 @@ export const mockDashboardData: DashboardData = {
     {
       id: "p1",
       name: "THE COFFEE HUB",
-      category: "Coffee",
+      category: "coffee",
       image: "https://images.unsplash.com/photo-1501339847302-ac426a4a7cbb?auto=format&fit=crop&q=80&w=600",
       bonusXp: 25,
       location: "ΤΣΙΜΙΣΚΗ 45",
@@ -194,12 +194,12 @@ export const mockDashboardData: DashboardData = {
       reviewCount: 2126,
       deliveryTime: "55' - 60'",
       minOrder: "7,00€",
-      menu: generateMockMenu('Coffee')
+      menu: generateMockMenu('coffee')
     },
     {
       id: "p2",
       name: "MEAT THE KING",
-      category: "Food",
+      category: "burger",
       image: "https://images.unsplash.com/photo-1594212699903-ec8a3eca50f5?auto=format&fit=crop&q=80&w=600",
       bonusXp: 50,
       location: "ΠΛΑΤΕΙΑ ΑΡΙΣΤΟΤΕΛΟΥΣ",
@@ -207,24 +207,24 @@ export const mockDashboardData: DashboardData = {
       reviewCount: 1842,
       deliveryTime: "40' - 50'",
       minOrder: "9,00€",
-      menu: generateMockMenu('Food')
+      menu: generateMockMenu('burger')
     },
     {
       id: "p3",
       name: "ZEN SPA & FITNESS",
-      category: "Lifestyle",
+      category: "healthy",
       image: "https://images.unsplash.com/photo-1544161515-450a91adbd05?auto=format&fit=crop&q=80&w=600",
       location: "ΛΕΩΦΟΡΟΣ ΝΙΚΗΣ",
       rating: 4.7,
       reviewCount: 318,
       deliveryTime: "—",
       minOrder: "—",
-      menu: generateMockMenu('Lifestyle')
+      menu: generateMockMenu('healthy')
     },
     {
       id: "p4",
       name: "TECH REPAIR PRO",
-      category: "Services",
+      category: "cooked",
       image: "https://images.unsplash.com/photo-1581092160562-40aa08e78837?auto=format&fit=crop&q=80&w=600",
       bonusXp: 15,
       location: "ΕΓΝΑΤΙΑ 112",
@@ -232,12 +232,12 @@ export const mockDashboardData: DashboardData = {
       reviewCount: 89,
       deliveryTime: "—",
       minOrder: "—",
-      menu: generateMockMenu('Services')
+      menu: generateMockMenu('cooked')
     },
     {
       id: "p5",
       name: "BLUE CUP",
-      category: "Coffee",
+      category: "coffee",
       image: "https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=600",
       bonusXp: 30,
       location: "ΛΑΔΑΔΙΚΑ",
@@ -245,7 +245,199 @@ export const mockDashboardData: DashboardData = {
       reviewCount: 520,
       deliveryTime: "30' - 35'",
       minOrder: "5,00€",
-      menu: generateMockMenu('Coffee')
+      menu: generateMockMenu('coffee')
+    },
+    {
+      id: "p6",
+      name: "Ο ΓΥΡΟΣ ΤΗΣ ΑΡΙΣΤΟΤΕΛΟΥΣ",
+      category: "souvlaki",
+      image: "https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 20,
+      location: "ΑΡΙΣΤΟΤΕΛΟΥΣ 12",
+      rating: 4.7,
+      reviewCount: 890,
+      deliveryTime: "25' - 35'",
+      minOrder: "6,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p7",
+      name: "GOODY'S BURGER HOUSE",
+      category: "burger",
+      image: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 35,
+      location: "ΕΘΝΙΚΗΣ ΑΜΥΝΗΣ 45",
+      rating: 4.6,
+      reviewCount: 2100,
+      deliveryTime: "35' - 45'",
+      minOrder: "8,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p8",
+      name: "SUSHI MASTER",
+      category: "asian",
+      image: "https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=600",
+      location: "ΜΙΤΡΟΠΟΛΕΩΣ 8",
+      rating: 4.9,
+      reviewCount: 456,
+      deliveryTime: "40' - 55'",
+      minOrder: "12,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p9",
+      name: "CAFFÈ ROMA",
+      category: "coffee",
+      image: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 25,
+      location: "ΤΣΙΜΙΣΚΗ 78",
+      rating: 4.8,
+      reviewCount: 634,
+      deliveryTime: "20' - 30'",
+      minOrder: "4,00€",
+      menu: generateMockMenu('coffee')
+    },
+    {
+      id: "p10",
+      name: "PIZZA EXPRESS",
+      category: "pizza",
+      image: "https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 40,
+      location: "ΕΓΝΑΤΙΑ 56",
+      rating: 4.5,
+      reviewCount: 1200,
+      deliveryTime: "30' - 40'",
+      minOrder: "10,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p11",
+      name: "SWEET DREAMS",
+      category: "sweets",
+      image: "https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&q=80&w=600",
+      location: "ΠΛ. ΝΑΥΑΡΙΝΟΥ 3",
+      rating: 4.9,
+      reviewCount: 312,
+      deliveryTime: "25' - 35'",
+      minOrder: "7,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p12",
+      name: "FRESH JUICE BAR",
+      category: "healthy",
+      image: "https://images.unsplash.com/photo-1621506289937-a8e4df240d0b?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 15,
+      location: "ΛΕΩΦ. ΣΤΡΑΤΟΥ 22",
+      rating: 4.6,
+      reviewCount: 198,
+      deliveryTime: "15' - 25'",
+      minOrder: "5,00€",
+      menu: generateMockMenu('healthy')
+    },
+    {
+      id: "p13",
+      name: "TAVERNA OLYMPUS",
+      category: "cooked",
+      image: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 30,
+      location: "ΑΓ. ΣΟΦΙΑΣ 15",
+      rating: 4.7,
+      reviewCount: 567,
+      deliveryTime: "45' - 60'",
+      minOrder: "15,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p14",
+      name: "MORNING GLORY",
+      category: "coffee",
+      image: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 20,
+      location: "ΒΕΝΙΖΕΛΟΥ 90",
+      rating: 4.8,
+      reviewCount: 423,
+      deliveryTime: "25' - 35'",
+      minOrder: "6,00€",
+      menu: generateMockMenu('coffee')
+    },
+    {
+      id: "p15",
+      name: "BURGER STATION",
+      category: "burger",
+      image: "https://images.unsplash.com/photo-1553979459-d2229ba7433b?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 45,
+      location: "ΠΑΝΕΠΙΣΤΗΜΙΟΥ 34",
+      rating: 4.4,
+      reviewCount: 876,
+      deliveryTime: "20' - 30'",
+      minOrder: "7,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p16",
+      name: "YOGA & SMOOTHIE",
+      category: "healthy",
+      image: "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=600",
+      location: "ΚΑΣΣΑΝΔΡΟΥ 7",
+      rating: 4.9,
+      reviewCount: 234,
+      deliveryTime: "—",
+      minOrder: "—",
+      menu: generateMockMenu('healthy')
+    },
+    {
+      id: "p17",
+      name: "BAKERY CENTRAL",
+      category: "bougatsa",
+      image: "https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 18,
+      location: "ΜΑΡΤΎΡΩΝ 12",
+      rating: 4.8,
+      reviewCount: 701,
+      deliveryTime: "30' - 40'",
+      minOrder: "5,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p18",
+      name: "QUICK FIX PHONE",
+      category: "cooked",
+      image: "https://images.unsplash.com/photo-1581092162384-8987c1d64718?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 10,
+      location: "ΜΑΚΕΔΟΝΟΜΑΧΩΝ 5",
+      rating: 4.5,
+      reviewCount: 145,
+      deliveryTime: "—",
+      minOrder: "—",
+      menu: generateMockMenu('cooked')
+    },
+    {
+      id: "p19",
+      name: "GREEK FLAVOURS",
+      category: "italian",
+      image: "https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 28,
+      location: "ΔΙΚΗΓΟΥΡΟΥ 18",
+      rating: 4.7,
+      reviewCount: 534,
+      deliveryTime: "35' - 50'",
+      minOrder: "9,00€",
+      menu: generateMockMenu('burger')
+    },
+    {
+      id: "p20",
+      name: "ESPRESSO LAB",
+      category: "coffee",
+      image: "https://images.unsplash.com/photo-1497935586351-b67a49e012bf?auto=format&fit=crop&q=80&w=600",
+      bonusXp: 35,
+      location: "ΦΡΑΓΚΟΥΛΗ 2",
+      rating: 4.9,
+      reviewCount: 389,
+      deliveryTime: "15' - 25'",
+      minOrder: "3,50€",
+      menu: generateMockMenu('coffee')
     }
   ],
   leaderboard: [

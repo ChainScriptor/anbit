@@ -94,10 +94,14 @@ export interface Product {
   allergens?: string[];
 }
 
+export type PartnerCategory =
+  | 'street_food' | 'sandwiches' | 'brunch' | 'coffee' | 'bar' | 'burger' | 'sweets' | 'bbq' | 'breakfast'
+  | 'italian' | 'asian' | 'pizza' | 'crepe' | 'healthy' | 'pasta' | 'bougatsa' | 'salads' | 'souvlaki' | 'cooked';
+
 export interface Partner {
   id: string;
   name: string;
-  category: 'Coffee' | 'Food' | 'Services' | 'Lifestyle';
+  category: PartnerCategory;
   image: string;
   bonusXp?: number;
   location: string;

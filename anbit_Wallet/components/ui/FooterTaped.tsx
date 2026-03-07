@@ -1,4 +1,5 @@
 import React from 'react';
+import { NavLink } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { Linkedin, Twitter } from 'lucide-react';
 import { DASHBOARD_URL } from '../../constants';
@@ -14,12 +15,11 @@ const tape = (
 );
 
 export interface FooterTapedProps {
-  setActiveTab?: (tab: string) => void;
   t: (key: string) => string;
   className?: string;
 }
 
-export const FooterTaped: React.FC<FooterTapedProps> = ({ setActiveTab, t, className }) => {
+export const FooterTaped: React.FC<FooterTapedProps> = ({ t, className }) => {
   const currentYear = new Date().getFullYear();
 
   return (
@@ -33,39 +33,61 @@ export const FooterTaped: React.FC<FooterTapedProps> = ({ setActiveTab, t, class
         </div>
         <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-10 px-2 md:px-8 flex-1 w-full">
           <div className="flex flex-col items-start gap-2">
-            <a
-              href="#"
-              onClick={(e) => {
-                e.preventDefault();
-                setActiveTab?.('Dashboard');
-              }}
+            <NavLink
+              to="/dashboard"
               className="flex flex-row gap-2 items-center justify-start text-xl md:text-2xl font-bold tracking-tighter italic text-anbit-text hover:opacity-90"
             >
               <div className="w-8 h-8 bg-anbit-yellow rounded-lg flex items-center justify-center flex-shrink-0">
                 <span className="text-anbit-yellow-content font-black text-lg italic">A</span>
               </div>
               Anbit Wallet
-            </a>
+            </NavLink>
             <p className="text-anbit-muted font-medium text-sm max-w-md">
               Loyalty rewards & partner network. Earn points, unlock rewards, explore stores.
             </p>
           </div>
 
           <div className="flex flex-wrap gap-4 md:gap-8 items-center text-[10px] font-semibold tracking-wide">
-            <button
-              type="button"
-              onClick={() => setActiveTab?.('Dashboard')}
-              className="text-anbit-muted hover:text-anbit-yellow transition-colors"
+            <NavLink
+              to="/dashboard"
+              className={({ isActive }) =>
+                isActive ? 'text-anbit-yellow' : 'text-anbit-muted hover:text-anbit-yellow transition-colors'
+              }
             >
               {t('dashboard')}
-            </button>
-            <button
-              type="button"
-              onClick={() => setActiveTab?.('Network')}
-              className="text-anbit-muted hover:text-anbit-yellow transition-colors"
+            </NavLink>
+            <NavLink
+              to="/network"
+              className={({ isActive }) =>
+                isActive ? 'text-anbit-yellow' : 'text-anbit-muted hover:text-anbit-yellow transition-colors'
+              }
             >
               {t('network')}
-            </button>
+            </NavLink>
+            <NavLink
+              to="/quests"
+              className={({ isActive }) =>
+                isActive ? 'text-anbit-yellow' : 'text-anbit-muted hover:text-anbit-yellow transition-colors'
+              }
+            >
+              {t('quests')}
+            </NavLink>
+            <NavLink
+              to="/profile"
+              className={({ isActive }) =>
+                isActive ? 'text-anbit-yellow' : 'text-anbit-muted hover:text-anbit-yellow transition-colors'
+              }
+            >
+              {t('profile')}
+            </NavLink>
+            <NavLink
+              to="/settings"
+              className={({ isActive }) =>
+                isActive ? 'text-anbit-yellow' : 'text-anbit-muted hover:text-anbit-yellow transition-colors'
+              }
+            >
+              {t('settings')}
+            </NavLink>
             <a
               href={DASHBOARD_URL}
               target="_blank"
