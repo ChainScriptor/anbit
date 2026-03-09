@@ -136,13 +136,28 @@
 
       /* Fixed navbar: solid red background on scroll only in light mode (Pax-style) */
       [data-theme="light"] .glass-nav.navbar-scrolled {
-        background: #C2002A;
+        background: #e63533;
         border-bottom-color: rgba(255, 255, 255, 0.2);
         color: #fff;
       }
       [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-text,
       [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-muted {
         color: #fff !important;
+      }
+      /* Hover card στο nav: πάντα ορατό κείμενο (δεν κληρονομεί το άσπρο του navbar) */
+      [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card {
+        background: #ffffff;
+        border-color: rgba(0, 0, 0, 0.08);
+      }
+      [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card .nav-hover-card-text {
+        color: #333333 !important;
+      }
+      [data-theme="dark"] .glass-nav .nav-hover-card {
+        background: var(--anbit-card);
+        border-color: var(--anbit-border);
+      }
+      [data-theme="dark"] .glass-nav .nav-hover-card .nav-hover-card-text {
+        color: var(--anbit-text);
       }
       [data-theme="light"] .glass-nav.navbar-scrolled button:not([class*="rounded-lg overflow-hidden"]) {
         color: #fff;

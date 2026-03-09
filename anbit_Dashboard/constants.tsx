@@ -63,7 +63,7 @@ export const INITIAL_ORDERS: Order[] = [
       { name: 'Freddo Espresso', qty: 1, price: 3.5, points: 8, image: 'https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&q=80&w=100&h=100' },
       { name: 'Chocolate Cake', qty: 1, price: 5.5, points: 12, image: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?auto=format&fit=crop&q=80&w=100&h=100' }
     ],
-    status: 'completed',
+    status: 'shipped',
     totalPrice: 9.0,
     totalPoints: 20,
     timestamp: new Date(Date.now() - 90 * 60000).toISOString()

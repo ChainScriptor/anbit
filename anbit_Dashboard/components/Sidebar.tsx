@@ -31,7 +31,7 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
   ];
 
   const sidebarClasses = `
-    fixed inset-y-0 left-0 z-50 w-[240px] bg-[#09090b] border-r border-white/10 flex flex-col transition-transform duration-300 ease-in-out shadow-2xl
+    fixed inset-y-0 left-0 z-50 w-[80px] lg:w-[90px] bg-white border-r border-slate-200 flex flex-col items-center transition-transform duration-300 ease-in-out shadow-card-soft
     ${isOpen ? 'translate-x-0' : '-translate-x-full'}
   `;
 
@@ -45,56 +45,57 @@ const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
       )}
 
       <div className={sidebarClasses}>
-        <div className="p-6 flex flex-col items-start gap-4">
+        <div className="p-4 flex flex-col items-center gap-4 w-full">
           <div className="flex items-center justify-between w-full">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-anbit-yellow rounded-lg flex items-center justify-center shadow-glow-yellow">
-                <Store size={18} className="text-anbit-dark" />
+            <div className="mx-auto flex items-center justify-center">
+              <div className="w-9 h-9 bg-anbit-red rounded-2xl flex items-center justify-center">
+                <Store size={18} className="text-white" />
               </div>
-              <span className="font-black text-lg tracking-tighter italic text-white">ANBIT BIZ</span>
             </div>
             <button 
               onClick={onClose} 
-              className="lg:hidden p-2 text-white/40 hover:text-anbit-yellow hover:bg-white/5 rounded-full transition-all"
+              className="lg:hidden p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-full transition-all"
             >
               <X size={20} />
             </button>
           </div>
-          <div className="px-3 py-1 bg-anbit-yellow/5 rounded border border-anbit-yellow/20">
-            <span className="text-[9px] font-black text-anbit-yellow uppercase tracking-widest italic">Node: A-7 COMMAND</span>
+          <div className="hidden lg:block px-2 py-1 bg-slate-100 rounded-full border border-slate-200">
+            <span className="text-[8px] font-semibold text-slate-500 uppercase tracking-[0.25em]">Node A-7</span>
           </div>
         </div>
 
-        <nav className="flex-1 px-4 py-6 space-y-1.5 overflow-y-auto no-scrollbar">
+        <nav className="flex-1 px-2 py-6 space-y-3 overflow-y-auto no-scrollbar flex flex-col items-center">
           {navItems.map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
               onClick={() => { if (window.innerWidth < 1024) onClose(); }}
               className={({ isActive }) => `
-                flex items-center gap-3 px-4 py-3 rounded-xl transition-all text-[10px] font-black tracking-widest uppercase italic
+                group relative flex items-center justify-center w-11 h-11 rounded-full transition-all
                 ${isActive 
-                  ? 'bg-anbit-yellow text-anbit-dark shadow-glow-yellow scale-[1.02]' 
-                  : 'text-white/40 hover:bg-white/5 hover:text-white border border-transparent hover:border-white/5'}
+                  ? 'bg-anbit-red text-white scale-[1.05]' 
+                  : 'text-slate-400 hover:bg-slate-100 hover:text-slate-700'}
               `}
             >
               <span className="shrink-0">{item.icon}</span>
-              <span className="truncate">{item.label}</span>
+              <span className="pointer-events-none absolute left-full ml-3 px-3 py-1 rounded-full bg-slate-900/90 text-[9px] font-medium uppercase tracking-widest text-white whitespace-nowrap opacity-0 group-hover:opacity-100 group-focus-visible:opacity-100 transition-opacity">
+                {item.label}
+              </span>
             </NavLink>
           ))}
         </nav>
 
-        <div className="p-4 border-t border-white/5 bg-black/20 space-y-1">
+        <div className="p-4 border-t border-slate-200 bg-white space-y-1">
           <a
             href={WALLET_URL}
             target="_blank"
             rel="noopener noreferrer"
-            className="flex items-center gap-3 px-4 py-3 text-anbit-yellow/90 hover:text-anbit-yellow hover:bg-white/5 w-full text-[10px] font-black uppercase tracking-widest italic transition-colors rounded-xl"
+            className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:text-slate-900 hover:bg-slate-100 w-full text-[10px] font-semibold uppercase tracking-[0.2em] transition-colors rounded-xl"
           >
             <Wallet size={16} />
             Anbit Wallet
           </a>
-          <button className="flex items-center gap-3 px-4 py-3 text-white/30 hover:text-white w-full text-[10px] font-black uppercase tracking-widest italic transition-colors group">
+          <button className="flex items-center gap-3 px-4 py-3 text-slate-400 hover:text-slate-800 w-full text-[10px] font-semibold uppercase tracking-[0.2em] transition-colors group">
             <Settings size={16} className="group-hover:rotate-45 transition-transform" />
             Ρυθμίσεις
           </button>

@@ -55,25 +55,34 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
           </button>
         </div>
 
-        <nav className="flex items-center bg-white/[0.03] border border-anbit-border rounded-xl p-1 overflow-x-auto no-scrollbar scroll-smooth">
+        <nav className="flex items-center justify-center bg-white/[0.03] border border-anbit-border rounded-full px-2 py-1 gap-1 shrink-0">
           {navPaths.map((item) => {
             const Icon = item.icon;
             const isActive = location.pathname === item.path;
             const isProfileAsGuest = item.path === '/profile' && !isAuthenticated && onOpenLogin;
-            const baseClass = `flex items-center gap-2 px-3 lg:px-5 py-2 lg:py-2.5 rounded-lg transition-all whitespace-nowrap ${isActive ? 'bg-anbit-border text-anbit-text' : 'text-anbit-muted hover:text-anbit-text'
-              }`;
+            const baseClass = `relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all ${
+              isActive ? 'bg-anbit-text text-anbit-bg shadow-sm' : 'text-anbit-muted hover:bg-anbit-border/40 hover:text-anbit-text'
+            }`;
+            const hoverCardContent = (
+              <div
+                className="nav-hover-card pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-48 -translate-x-1/2 rounded-lg border border-anbit-border bg-anbit-card px-4 py-3 shadow-lg outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
+                style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
+              >
+                <p className="nav-hover-card-text text-center text-sm font-greek-bold text-anbit-text">
+                  {t(item.labelKey)}
+                </p>
+              </div>
+            );
             if (isProfileAsGuest) {
               return (
                 <button
                   key={item.path}
                   type="button"
                   onClick={onOpenLogin}
-                  className={`${baseClass} font-greek`}
+                  className={baseClass}
                 >
-                  <Icon className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span className="text-lg font-greek-bold tracking-tight normal-case">
-                    {t(item.labelKey)}
-                  </span>
+                  <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
+                  {hoverCardContent}
                 </button>
               );
             }
@@ -81,12 +90,10 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={`${baseClass} font-greek`}
+                className={baseClass}
               >
-                <Icon className={`w-4 h-4 lg:w-5 lg:h-5 ${isActive ? 'text-anbit-yellow' : ''}`} />
-                <span className="text-lg font-greek-bold tracking-tight normal-case">
-                  {t(item.labelKey)}
-                </span>
+                <Icon className={`w-5 h-5 lg:w-6 lg:h-6 ${isActive ? 'text-anbit-bg' : ''}`} />
+                {hoverCardContent}
               </NavLink>
             );
           })}

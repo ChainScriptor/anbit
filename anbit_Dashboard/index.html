@@ -1,11 +1,12 @@
-
 <!DOCTYPE html>
 <html lang="el" class="text-[12px] sm:text-[13px] md:text-[14px] lg:text-[15px] xl:text-[16px]">
+
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
   <title>Anbit Business - Tactical Command</title>
-  
+
   <meta name="theme-color" content="#09090b">
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
@@ -14,26 +15,31 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700&display=swap" rel="stylesheet">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=JetBrains+Mono:wght@700&family=Poppins:wght@800;900&display=swap"
+    rel="stylesheet">
   <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
             'anbit-dark': '#09090b',
-            'anbit-yellow': '#FEF08A',
-            'anbit-gold': '#FFD700',
-            'anbit-cyan': '#22d3ee',
-            'anbit-green': '#39FF14',
+            /* Χρώματα ευθυγραμμισμένα με το wallet light mode (Pax Burgers / κόκκινο) */
+            'anbit-soft-bg': '#f3f4f6',
+            'anbit-card': '#ffffff',
+            'anbit-border': 'rgba(0,0,0,0.08)',
+            'anbit-yellow': '#E63533',
+            'anbit-red': '#E63533',
+            'anbit-text': '#333333',
+            'anbit-muted': '#666666',
           },
           fontFamily: {
             sans: ['Inter', 'sans-serif'],
             mono: ['JetBrains Mono', 'monospace'],
+            logo: ['Poppins', 'sans-serif'],
           },
           boxShadow: {
-            'glow-yellow': '0 0 15px rgba(254, 240, 138, 0.3)',
-            'glow-heavy-yellow': '0 0 30px rgba(254, 240, 138, 0.5)',
-            'glow-cyan': '0 0 15px rgba(34, 211, 238, 0.3)',
+            'card-soft': '0 12px 30px rgba(15, 23, 42, 0.08)',
           }
         }
       }
@@ -41,41 +47,40 @@
   </script>
   <style>
     body {
-      background-color: #09090b;
-      background-image: 
-        radial-gradient(circle at center, rgba(254, 240, 138, 0.02) 0%, transparent 70%),
-        linear-gradient(45deg, #050505 25%, transparent 25%), 
-        linear-gradient(-45deg, #050505 25%, transparent 25%), 
-        linear-gradient(45deg, transparent 75%, #050505 75%), 
-        linear-gradient(-45deg, transparent 75%, #050505 75%);
-      background-size: 4px 4px;
-      color: #ffffff;
+      background-color: #f3f4f6;
+      color: #333333;
       margin: 0;
       overflow-x: hidden;
     }
+
+    /* Λευκές κάρτες τύπου wallet */
     .glass-tactical {
-      background: rgba(20, 20, 20, 0.6);
-      backdrop-filter: blur(16px);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      box-shadow: inset 0 0 20px rgba(0,0,0,0.5);
+      background: #ffffff;
+      backdrop-filter: blur(12px);
+      border: 1px solid rgba(0, 0, 0, 0.06);
+      box-shadow: 0 12px 30px rgba(15, 23, 42, 0.08);
+      border-radius: 18px;
     }
+
     .neon-text-glow-yellow {
-      text-shadow: 0 0 10px rgba(254, 240, 138, 0.4);
+      text-shadow: none;
     }
+
     .particle-yellow {
-      position: absolute;
-      width: 2px;
-      height: 2px;
-      background: #FEF08A;
-      border-radius: 50%;
-      pointer-events: none;
+      display: none;
     }
+
     @keyframes shimmer {
-      0% { transform: translateX(-100%); }
-      100% { transform: translateX(100%); }
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(100%);
+      }
     }
   </style>
-<script type="importmap">
+  <script type="importmap">
 {
   "imports": {
     "framer-motion": "https://esm.sh/framer-motion@^12.29.2",
@@ -88,10 +93,12 @@
   }
 }
 </script>
-<link rel="stylesheet" href="/index.css">
+  <link rel="stylesheet" href="/index.css">
 </head>
+
 <body>
   <div id="root"></div>
-<script type="module" src="/index.tsx"></script>
+  <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>
