@@ -45,6 +45,15 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
         username: usernameOrEmail,
         password,
       });
+
+      const hasUserRole = response.roles?.includes('User');
+      if (!hasUserRole) {
+        logout();
+        throw new Error(
+          'Αυτός ο λογαριασμός δεν είναι λογαριασμός πελάτη. Παρακαλώ συνδεθείτε στο Dashboard.'
+        );
+      }
+
       setToken(response.token);
       const userData = loginResponseToUserData(response);
       setUser(userData);

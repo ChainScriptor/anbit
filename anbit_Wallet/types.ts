@@ -4,6 +4,7 @@ export interface UserData {
   name: string;
   email: string;
   avatar: string;
+  roles: string[]; // Backend roles: e.g. ["User"], ["Admin"], ["Merchant"]
   totalXP: number; // Global XP (Coming Soon)
   storeXP: Record<string, number>; // Points per store: { "p1": 500, "p2": 150 }
   currentLevel: number;

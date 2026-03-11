@@ -9,22 +9,40 @@ import ViewTables from '@/pages/ViewTables';
 import TableHistory from '@/pages/TableHistory';
 import Help from '@/pages/Help';
 import Customers from '@/pages/Customers';
+import AuthPage from '@/pages/Auth';
+import AdminPage from '@/pages/Admin';
+import StoresManagement from '@/pages/StoresManagement';
+import MerchantUsers from '@/pages/MerchantUsers';
+import SystemSettings from '@/pages/SystemSettings';
+import { AuthProvider } from './AuthContext';
+import { ProtectedRoute } from './ProtectedRoute';
 
 const App: React.FC = () => {
   return (
     <Router>
-      <AppLayout>
+      <AuthProvider>
         <Routes>
-          <Route path="/" element={<Dashboard />} />
-          <Route path="/orders" element={<OrdersDashboard />} />
-          <Route path="/products" element={<Products />} />
-          <Route path="/reservation-list" element={<ReservationList />} />
-          <Route path="/view-tables" element={<ViewTables />} />
-          <Route path="/table-history" element={<TableHistory />} />
-          <Route path="/help" element={<Help />} />
-          <Route path="/customers" element={<Customers />} />
+          <Route path="/auth" element={<AuthPage />} />
+          <Route element={<AppLayout />}>
+            <Route element={<ProtectedRoute allowedRoles={['Admin', 'Merchant']} />}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/orders" element={<OrdersDashboard />} />
+              <Route path="/products" element={<Products />} />
+              <Route path="/reservation-list" element={<ReservationList />} />
+              <Route path="/view-tables" element={<ViewTables />} />
+              <Route path="/table-history" element={<TableHistory />} />
+              <Route path="/help" element={<Help />} />
+              <Route path="/customers" element={<Customers />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
+              <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/stores" element={<StoresManagement />} />
+              <Route path="/admin/merchant-users" element={<MerchantUsers />} />
+              <Route path="/admin/settings" element={<SystemSettings />} />
+            </Route>
+          </Route>
         </Routes>
-      </AppLayout>
+      </AuthProvider>
     </Router>
   );
 };

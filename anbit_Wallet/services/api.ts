@@ -55,6 +55,7 @@ function loginResponseToUserData(data: LoginResponse): UserData {
     name: data.username,
     email: data.username,
     avatar: `https://api.dicebear.com/7.x/initials/svg?seed=${encodeURIComponent(data.username)}`,
+    roles: data.roles,
     totalXP: 0,
     storeXP: {},
     currentLevel: 1,

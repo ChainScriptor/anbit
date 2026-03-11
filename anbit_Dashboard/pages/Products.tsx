@@ -1,5 +1,4 @@
-import React, { useMemo, useRef, useState } from 'react';
-import { INITIAL_PRODUCTS } from '@/constants';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -23,6 +22,7 @@ import {
   Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { api } from '@/services/api';
 
 const ACCENT = '#e63533';
 
@@ -49,7 +49,7 @@ function getCategoryIcon(cat: string) {
 }
 
 const Products: React.FC = () => {
-  const [items, setItems] = useState<Product[]>(INITIAL_PRODUCTS);
+  const [items, setItems] = useState<Product[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
@@ -67,6 +67,38 @@ const Products: React.FC = () => {
   const [extraCategories, setExtraCategories] = useState<string[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  const loadProducts = async () => {
+    setIsLoading(true);
+    setError(null);
+    try {
+      const apiProducts = await api.getProducts();
+      const mapped: Product[] = apiProducts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        category: 'Menu',
+        price: p.price,
+        pointsReward: p.xp,
+        image:
+          'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
+        isActive: true,
+        allergens: [],
+      }));
+      setItems(mapped);
+    } catch (e) {
+      setError('Αποτυχία φόρτωσης προϊόντων.');
+      console.error(e);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadProducts();
+  }, []);
 
   const categories = useMemo(() => {
     const base = Array.from(new Set(items.map((p) => p.category)));
@@ -108,26 +140,25 @@ const Products: React.FC = () => {
     });
   };
 
-  const handleAddProduct = () => {
-    if (!newProduct.name || !newProduct.category || !newProduct.image) {
-      alert('Συμπλήρωσε όνομα, κατηγορία και εικόνα.');
+  const handleAddProduct = async () => {
+    if (!newProduct.name || !newProduct.category) {
+      alert('Συμπλήρωσε τουλάχιστον όνομα και κατηγορία.');
       return;
     }
-    const product: Product = {
-      id: `P-${Date.now()}`,
-      name: newProduct.name,
-      category: newProduct.category,
-      price: Number(newProduct.price || 0),
-      pointsReward: Number(newProduct.pointsReward || 0),
-      image: newProduct.image,
-      isActive: true,
-      allergens: newProduct.allergens || [],
-      stats: newProduct.stats,
-      description: newProduct.description,
-    };
-    setItems((prev) => [...prev, product]);
-    setIsAddOpen(false);
-    resetForm();
+    try {
+      await api.createProduct({
+        name: newProduct.name,
+        description: newProduct.description ?? '',
+        price: Number(newProduct.price || 0),
+        xp: Number(newProduct.pointsReward || 0),
+      });
+      setIsAddOpen(false);
+      resetForm();
+      await loadProducts();
+    } catch (e) {
+      alert('Αποτυχία δημιουργίας προϊόντος.');
+      console.error(e);
+    }
   };
 
   const handleAddCategory = () => {
@@ -265,6 +296,12 @@ const Products: React.FC = () => {
           </div>
 
           <div className="flex flex-col gap-4">
+          {isLoading && (
+            <p className="text-sm text-slate-500">Φόρτωση προϊόντων...</p>
+          )}
+          {error && (
+            <p className="text-sm text-red-600">{error}</p>
+          )}
           <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
