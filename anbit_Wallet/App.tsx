@@ -14,8 +14,8 @@ import SettingsPage from './components/SettingsPage';
 import SecurityPage from './components/SecurityPage';
 import UserQRModal from './components/UserQRModal';
 import ShopScannerPage from './components/ShopScannerPage';
-import PartnerMenuModal from './components/PartnerMenuModal';
 import StoreMenuPage from './components/StoreMenuPage';
+import StoreProfilePage from './components/StoreProfilePage';
 import ActiveOperations from './components/ActiveOperations';
 import RedemptionActiveModal from './components/RedemptionActiveModal';
 import AuthModal from './components/AuthModal';
@@ -46,7 +46,6 @@ const App: React.FC = () => {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [activeOrderPartner, setActiveOrderPartner] = useState<string | null>(null);
   const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
-  const [isPartnerMenuOpen, setIsPartnerMenuOpen] = useState(false);
   const [storeMenuPartner, setStoreMenuPartner] = useState<Partner | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
@@ -86,7 +85,14 @@ const App: React.FC = () => {
   useEffect(() => { if (!isAuthLoading) setTimeout(() => setIsLoaded(true), 600); }, [isAuthLoading]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [location.pathname]);
 
-  const handleOpenPartnerMenu = (partner: Partner) => { setSelectedPartner(partner); setIsPartnerMenuOpen(true); };
+  const handleOpenPartnerMenu = (partner: Partner) => {
+    setSelectedPartner(partner);
+    setStoreMenuPartner(partner);
+    navigate('/network');
+  };
+  const handleOpenStoreProfile = (partner: Partner) => {
+    navigate(`/store-profile/${partner.id}`, { state: { partner } });
+  };
   const handleRedeemClick = (reward: Reward) => { 
     // Check if user has enough points for THIS partner
     const storePoints = userData?.storeXP[reward.partnerId] || 0;
@@ -283,8 +289,7 @@ const App: React.FC = () => {
                       onOpenLogin={openLogin}
                       onOpenRegister={openRegister}
                       onOrderComplete={(xpEarned) => {
-                        if (userData && selectedPartner) {
-                          setSelectedPartner(storeMenuPartner);
+                        if (userData && storeMenuPartner) {
                           handleOrderComplete(xpEarned);
                         }
                         setStoreMenuPartner(null);
@@ -300,9 +305,11 @@ const App: React.FC = () => {
                         setSelectedPartner(partner);
                         setStoreMenuPartner(partner);
                       }}
+                      onOpenStoreProfile={handleOpenStoreProfile}
                     />
                   )
                 } />
+                <Route path="/store-profile/:partnerId" element={<StoreProfilePage />} />
                 <Route path="/quests" element={userData ? <QuestsPage quests={dashboardFeed.quests} user={userData} /> : <Navigate to="/dashboard" replace />} />
                 <Route path="/profile" element={userData ? <ProfilePage user={userData} partners={dashboardFeed.partners} /> : <Navigate to="/dashboard" replace />} />
                 <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/dashboard" replace />} />
@@ -313,7 +320,6 @@ const App: React.FC = () => {
             {!isStoreOrderLink && <FooterTaped t={t} />}
             <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} mode={authModalMode} onSwitchMode={setAuthModalMode} onSuccess={authSuccessCallback ?? undefined} />
             {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
-            <PartnerMenuModal isOpen={isPartnerMenuOpen} onClose={() => setIsPartnerMenuOpen(false)} partner={selectedPartner} onOrderComplete={handleOrderComplete} />
             <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />
           </motion.div>
         )}

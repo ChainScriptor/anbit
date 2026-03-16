@@ -3,7 +3,6 @@ import { motion } from 'framer-motion';
 import { MapPin, Star, Truck, Zap, ChevronLeft, ChevronRight, Info, SlidersHorizontal, X } from 'lucide-react';
 import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
-import CheckInModal from './CheckInModal';
 import { useLanguage } from '../context/LanguageContext';
 
 const CATEGORY_IMAGES: Record<string, string> = {
@@ -35,6 +34,7 @@ interface NetworkPageProps {
   onOpenQR: () => void;
   onOrderComplete: (xpEarned: number) => void;
   onOpenStoreMenu: (partner: Partner) => void;
+  onOpenStoreProfile: (partner: Partner) => void;
 }
 
 type SortOption = 'default' | 'name_asc' | 'name_desc' | 'rating_desc' | 'rating_asc' | 'delivery_asc' | 'min_order_asc';
@@ -49,13 +49,11 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'min_order_asc', label: 'Ελάχ. παραγγελία (από μικρότερο)' },
 ];
 
-const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpenQR, onOrderComplete, onOpenStoreMenu }) => {
+const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpenQR, onOrderComplete, onOpenStoreMenu, onOpenStoreProfile }) => {
   const { t } = useLanguage();
   const [filter, setFilter] = useState('All');
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
-  const [selectedPartner, setSelectedPartner] = useState<Partner | null>(null);
-  const [isCheckInModalOpen, setIsCheckInModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const categoriesScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -120,11 +118,6 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
     }
     return list;
   }, [filteredPartners, sortBy]);
-
-  const handleCheckIn = (partner: Partner) => {
-    setSelectedPartner(partner);
-    setIsCheckInModalOpen(true);
-  };
 
   return (
     <motion.div
@@ -277,7 +270,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
                   <span className="text-xs font-bold text-anbit-text truncate">{t('pointsAtStore')}</span>
                   <span className="text-sm font-black text-anbit-yellow ml-auto">{(storeXP[partner.id] ?? 0).toLocaleString()}</span>
                 </div>
-                {/* Κουμπιά Παραγγελία / Κράτηση */}
+                {/* Κουμπιά Παραγγελία / Προφίλ καταστήματος */}
                 <div className="grid grid-cols-2 gap-2 mt-auto">
                   <button
                     onClick={() => onOpenStoreMenu(partner)}
@@ -286,10 +279,10 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
                     {t('orderBtn')}
                   </button>
                   <button
-                    onClick={() => handleCheckIn(partner)}
+                    onClick={() => onOpenStoreProfile(partner)}
                     className="py-2.5 rounded-lg font-greek-bold text-sm tracking-wide bg-anbit-yellow text-anbit-yellow-content hover:opacity-90 transition-all"
                   >
-                    {t('reservationBtn')}
+                    Προφίλ
                   </button>
                 </div>
               </div>
@@ -354,11 +347,6 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
         </div>
       )}
 
-      <CheckInModal
-        isOpen={isCheckInModalOpen}
-        onClose={() => setIsCheckInModalOpen(false)}
-        partner={selectedPartner}
-      />
     </motion.div>
   );
 };

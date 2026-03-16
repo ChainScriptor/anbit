@@ -21,6 +21,7 @@ import ProductCustomizeModal from './ProductCustomizeModal';
 import CartCheckoutModal, { type PaymentMethod } from './CartCheckoutModal';
 import OrderSentScreen from './OrderSentScreen';
 import OrderAcceptedScreen from './OrderAcceptedScreen';
+import AnimatedSocialLinks, { type Social } from './ui/social-links';
 
 interface StoreMenuPageProps {
   partner: Partner;
@@ -319,6 +320,28 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
             ? partner.name
             : `${categoryLabel(activeCategory)} – ${partner.name}`}
         </p>
+
+        <div className="mb-6">
+          <AnimatedSocialLinks
+            socials={[
+              {
+                name: 'Instagram',
+                image:
+                  'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=200&q=80',
+              },
+              {
+                name: 'TikTok',
+                image:
+                  'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=200&q=80',
+              },
+              {
+                name: 'Google',
+                image:
+                  'https://images.unsplash.com/photo-1592609931041-40265b692757?auto=format&fit=crop&w=200&q=80',
+              },
+            ] satisfies Social[]}
+          />
+        </div>
 
         <div className="relative mb-6">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/40" strokeWidth={2} />
