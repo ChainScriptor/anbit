@@ -1,3 +1,4 @@
+import './i18n/i18n';
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import { BrowserRouter } from 'react-router-dom';
@@ -5,6 +6,7 @@ import App from './App';
 import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
+import { OrderProvider } from './context/OrderContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -18,7 +20,9 @@ root.render(
       <ThemeProvider>
         <AuthProvider>
           <LanguageProvider>
-            <App />
+            <OrderProvider>
+              <App />
+            </OrderProvider>
           </LanguageProvider>
         </AuthProvider>
       </ThemeProvider>

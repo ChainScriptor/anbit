@@ -1,0 +1,63 @@
+import React, { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
+import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
+import { useOrder } from '../context/OrderContext';
+import { useDashboardData } from '../hooks/useDashboardData';
+import type { Partner } from '../types';
+
+const ScanPage: React.FC = () => {
+  const { shortCode } = useParams<{ shortCode: string }>();
+  const navigate = useNavigate();
+  const { setSession } = useOrder();
+  const { isAuthenticated } = useAuth();
+  const { partners } = useDashboardData(!!isAuthenticated);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    const run = async () => {
+      if (!shortCode) {
+        setError('Μη έγκυρος κωδικός QR.');
+        return;
+      }
+
+      try {
+        const details = await api.getQrCodeDetails(shortCode);
+        const merchantId = details.merchantId;
+
+        setSession({
+          merchantId,
+          tableNumber: details.tableId,
+        });
+
+        // Αντί να πηγαίνουμε στο /network, προωθούμε στο clean URL του καταστήματος
+        navigate(`/store/${shortCode}`, { replace: true });
+      } catch (e) {
+        console.error('Failed to resolve QR code', e);
+        setError('Το QR δεν βρέθηκε ή έληξε.');
+      }
+    };
+
+    run();
+  }, [shortCode, navigate, partners, setSession]);
+
+  if (error) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center">
+        <p className="text-sm text-red-400 font-medium">{error}</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4">
+      <div className="w-10 h-10 border-4 border-anbit-yellow border-t-transparent rounded-full animate-spin" />
+      <p className="text-xs text-anbit-muted font-medium tracking-wide uppercase">
+        Σάρωση QR... φόρτωση καταστήματος
+      </p>
+    </div>
+  );
+};
+
+export default ScanPage;
+

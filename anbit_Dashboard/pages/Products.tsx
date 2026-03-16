@@ -23,6 +23,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
+import { useAuth } from '@/AuthContext';
 
 const ACCENT = '#e63533';
 
@@ -49,17 +50,18 @@ function getCategoryIcon(cat: string) {
 }
 
 const Products: React.FC = () => {
+  const { user } = useAuth();
   const [items, setItems] = useState<Product[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [searchQuery, setSearchQuery] = useState('');
-  const [newProduct, setNewProduct] = useState<Partial<Product>>({
+  const [newProduct, setNewProduct] = useState<Partial<Product> & { price?: string; pointsReward?: string }>({
     name: '',
     category: '',
-    price: 0,
-    pointsReward: 0,
+    price: '',
+    pointsReward: '',
     image: '',
     allergens: [],
     isActive: true,
@@ -69,17 +71,29 @@ const Products: React.FC = () => {
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [saveError, setSaveError] = useState<string | null>(null);
+  const [saveSuccess, setSaveSuccess] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoadingCategories, setIsLoadingCategories] = useState(false);
+  const [categoriesError, setCategoriesError] = useState<string | null>(null);
+  const [isSyncingCategories, setIsSyncingCategories] = useState(false);
 
   const loadProducts = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      const apiProducts = await api.getProducts();
-      const mapped: Product[] = apiProducts.map((p) => ({
+      const allProducts = await api.getProducts();
+      const currentUser = user ?? null;
+      const filtered =
+        currentUser != null
+          ? allProducts.filter((p) => p.merchantId === currentUser.id)
+          : allProducts;
+
+      const mapped: Product[] = filtered.map((p) => ({
         id: p.id,
         name: p.name,
         description: p.description,
-        category: 'Menu',
+        category: p.category ?? 'Menu',
         price: p.price,
         pointsReward: p.xp,
         image:
@@ -97,7 +111,26 @@ const Products: React.FC = () => {
   };
 
   useEffect(() => {
-    loadProducts();
+    void (async () => {
+      await loadProducts();
+      // Αρχικό sync κατηγοριών από backend
+      try {
+        setIsLoadingCategories(true);
+        setCategoriesError(null);
+        const categoriesFromApi = await api.getMerchantCategories();
+        setExtraCategories(categoriesFromApi);
+      } catch (e: unknown) {
+        console.error(e);
+        const status = (e as { response?: { status?: number } })?.response?.status;
+        setCategoriesError(
+          status === 403
+            ? 'Δεν έχετε δικαιώματα για κατηγορίες. Χρειάζεται ρόλος Merchant ή Admin.'
+            : 'Αποτυχία φόρτωσης κατηγοριών merchant.'
+        );
+      } finally {
+        setIsLoadingCategories(false);
+      }
+    })();
   }, []);
 
   const categories = useMemo(() => {
@@ -129,11 +162,16 @@ const Products: React.FC = () => {
   }, [items, activeCategory, searchQuery]);
 
   const resetForm = () => {
+    const defaultCategory =
+      activeCategory === 'All'
+        ? categories.find((c) => c !== 'All') ?? 'Menu'
+        : activeCategory;
+
     setNewProduct({
       name: '',
-      category: activeCategory === 'All' ? categories[1] || '' : activeCategory,
-      price: 0,
-      pointsReward: 0,
+      category: defaultCategory,
+      price: '',
+      pointsReward: '',
       image: '',
       allergens: [],
       isActive: true,
@@ -141,23 +179,44 @@ const Products: React.FC = () => {
   };
 
   const handleAddProduct = async () => {
-    if (!newProduct.name || !newProduct.category) {
-      alert('Συμπλήρωσε τουλάχιστον όνομα και κατηγορία.');
+    setSaveError(null);
+    setSaveSuccess(null);
+
+    if (!newProduct.name?.trim()) {
+      setSaveError('Συμπλήρωσε τουλάχιστον όνομα προϊόντος.');
       return;
     }
+    const price = Number(String(newProduct.price ?? '').replace(',', '.'));
+    if (Number.isNaN(price) || price <= 0) {
+      setSaveError('Η τιμή πρέπει να είναι μεγαλύτερη από 0.');
+      return;
+    }
+    const xpValue = Number(String(newProduct.pointsReward ?? '').replace(',', '.'));
+    const xp = Number.isNaN(xpValue) || xpValue < 0 ? 0 : xpValue;
     try {
+      setIsSaving(true);
       await api.createProduct({
-        name: newProduct.name,
-        description: newProduct.description ?? '',
-        price: Number(newProduct.price || 0),
-        xp: Number(newProduct.pointsReward || 0),
+        name: newProduct.name.trim(),
+        description: newProduct.description?.trim() ?? '',
+        category: newProduct.category || 'Menu',
+        price,
+        xp,
+        allergens: newProduct.allergens ?? [],
       });
       setIsAddOpen(false);
       resetForm();
       await loadProducts();
-    } catch (e) {
-      alert('Αποτυχία δημιουργίας προϊόντος.');
+      setSaveSuccess('Το προϊόν δημιουργήθηκε με επιτυχία!');
+    } catch (e: unknown) {
       console.error(e);
+      const err = e as { response?: { data?: { error?: string; Error?: string } } };
+      const message =
+        err.response?.data?.error ??
+        err.response?.data?.Error ??
+        'Αποτυχία δημιουργίας προϊόντος. Ελέγξτε ότι η κατηγορία έχει αποθηκευτεί (Διαχείριση κατηγοριών) και τα πεδία.';
+      setSaveError(message);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -199,6 +258,25 @@ const Products: React.FC = () => {
   const displayCategoryName = (cat: string) =>
     cat === 'All' ? 'All Dishes' : cat;
 
+  const handleSaveCategories = async () => {
+    const toSave = categories.filter((c) => c !== 'All');
+    setIsSyncingCategories(true);
+    setCategoriesError(null);
+    try {
+      await api.upsertMerchantCategories({ categories: toSave });
+    } catch (e: unknown) {
+      console.error(e);
+      const status = (e as { response?: { status?: number } })?.response?.status;
+      setCategoriesError(
+        status === 403
+          ? 'Δεν έχετε δικαιώματα για να επεξεργαστείτε κατηγορίες. Χρειάζεται ρόλος Merchant ή Admin.'
+          : 'Αποτυχία αποθήκευσης κατηγοριών.'
+      );
+    } finally {
+      setIsSyncingCategories(false);
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 text-slate-900">
       {/* Two columns from top: Dish Category (left) δίπλα στο banner | Banner + Content (right) */}
@@ -211,6 +289,11 @@ const Products: React.FC = () => {
             <h2 className="font-semibold text-slate-900">Dish Category</h2>
           </div>
           <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
+            {isLoadingCategories && (
+              <p className="px-2 pb-2 text-[11px] text-slate-500">
+                Φόρτωση κατηγοριών...
+              </p>
+            )}
             {categories.map((cat) => {
               const isActive = activeCategory === cat;
               const Icon = getCategoryIcon(displayCategoryName(cat));
@@ -251,14 +334,32 @@ const Products: React.FC = () => {
             })}
           </div>
           <div className="shrink-0 border-t border-slate-200 p-3">
-            <Button
-              className="w-full gap-2 text-white"
-              style={{ backgroundColor: ACCENT }}
-              onClick={() => setIsManageOpen(true)}
-            >
-              <Plus className="h-4 w-4" />
-              Add Dish Category
-            </Button>
+            <div className="flex flex-col gap-2">
+              {categoriesError && (
+                <p className="text-[11px] text-red-600">
+                  {categoriesError}
+                </p>
+              )}
+              <div className="flex gap-2">
+                <Button
+                  className="flex-1 gap-2 text-white"
+                  style={{ backgroundColor: ACCENT }}
+                  onClick={() => setIsManageOpen(true)}
+                >
+                  <Plus className="h-4 w-4" />
+                  Add Dish Category
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={handleSaveCategories}
+                  disabled={isSyncingCategories}
+                  className="whitespace-nowrap text-xs"
+                >
+                  {isSyncingCategories ? 'Saving…' : 'Αποθήκευση'}
+                </Button>
+              </div>
+            </div>
           </div>
         </aside>
 
@@ -421,7 +522,17 @@ const Products: React.FC = () => {
                 Close
               </button>
             </div>
-            <div className="space-y-4">
+              <div className="space-y-4">
+              {saveError && (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
+                  {saveError}
+                </p>
+              )}
+              {saveSuccess && (
+                <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
+                  {saveSuccess}
+                </p>
+              )}
               <div className="space-y-1">
                 <label className="text-xs font-medium">Name</label>
                 <input
@@ -431,6 +542,17 @@ const Products: React.FC = () => {
                     setNewProduct({ ...newProduct, name: e.target.value })
                   }
                   className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                />
+              </div>
+              <div className="space-y-1">
+                <label className="text-xs font-medium">Description</label>
+                <textarea
+                  value={newProduct.description || ''}
+                  onChange={(e) =>
+                    setNewProduct({ ...newProduct, description: e.target.value })
+                  }
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm min-h-[80px] resize-y"
+                  placeholder="Περιγραφή πιάτου, υλικά, σημειώσεις..."
                 />
               </div>
               <div className="grid gap-4 md:grid-cols-2">
@@ -492,12 +614,14 @@ const Products: React.FC = () => {
                   <label className="text-xs font-medium">Price (€)</label>
                   <input
                     type="number"
-                    step="0.1"
-                    value={newProduct.price ?? 0}
+                    step="0.01"
+                    min="0"
+                    placeholder="π.χ. 5,50"
+                    value={newProduct.price ?? ''}
                     onChange={(e) =>
                       setNewProduct({
                         ...newProduct,
-                        price: Number(e.target.value),
+                        price: e.target.value,
                       })
                     }
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
@@ -507,11 +631,14 @@ const Products: React.FC = () => {
                   <label className="text-xs font-medium">Points</label>
                   <input
                     type="number"
-                    value={newProduct.pointsReward ?? 0}
+                    step="0.01"
+                    min="0"
+                    placeholder="π.χ. 10"
+                    value={newProduct.pointsReward ?? ''}
                     onChange={(e) =>
                       setNewProduct({
                         ...newProduct,
-                        pointsReward: Number(e.target.value),
+                        pointsReward: e.target.value,
                       })
                     }
                     className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
@@ -542,8 +669,14 @@ const Products: React.FC = () => {
                 <Button variant="outline" size="sm" onClick={() => setIsAddOpen(false)}>
                   Cancel
                 </Button>
-                <Button size="sm" onClick={handleAddProduct} style={{ backgroundColor: ACCENT }} className="text-white">
-                  Save product
+                <Button
+                  size="sm"
+                  onClick={handleAddProduct}
+                  disabled={isSaving}
+                  style={{ backgroundColor: ACCENT }}
+                  className="text-white"
+                >
+                  {isSaving ? 'Saving...' : 'Save product'}
                 </Button>
               </div>
             </div>

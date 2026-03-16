@@ -23,7 +23,7 @@ const AdminPage: React.FC = () => {
 
     setIsSubmitting(true);
     try {
-      await apiClient.post('/Auth/register-admin', {
+      await api.registerMerchant({
         username,
         email,
         password,

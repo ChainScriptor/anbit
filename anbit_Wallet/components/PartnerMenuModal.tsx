@@ -1,8 +1,7 @@
-
-import React, { useState, useMemo, useEffect } from 'react';
+import React, { useState, useMemo, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  X, Star, CheckCircle, ShoppingCart, 
+import {
+  X, Star, CheckCircle, ShoppingCart,
   ChevronRight, Zap, User, ShoppingBag,
   Utensils, Search, Plus, Minus, ChevronLeft,
   Flame, Heart, Clock, Trash2, RotateCcw,
@@ -10,6 +9,8 @@ import {
 } from 'lucide-react';
 import { Partner, Product } from '../types';
 import { useAuth } from '../context/AuthContext';
+import { useOrder } from '../context/OrderContext';
+import { api } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import ProductDetailModal from './ProductDetailModal';
 
@@ -33,9 +34,15 @@ interface PartnerMenuModalProps {
 
 const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, partner, onOrderComplete }) => {
   const { user } = useAuth();
+  const { session } = useOrder();
   const { t } = useLanguage();
   const [view, setView] = useState<'menu' | 'cart'>('menu');
-  const [orderStatus, setOrderStatus] = useState<'idle' | 'processing' | 'confirmed'>('idle');
+  const [orderStatus, setOrderStatus] = useState<'idle' | 'processing' | 'waiting' | 'accepted' | 'rejected'>('idle');
+  const [pendingOrderId, setPendingOrderId] = useState<string | null>(null);
+  const [xpEarned, setXpEarned] = useState(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const onOrderCompleteRef = useRef(onOrderComplete);
+  onOrderCompleteRef.current = onOrderComplete;
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProductForDetail, setSelectedProductForDetail] = useState<Product | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
@@ -59,13 +66,18 @@ const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, pa
   const cartTotal = cart.reduce((acc, item) => acc + (item.price * item.quantity), 0);
   const xpTotal = cart.reduce((acc, item) => acc + (item.xpReward * item.quantity), 0);
   const deliveryFee = 2.00;
+  const [orderError, setOrderError] = useState<string | null>(null);
 
   if (!partner) return null;
 
   const resetOrder = () => {
     setCart([]);
     setOrderStatus('idle');
+    setPendingOrderId(null);
+    setXpEarned(0);
     setView('menu');
+    if (pollRef.current) clearInterval(pollRef.current);
+    pollRef.current = null;
   };
 
   const removeFromCart = (id: string) => {
@@ -92,14 +104,57 @@ const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, pa
     });
   };
 
-  const handlePlaceOrder = () => {
-    if (cart.length === 0) return;
+  const handlePlaceOrder = async () => {
+    if (cart.length === 0 || !user) return;
+    setOrderError(null);
     setOrderStatus('processing');
-    setTimeout(() => {
-      setOrderStatus('confirmed');
-      if (onOrderComplete) onOrderComplete(xpTotal);
-    }, 2000);
+    try {
+      const { orderId } = await api.submitOrder({
+        userId: user.id,
+        merchantId: partner.id,
+        tableNumber: session?.tableNumber ?? 1,
+        orderItems: cart.map((item) => ({
+          productId: item.id,
+          quantity: item.quantity,
+        })),
+      });
+      setPendingOrderId(orderId);
+      setOrderStatus('waiting');
+    } catch (e) {
+      console.error('Order submission failed', e);
+      setOrderStatus('idle');
+      setOrderError('Αποτυχία αποστολής παραγγελίας. Δοκιμάστε ξανά.');
+    }
   };
+
+  useEffect(() => {
+    if (!pendingOrderId || orderStatus !== 'waiting') return;
+    const poll = async () => {
+      try {
+        const order = await api.getOrder(pendingOrderId);
+        const status = order.status;
+        const statusNum = typeof status === 'string' ? (status === 'Accepted' ? 2 : status === 'Rejected' ? 3 : 1) : status;
+        if (statusNum === 2) {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+          setXpEarned(order.totalXp ?? 0);
+          setOrderStatus('accepted');
+          onOrderCompleteRef.current?.(order.totalXp ?? 0);
+        } else if (statusNum === 3) {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+          setOrderStatus('rejected');
+        }
+      } catch {
+        // ignore network errors, will retry
+      }
+    };
+    poll();
+    pollRef.current = setInterval(poll, 3000);
+    return () => {
+      if (pollRef.current) clearInterval(pollRef.current);
+    };
+  }, [pendingOrderId, orderStatus]);
 
   const categoryLabel = (id: string) => id === 'All' ? 'Όλα' : id;
 
@@ -117,7 +172,12 @@ const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, pa
               <p className="text-sm font-medium text-white">{t('emptyCart')}</p>
               <p className="text-xs text-gray-400 leading-relaxed max-w-[220px]">{t('fillCartHint')}</p>
             </div>
-            <div className="pt-4 space-y-3 shrink-0">
+              <div className="pt-4 space-y-3 shrink-0">
+              {orderError && (
+                <p className="text-xs text-red-400 bg-red-500/10 border border-red-500/30 rounded-lg px-3 py-2 mb-1">
+                  {orderError}
+                </p>
+              )}
               <p className="text-xs text-gray-400 flex items-center justify-center gap-2">
                 <MapPin className="w-3.5 h-3.5 shrink-0" /> {t('addAddressHint')}
               </p>
@@ -167,9 +227,10 @@ const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, pa
               </div>
               <button
                 onClick={handlePlaceOrder}
-                className="w-full py-3.5 rounded-xl font-medium text-sm bg-anbit-yellow text-anbit-yellow-content hover:opacity-90 transition-all mt-3"
+                disabled={orderStatus === 'processing'}
+                className="w-full py-3.5 rounded-xl font-medium text-sm bg-anbit-yellow text-anbit-yellow-content hover:opacity-90 disabled:opacity-60 disabled:cursor-not-allowed transition-all mt-3"
               >
-                {t('placeOrder')}
+                {orderStatus === 'processing' ? 'Αποστολή...' : t('placeOrder')}
               </button>
             </div>
           </>
@@ -191,19 +252,21 @@ const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, pa
             transition={{ type: 'spring', damping: 30, stiffness: 300 }}
             className="relative w-full max-w-full h-full bg-[#121212] overflow-hidden flex flex-col font-sans shadow-[0_0_100px_rgba(0,0,0,0.8)] border-0"
           >
-            {orderStatus === 'confirmed' ? (
+            {orderStatus === 'accepted' ? (
               <div className="h-full w-full flex flex-col items-center justify-center text-center space-y-10 py-20 px-10">
                 <div className="relative">
-                   <div className="w-32 h-32 bg-anbit-yellow rounded-full flex items-center justify-center shadow-[0_0_80px_rgba(254,240,138,0.3)] animate-pulse">
-                     <CheckCircle className="w-16 h-16 text-anbit-yellow-content" />
-                   </div>
-                   <div className="absolute -bottom-4 -right-4 bg-anbit-card border border-anbit-border text-anbit-text p-3 rounded-2xl font-black text-xs uppercase shadow-2xl">
-                    +{xpTotal} XP GAIN
+                  <div className="w-32 h-32 bg-green-500 rounded-full flex items-center justify-center shadow-[0_0_80px_rgba(34,197,94,0.3)]">
+                    <CheckCircle className="w-16 h-16 text-white" />
                   </div>
+                  {xpEarned > 0 && (
+                    <div className="absolute -bottom-4 -right-4 bg-anbit-card border border-anbit-border text-anbit-text p-3 rounded-2xl font-black text-xs uppercase shadow-2xl">
+                      +{xpEarned} XP
+                    </div>
+                  )}
                 </div>
                 <div className="space-y-3">
-                  <h3 className="text-4xl font-black text-white uppercase italic tracking-tighter">Η ΑΝΑΠΤΥΞΗ ΕΠΙΒΕΒΑΙΩΘΗΚΕ</h3>
-                  <p className="text-anbit-muted text-sm font-medium max-w-xs mx-auto">ΤΟ ΤΑΚΤΙΚΟ ΦΟΡΤΙΟ ΣΑΣ ΕΙΝΑΙ ΚΑΘ' ΟΔΟΝ. ΤΟ XP POOL ΕΝΗΜΕΡΩΘΗΚΕ ΕΠΙΤΥΧΩΣ ΣΕ ΟΛΟ ΤΟ ΔΙΚΤΥΟ.</p>
+                  <h3 className="text-2xl sm:text-3xl font-black text-white uppercase tracking-tight">Η παραγγελία σας έχει σταλεί</h3>
+                  <p className="text-gray-400 text-sm font-medium max-w-xs mx-auto">Το κατάστημα έγκρινε την παραγγελία σας. {xpEarned > 0 ? 'Κερδίσατε τους πόντους που σας αναλογούν.' : ''}</p>
                 </div>
                 <div className="w-full flex flex-col gap-4 max-w-xs">
                   <button onClick={resetOrder} className="w-full py-5 bg-anbit-card border border-anbit-border text-anbit-text font-black text-xs rounded-[24px] hover:bg-anbit-yellow hover:text-anbit-yellow-content transition-all uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-3">
@@ -212,15 +275,35 @@ const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, pa
                   <button onClick={onClose} className="w-full py-5 bg-white/5 text-anbit-muted font-black text-xs rounded-[24px] hover:bg-white/10 transition-all uppercase tracking-[0.2em]">ΕΠΙΣΤΡΟΦΗ ΣΤΟ HQ</button>
                 </div>
               </div>
-            ) : orderStatus === 'processing' ? (
+            ) : orderStatus === 'rejected' ? (
+              <div className="h-full w-full flex flex-col items-center justify-center text-center space-y-10 py-20 px-10">
+                <div className="w-24 h-24 bg-red-500/20 rounded-full flex items-center justify-center border-2 border-red-500">
+                  <X className="w-12 h-12 text-red-500" />
+                </div>
+                <div className="space-y-3">
+                  <h3 className="text-2xl font-black text-white uppercase tracking-tight">Η παραγγελία σας απορρίφθηκε</h3>
+                  <p className="text-gray-400 text-sm font-medium max-w-xs mx-auto">Το κατάστημα δεν μπόρεσε να εξυπηρετήσει την παραγγελία σας αυτή τη στιγμή.</p>
+                </div>
+                <div className="w-full flex flex-col gap-4 max-w-xs">
+                  <button onClick={resetOrder} className="w-full py-5 bg-anbit-card border border-anbit-border text-anbit-text font-black text-xs rounded-[24px] hover:bg-anbit-yellow hover:text-anbit-yellow-content transition-all uppercase tracking-[0.2em] shadow-xl flex items-center justify-center gap-3">
+                    <RefreshCw className="w-5 h-5" /> ΝΕΑ ΠΑΡΑΓΓΕΛΙΑ
+                  </button>
+                  <button onClick={onClose} className="w-full py-5 bg-white/5 text-anbit-muted font-black text-xs rounded-[24px] hover:bg-white/10 transition-all uppercase tracking-[0.2em]">ΕΠΙΣΤΡΟΦΗ ΣΤΟ HQ</button>
+                </div>
+              </div>
+            ) : orderStatus === 'waiting' || orderStatus === 'processing' ? (
               <div className="h-full w-full flex flex-col items-center justify-center space-y-8">
                 <div className="relative">
-                   <div className="w-24 h-24 border-[6px] border-anbit-yellow/20 rounded-full" />
-                   <div className="absolute inset-0 border-[6px] border-anbit-yellow border-t-transparent rounded-full animate-spin" />
+                  <div className="w-24 h-24 border-[6px] border-anbit-yellow/20 rounded-full" />
+                  <div className="absolute inset-0 border-[6px] border-anbit-yellow border-t-transparent rounded-full animate-spin" />
                 </div>
                 <div className="text-center space-y-2">
-                   <span className="text-anbit-yellow font-black text-xs uppercase tracking-[0.5em] animate-pulse block">ΣΥΓΧΡΟΝΙΣΜΟΣ ΔΙΚΤΥΟΥ...</span>
-                   <p className="text-anbit-muted text-[10px] font-bold uppercase tracking-widest italic">ΕΞΟΥΣΙΟΔΟΤΗΣΗ ΤΑΚΤΙΚΟΥ ΦΟΡΤΙΟΥ</p>
+                  <span className="text-anbit-yellow font-black text-xs uppercase tracking-[0.3em] animate-pulse block">
+                    {orderStatus === 'processing' ? 'Αποστολή παραγγελίας...' : 'Αναμονή επιβεβαίωσης από το κατάστημα...'}
+                  </span>
+                  <p className="text-anbit-muted text-[10px] font-bold uppercase tracking-widest italic">
+                    {orderStatus === 'processing' ? 'Συνεχίστε να περιμένετε' : 'Θα ενημερωθείτε μόλις γίνει αποδοχή ή απόρριψη'}
+                  </p>
                 </div>
               </div>
             ) : (

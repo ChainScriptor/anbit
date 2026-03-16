@@ -27,12 +27,14 @@ const App: React.FC = () => {
             <Route element={<ProtectedRoute allowedRoles={['Admin', 'Merchant']} />}>
               <Route path="/" element={<Dashboard />} />
               <Route path="/orders" element={<OrdersDashboard />} />
-              <Route path="/products" element={<Products />} />
               <Route path="/reservation-list" element={<ReservationList />} />
               <Route path="/view-tables" element={<ViewTables />} />
               <Route path="/table-history" element={<TableHistory />} />
               <Route path="/help" element={<Help />} />
               <Route path="/customers" element={<Customers />} />
+            </Route>
+            <Route element={<ProtectedRoute allowedRoles={['Merchant']} />}>
+              <Route path="/products" element={<Products />} />
             </Route>
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin" element={<AdminPage />} />

@@ -8,9 +8,10 @@ interface AuthModalProps {
   onClose: () => void;
   mode: 'login' | 'register';
   onSwitchMode: (mode: 'login' | 'register') => void;
+  onSuccess?: () => void;
 }
 
-const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMode }) => {
+const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMode, onSuccess }) => {
   const { login, register } = useAuth();
   const [username, setUsername] = useState('');
   const [email, setEmail] = useState('');
@@ -33,10 +34,12 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
     try {
       if (isRegister) {
         await register(username, email, password);
+        onSuccess?.();
         onClose();
       } else {
-        await login(username, password);
+        await login(username, password, { skipGlobalLoader: true });
         onClose();
+        onSuccess?.();
       }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Κάτι πήγε στραβά.');

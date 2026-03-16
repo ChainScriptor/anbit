@@ -20,6 +20,7 @@ import ActiveOperations from './components/ActiveOperations';
 import RedemptionActiveModal from './components/RedemptionActiveModal';
 import AuthModal from './components/AuthModal';
 import { useAuth } from './context/AuthContext';
+import { useOrder } from './context/OrderContext';
 import { useLanguage } from './context/LanguageContext';
 import { Partner, UserData, Reward } from './types';
 import { DASHBOARD_URL } from './constants';
@@ -28,13 +29,16 @@ import { FooterTaped } from './components/ui/FooterTaped';
 import AnbitCafeDemoScene from './components/AnbitCafeDemoScene';
 import { OfferCarousel } from './components/ui/offer-carousel';
 import { GREEK_OFFERS } from './data/greekOffers';
+import ScanPage from './components/ScanPage';
+import StoreFromQrPage from './components/StoreFromQrPage';
 
 const App: React.FC = () => {
-  const { isAuthenticated, user, isLoading: isAuthLoading } = useAuth();
+  const { isAuthenticated, user, isLoading: isAuthLoading, logout } = useAuth();
+  const { session } = useOrder();
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const dashboardFeed = useDashboardData();
+  const dashboardFeed = useDashboardData(!!isAuthenticated);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isRedemptionModalOpen, setIsRedemptionModalOpen] = useState(false);
@@ -46,10 +50,39 @@ const App: React.FC = () => {
   const [storeMenuPartner, setStoreMenuPartner] = useState<Partner | null>(null);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
+  const [authSuccessCallback, setAuthSuccessCallback] = useState<(() => void) | null>(null);
+  const [authMessage, setAuthMessage] = useState<string | null>(null); // e.g. session expired or other global auth message
   useEffect(() => { setUserData(user ?? null); }, [user]);
+  useEffect(() => { if (user) setAuthMessage(null); }, [user]);
 
-  const openLogin = () => { setAuthModalMode('login'); setAuthModalOpen(true); };
-  const openRegister = () => { setAuthModalMode('register'); setAuthModalOpen(true); };
+  // On 401 from API: logout, show message, navigate without full-page refresh
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const detail = (e as CustomEvent<{ message?: string }>).detail;
+      logout();
+      setAuthMessage(detail?.message || 'Η συνεδρία σας έληξε. Παρακαλώ συνδεθείτε ξανά.');
+      navigate('/dashboard');
+    };
+    window.addEventListener('anbit:auth:401', handler);
+    return () => window.removeEventListener('anbit:auth:401', handler);
+  }, [logout, navigate]);
+
+  const openLogin = useCallback((onSuccess?: () => void) => {
+    setAuthMessage(null);
+    if (onSuccess) setAuthSuccessCallback(() => onSuccess);
+    setAuthModalMode('login');
+    setAuthModalOpen(true);
+  }, []);
+  const openRegister = useCallback((onSuccess?: () => void) => {
+    setAuthMessage(null);
+    if (onSuccess) setAuthSuccessCallback(() => onSuccess);
+    setAuthModalMode('register');
+    setAuthModalOpen(true);
+  }, []);
+  const closeAuthModal = useCallback(() => {
+    setAuthSuccessCallback(null);
+    setAuthModalOpen(false);
+  }, []);
   useEffect(() => { if (!isAuthLoading) setTimeout(() => setIsLoaded(true), 600); }, [isAuthLoading]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [location.pathname]);
 
@@ -184,6 +217,8 @@ const App: React.FC = () => {
     </>
   );
 
+  const isStoreOrderLink = location.pathname.startsWith('/store/');
+
   return (
     <div className="min-h-screen bg-anbit-bg text-anbit-text font-sans antialiased overflow-x-hidden">
       <AnimatePresence mode="wait">
@@ -196,23 +231,57 @@ const App: React.FC = () => {
           </motion.div>
         ) : (
           <motion.div key="app-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-screen">
-            <Header
-              isAuthenticated={!!userData}
-              onOpenQR={userData ? () => setIsQRModalOpen(true) : undefined}
-              totalXP={userData?.totalXP ?? 0}
-              onOpenLogin={!userData ? openLogin : undefined}
-              onOpenRegister={!userData ? openRegister : undefined}
-            />
-            <main className="flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8">
+            {authMessage && (
+              <div className="sticky top-0 z-[50] flex items-center justify-between gap-4 bg-amber-500/20 border-b border-amber-500/40 px-4 py-3 text-sm">
+                <p className="text-amber-200 flex-1">{authMessage}</p>
+                <div className="flex items-center gap-2 shrink-0">
+                  <button type="button" onClick={openLogin} className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 transition-colors">
+                    Σύνδεση
+                  </button>
+                  <button type="button" onClick={() => setAuthMessage(null)} className="p-1.5 text-amber-200 hover:text-white rounded transition-colors" aria-label="Κλείσιμο">
+                    ×
+                  </button>
+                </div>
+              </div>
+            )}
+            {!isStoreOrderLink && (
+              <Header
+                isAuthenticated={!!userData}
+                onOpenQR={userData ? () => setIsQRModalOpen(true) : undefined}
+                totalXP={userData?.totalXP ?? 0}
+                onOpenLogin={!userData ? openLogin : undefined}
+                onOpenRegister={!userData ? openRegister : undefined}
+              />
+            )}
+            <main className={isStoreOrderLink ? 'flex-1 min-h-screen w-full p-0' : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={dashboardContent} />
                 <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
+                <Route path="/scan/:shortCode" element={<ScanPage />} />
+                <Route
+                  path="/store/:shortCode"
+                  element={
+                    <StoreFromQrPage
+                      isAuthenticated={!!userData}
+                      onOpenLogin={openLogin}
+                      onOpenRegister={openRegister}
+                      onOrderComplete={(xpEarned) => {
+                        if (userData && selectedPartner) {
+                          handleOrderComplete(xpEarned);
+                        }
+                      }}
+                    />
+                  }
+                />
                 <Route path="/network" element={
                   storeMenuPartner ? (
                     <StoreMenuPage
                       partner={storeMenuPartner}
                       onBack={() => setStoreMenuPartner(null)}
+                      isAuthenticated={!!userData}
+                      onOpenLogin={openLogin}
+                      onOpenRegister={openRegister}
                       onOrderComplete={(xpEarned) => {
                         if (userData && selectedPartner) {
                           setSelectedPartner(storeMenuPartner);
@@ -241,8 +310,8 @@ const App: React.FC = () => {
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </main>
-            <FooterTaped t={t} />
-            <AuthModal isOpen={authModalOpen} onClose={() => setAuthModalOpen(false)} mode={authModalMode} onSwitchMode={setAuthModalMode} />
+            {!isStoreOrderLink && <FooterTaped t={t} />}
+            <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} mode={authModalMode} onSwitchMode={setAuthModalMode} onSuccess={authSuccessCallback ?? undefined} />
             {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
             <PartnerMenuModal isOpen={isPartnerMenuOpen} onClose={() => setIsPartnerMenuOpen(false)} partner={selectedPartner} onOrderComplete={handleOrderComplete} />
             <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />

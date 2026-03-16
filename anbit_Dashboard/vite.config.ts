@@ -13,6 +13,7 @@ export default defineConfig(({ mode }) => {
           '/api': {
             target: 'http://localhost:5057',
             changeOrigin: true,
+            secure: false,
           },
         },
       },

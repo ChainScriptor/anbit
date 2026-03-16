@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { mockDashboardData } from '../mockData';
-import { DASHBOARD_URL } from '../constants';
-import type { Activity, Quest, Reward, Partner, LeaderboardEntry } from '../types';
+import type { Activity, Quest, Reward, Partner, LeaderboardEntry, Product } from '../types';
+import { api, type ApiProduct } from '../services/api';
 
 export type DashboardFeed = {
   activities: Activity[];
@@ -11,9 +11,7 @@ export type DashboardFeed = {
   leaderboard: LeaderboardEntry[];
 };
 
-const WALLET_DATA_URL = `${DASHBOARD_URL.replace(/\/$/, '')}/wallet-data.json`;
-
-export function useDashboardData(): DashboardFeed & { fromDashboard: boolean } {
+export function useDashboardData(isAuthenticated: boolean): DashboardFeed & { fromDashboard: boolean } {
   const [feed, setFeed] = useState<DashboardFeed>({
     activities: mockDashboardData.activities,
     quests: mockDashboardData.quests,
@@ -24,49 +22,58 @@ export function useDashboardData(): DashboardFeed & { fromDashboard: boolean } {
   const [fromDashboard, setFromDashboard] = useState(false);
 
   useEffect(() => {
+    if (!isAuthenticated) return;
     let cancelled = false;
-    fetch(WALLET_DATA_URL, { method: 'GET' })
-      .then((res) => {
-        if (!res.ok) throw new Error('Not ok');
-        return res.json();
-      })
-      .then((data: DashboardFeed) => {
+    const load = async () => {
+      try {
+        const products = await api.getProducts();
         if (cancelled) return;
-        if (
-          Array.isArray(data.activities) &&
-          Array.isArray(data.quests) &&
-          Array.isArray(data.rewards) &&
-          Array.isArray(data.partners) &&
-          Array.isArray(data.leaderboard)
-        ) {
-          // Enrich quests with storeName/storeImage from mockData (by id or index) so offers always show store name and image
-          const mockQuests = mockDashboardData.quests;
-          const quests: Quest[] = data.quests.map((q, i) => {
-            const mock = mockQuests.find((m) => m.id === q.id) ?? mockQuests[i];
-            return {
-              ...q,
-              storeName: q.storeName ?? mock?.storeName,
-              storeImage: q.storeImage ?? mock?.storeImage,
-              multiplier: q.multiplier ?? mock?.multiplier,
-            };
-          });
-          setFeed({
-            activities: data.activities,
-            quests,
-            rewards: data.rewards,
-            partners: data.partners,
-            leaderboard: data.leaderboard,
-          });
-          setFromDashboard(true);
-        }
-      })
-      .catch(() => {
+        const partners = groupProductsByMerchant(products);
+        setFeed((prev) => ({
+          ...prev,
+          partners,
+        }));
+        setFromDashboard(true);
+      } catch (e) {
+        console.error('Failed to load products from API, using mock partners.', e);
         if (!cancelled) setFromDashboard(false);
-      });
+      }
+    };
+    load();
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isAuthenticated]);
 
   return { ...feed, fromDashboard };
+}
+
+function groupProductsByMerchant(products: ApiProduct[]): Partner[] {
+  const map = new Map<string, Partner>();
+  for (const p of products) {
+    const existing = map.get(p.merchantId);
+    const menuItem: Product = {
+      id: p.id,
+      name: p.name,
+      description: p.description,
+      price: p.price,
+      xpReward: p.xp,
+      image: 'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
+      category: p.category ?? 'Menu',
+    };
+    if (!existing) {
+      map.set(p.merchantId, {
+        id: p.merchantId,
+        name: `Store ${p.merchantId.slice(0, 6)}`,
+        category: 'burger',
+        image: 'https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?auto=compress&cs=tinysrgb&w=400',
+        location: 'Unknown',
+        rating: 4.8,
+        menu: [menuItem],
+      });
+    } else {
+      existing.menu = [...(existing.menu ?? []), menuItem];
+    }
+  }
+  return Array.from(map.values());
 }

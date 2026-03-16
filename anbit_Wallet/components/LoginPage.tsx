@@ -1,13 +1,14 @@
 
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Mail, Lock, ArrowRight, Loader2 } from 'lucide-react';
+import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
@@ -76,7 +77,22 @@ const LoginPage: React.FC = () => {
                 <label className="text-[10px] font-black text-anbit-muted uppercase tracking-widest ml-1">Password</label>
                 <div className="relative">
                   <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-anbit-muted" />
-                  <input type="password" value={password} onChange={(e) => setPassword(e.target.value)} className="w-full bg-white/[0.03] border border-anbit-border rounded-xl pl-12 pr-4 py-3 text-sm focus:border-anbit-yellow outline-none transition-all font-bold" placeholder="••••••••" required />
+                  <input
+                    type={showPassword ? 'text' : 'password'}
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    className="w-full bg-white/[0.03] border border-anbit-border rounded-xl pl-12 pr-12 py-3 text-sm focus:border-anbit-yellow outline-none transition-all font-bold"
+                    placeholder="••••••••"
+                    required
+                  />
+                  <button
+                    type="button"
+                    className="absolute right-3 top-1/2 -translate-y-1/2 text-anbit-muted hover:text-white transition-colors p-1"
+                    onClick={() => setShowPassword((s) => !s)}
+                    aria-label={showPassword ? 'Απόκρυψη κωδικού' : 'Εμφάνιση κωδικού'}
+                  >
+                    {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                  </button>
                 </div>
               </div>
             </div>

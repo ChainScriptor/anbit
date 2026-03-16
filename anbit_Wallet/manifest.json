@@ -1,12 +1,13 @@
 
 {
-  "name": "Anbit Warrior Wallet",
+  "name": "Anbit Order",
   "short_name": "Anbit",
-  "description": "The elite gamified loyalty network of Thessaloniki.",
+  "description": "Order from your table – Anbit partner stores.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#09090b",
-  "theme_color": "#09090b",
+  "display_override": ["standalone", "minimal-ui"],
+  "background_color": "#ffffff",
+  "theme_color": "#333333",
   "orientation": "portrait",
   "icons": [
     {

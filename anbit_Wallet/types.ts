@@ -95,6 +95,20 @@ export interface Product {
   allergens?: string[];
 }
 
+/** Επιλογές προϊόντος πριν την προσθήκη στο καλάθι (π.χ. ζάχαρη για καφέ) */
+export interface ProductCartOptions {
+  sugarAmount?: string;
+  sugarType?: string;
+  [key: string]: string | undefined;
+}
+
+/** Στοιχείο καλαθιού με ποσότητα, επιλογές και προαιρετικά σχόλια */
+export interface CartItemData extends Product {
+  quantity: number;
+  options?: ProductCartOptions;
+  comments?: string;
+}
+
 export type PartnerCategory =
   | 'street_food' | 'sandwiches' | 'brunch' | 'coffee' | 'bar' | 'burger' | 'sweets' | 'bbq' | 'breakfast'
   | 'italian' | 'asian' | 'pizza' | 'crepe' | 'healthy' | 'pasta' | 'bougatsa' | 'salads' | 'souvlaki' | 'cooked';

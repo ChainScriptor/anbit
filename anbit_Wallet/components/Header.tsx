@@ -4,6 +4,7 @@ import { Home, MapPin, Star, User, LogOut, Zap, Sun, Moon, ChevronDown } from 'l
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import LanguageSelector from './LanguageSelector';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -100,6 +101,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
         </nav>
 
         <div className="flex items-center gap-2 shrink-0">
+          <LanguageSelector />
           {isAuthenticated ? (
             <>
               <div className="hidden md:flex items-center gap-2 bg-white/[0.03] border border-white/10 px-3 py-2 rounded-lg">

@@ -82,6 +82,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       }
 
       const loginData = data as LoginResponse;
+      console.log('Dashboard login response:', loginData);
 
       const roles = loginData.roles ?? [];
       const hasDashboardRole = roles.includes('Admin') || roles.includes('Merchant');

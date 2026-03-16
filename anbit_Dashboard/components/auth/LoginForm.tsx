@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { motion } from 'framer-motion';
+import { Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../../AuthContext';
 import { useNavigate } from 'react-router-dom';
 
@@ -22,6 +23,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
   const { login } = useAuth();
   const navigate = useNavigate();
   const [serverError, setServerError] = useState<string | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const {
     register,
@@ -84,13 +86,23 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         >
           Password
         </label>
-        <input
-          id="password"
-          type="password"
-          autoComplete="current-password"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none ring-0 transition focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
-          {...register('password')}
-        />
+        <div className="relative">
+          <input
+            id="password"
+            type={showPassword ? 'text' : 'password'}
+            autoComplete="current-password"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-3 pr-10 py-2.5 text-sm outline-none ring-0 transition focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+            {...register('password')}
+          />
+          <button
+            type="button"
+            className="absolute right-2.5 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600 p-1"
+            onClick={() => setShowPassword((s) => !s)}
+            aria-label={showPassword ? 'Απόκρυψη κωδικού' : 'Εμφάνιση κωδικού'}
+          >
+            {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+          </button>
+        </div>
         {errors.password && (
           <p className="mt-0.5 text-xs text-red-500">
             {errors.password.message}
