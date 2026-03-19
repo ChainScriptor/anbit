@@ -165,6 +165,27 @@ const Sidebar: React.FC = () => {
                 </NavLink>
               </li>
 
+              {/* Admin: Wallet Users */}
+              <li className="w-full">
+                <NavLink
+                  to="/admin/users"
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                      isActive
+                        ? 'bg-white text-[#0C0C0C]'
+                        : 'text-white/95 hover:bg-white/10',
+                    )
+                  }
+                >
+                  <Users className="h-5 w-5 shrink-0" />
+                  {!collapsed && (
+                    <span className="min-w-0 truncate">Wallet Users</span>
+                  )}
+                </NavLink>
+              </li>
+
               {/* Admin: System Settings */}
               <li className="w-full">
                 <NavLink

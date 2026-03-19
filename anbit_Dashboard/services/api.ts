@@ -59,6 +59,42 @@ export interface ApiMerchantUser {
   email: string;
 }
 
+export interface ApiUserSummary {
+  id: string;
+  username: string;
+  email: string;
+  roles: string[];
+  createdAt: string;
+  isBanned: boolean;
+}
+
+export interface ApiUserLeaderboardEntry {
+  userId: string;
+  username: string;
+  email: string;
+  totalXp: number;
+  rank: number;
+}
+
+export interface ApiUserActivityProduct {
+  productId: string;
+  name: string;
+  quantity: number;
+  unitPrice: number;
+  unitXp: number;
+}
+
+export interface ApiUserActivityEntry {
+  orderId: string;
+  merchantId: string;
+  merchantName: string;
+  tableNumber: number;
+  totalPrice: number;
+  totalXp: number;
+  createdAt: string;
+  products: ApiUserActivityProduct[];
+}
+
 export interface QrCodeCreateResponse {
   shortCode: string;
 }
@@ -82,19 +118,43 @@ export const api = {
     return data;
   },
 
-  async createProduct(payload: {
-    name: string;
-    description: string;
-    category: string;
-    price: number;
-    xp: number;
-    allergens: string[];
-  }): Promise<void> {
-    await apiClient.post('/Products', payload);
+  async createProduct(
+    payload: {
+      name: string;
+      description: string;
+      category: string;
+      price: number;
+      xp: number;
+      allergens: string[];
+    },
+    merchantId?: string,
+  ): Promise<void> {
+    await apiClient.post('/Products', payload, {
+      params: merchantId ? { merchantId } : undefined,
+    });
   },
 
   async getMerchants(): Promise<ApiMerchantUser[]> {
     const { data } = await apiClient.get<ApiMerchantUser[]>('/Auth/merchants');
+    return data;
+  },
+
+  async getUsers(): Promise<ApiUserSummary[]> {
+    const { data } = await apiClient.get<ApiUserSummary[]>('/Auth/users');
+    return data;
+  },
+
+  async getUsersLeaderboard(): Promise<ApiUserLeaderboardEntry[]> {
+    const { data } = await apiClient.get<ApiUserLeaderboardEntry[]>('/Auth/users/leaderboard');
+    return data;
+  },
+
+  async banUser(userId: string): Promise<void> {
+    await apiClient.post(`/Auth/users/${userId}/ban`);
+  },
+
+  async getUserActivity(userId: string): Promise<ApiUserActivityEntry[]> {
+    const { data } = await apiClient.get<ApiUserActivityEntry[]>(`/Auth/users/${userId}/activity`);
     return data;
   },
 
@@ -138,13 +198,20 @@ export const api = {
     await apiClient.post('/Auth/register-merchant', payload);
   },
 
-  async getMerchantCategories(): Promise<string[]> {
-    const { data } = await apiClient.get<string[]>('/merchants/categories');
+  async getMerchantCategories(merchantId?: string): Promise<string[]> {
+    const { data } = await apiClient.get<string[]>('/merchants/categories', {
+      params: merchantId ? { merchantId } : undefined,
+    });
     return data;
   },
 
-  async upsertMerchantCategories(payload: MerchantCategoriesPayload): Promise<void> {
-    await apiClient.put('/merchants/categories', payload);
+  async upsertMerchantCategories(
+    payload: MerchantCategoriesPayload,
+    merchantId?: string,
+  ): Promise<void> {
+    await apiClient.put('/merchants/categories', payload, {
+      params: merchantId ? { merchantId } : undefined,
+    });
   },
 };
 

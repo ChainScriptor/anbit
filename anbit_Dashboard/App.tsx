@@ -14,6 +14,7 @@ import AdminPage from '@/pages/Admin';
 import StoresManagement from '@/pages/StoresManagement';
 import MerchantUsers from '@/pages/MerchantUsers';
 import SystemSettings from '@/pages/SystemSettings';
+import AdminUsers from '@/pages/AdminUsers';
 import { AuthProvider } from './AuthContext';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -40,6 +41,7 @@ const App: React.FC = () => {
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/stores" element={<StoresManagement />} />
               <Route path="/admin/merchant-users" element={<MerchantUsers />} />
+              <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/settings" element={<SystemSettings />} />
             </Route>
           </Route>
