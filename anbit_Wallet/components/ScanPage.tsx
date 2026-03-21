@@ -3,15 +3,12 @@ import { useNavigate, useParams } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useOrder } from '../context/OrderContext';
-import { useDashboardData } from '../hooks/useDashboardData';
-import type { Partner } from '../types';
 
 const ScanPage: React.FC = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
   const navigate = useNavigate();
   const { setSession } = useOrder();
   const { isAuthenticated } = useAuth();
-  const { partners } = useDashboardData(!!isAuthenticated);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -39,7 +36,7 @@ const ScanPage: React.FC = () => {
     };
 
     run();
-  }, [shortCode, navigate, partners, setSession]);
+  }, [shortCode, navigate, setSession, isAuthenticated]);
 
   if (error) {
     return (

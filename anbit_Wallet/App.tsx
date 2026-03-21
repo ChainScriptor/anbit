@@ -31,6 +31,7 @@ import { OfferCarousel } from './components/ui/offer-carousel';
 import { GREEK_OFFERS } from './data/greekOffers';
 import ScanPage from './components/ScanPage';
 import StoreFromQrPage from './components/StoreFromQrPage';
+import { api } from './services/api';
 
 const App: React.FC = () => {
   const { isAuthenticated, user, isLoading: isAuthLoading, logout } = useAuth();
@@ -51,8 +52,62 @@ const App: React.FC = () => {
   const [authModalMode, setAuthModalMode] = useState<'login' | 'register'>('login');
   const [authSuccessCallback, setAuthSuccessCallback] = useState<(() => void) | null>(null);
   const [authMessage, setAuthMessage] = useState<string | null>(null); // e.g. session expired or other global auth message
+  const [xpPlaceholderMessage, setXpPlaceholderMessage] = useState<string | null>(null);
   useEffect(() => { setUserData(user ?? null); }, [user]);
   useEffect(() => { if (user) setAuthMessage(null); }, [user]);
+
+  useEffect(() => {
+    if (!isAuthenticated || !user?.id) {
+      setXpPlaceholderMessage(null);
+      return;
+    }
+
+    let cancelled = false;
+    const loadUserXP = async () => {
+      try {
+        const breakdown = await api.getUserXP({ limit: 100, offset: 0 });
+        if (cancelled) return;
+
+        const totalXP = breakdown.reduce((sum, row) => sum + (Number(row.xp) || 0), 0);
+        const storeXP = breakdown.reduce<Record<string, number>>((acc, row) => {
+          const merchantId = String(row.merchantId);
+          acc[merchantId] = Number(row.xp) || 0;
+          return acc;
+        }, {});
+        const levelSize = 1000;
+        const currentLevel = Math.max(1, Math.floor(totalXP / levelSize) + 1);
+        const prevLevelXp = (currentLevel - 1) * levelSize;
+        const nextLevelXP = currentLevel * levelSize;
+        const levelProgress = Math.round(((totalXP - prevLevelXp) / levelSize) * 100);
+
+        setUserData((prev) =>
+          prev
+            ? {
+                ...prev,
+                totalXP,
+                storeXP,
+                currentLevel,
+                currentLevelName: `Level ${currentLevel}`,
+                nextLevelXP,
+                levelProgress: Math.max(0, Math.min(100, levelProgress)),
+              }
+            : prev,
+        );
+        setXpPlaceholderMessage(null);
+      } catch (e) {
+        if (cancelled) return;
+        const status = (e as { response?: { status?: number } })?.response?.status;
+        if (status === 401 || status === 404) {
+          setXpPlaceholderMessage('Login για να δεις τα XP σου');
+        }
+      }
+    };
+
+    void loadUserXP();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, user?.id]);
 
   // On 401 from API: logout, show message, navigate without full-page refresh
   useEffect(() => {
@@ -137,7 +192,9 @@ const App: React.FC = () => {
         <div className="xl:col-span-8 space-y-8 lg:space-y-12">
           <AnimatePresence>{activeOrderPartner && <ActiveOperations partnerName={activeOrderPartner} />}</AnimatePresence>
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-            <div className="lg:col-span-7"><XPProgressCircle user={userData} /></div>
+            <div className="lg:col-span-7">
+              <XPProgressCircle user={userData} placeholderMessage={xpPlaceholderMessage ?? undefined} />
+            </div>
             <div className="lg:col-span-5 dashboard-card p-6 lg:p-10 flex flex-col justify-between relative overflow-hidden group min-h-[300px]">
               <div className="relative z-10 space-y-4">
                 <div className="flex items-center gap-2">

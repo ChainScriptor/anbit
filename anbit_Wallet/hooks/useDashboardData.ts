@@ -58,7 +58,9 @@ function groupProductsByMerchant(products: ApiProduct[]): Partner[] {
       description: p.description,
       price: p.price,
       xpReward: p.xp,
-      image: 'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
+      image:
+        p.imageUrl ||
+        'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
       category: p.category ?? 'Menu',
     };
     if (!existing) {

@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Check } from 'lucide-react';
-import { api, type ApiProduct } from '../services/api';
+import { api } from '../services/api';
 import { useOrder } from '../context/OrderContext';
 import { Partner, Product } from '../types';
 import StoreMenuPage from './StoreMenuPage';
@@ -40,14 +40,26 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
   const [selectedLang, setSelectedLang] = useState<'el' | 'en'>(language);
   const [partner, setPartner] = useState<Partner | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isResolving, setIsResolving] = useState(false);
+  const resolvingRef = useRef(false);
+  const resolvedShortCodeRef = useRef<string | null>(null);
 
   useEffect(() => {
-    const run = async () => {
-      if (!shortCode) {
-        setError('Μη έγκυρος κωδικός QR.');
-        return;
-      }
+    if (!shortCode) {
+      setError('Μη έγκυρος κωδικός QR.');
+      return;
+    }
 
+    // Prevent duplicate API calls for the same shortCode
+    if (resolvingRef.current || resolvedShortCodeRef.current === shortCode) {
+      return;
+    }
+
+    let cancelled = false;
+    resolvingRef.current = true;
+    setIsResolving(true);
+
+    const run = async () => {
       try {
         const details = await api.getQrCodeDetails(shortCode);
 
@@ -56,43 +68,44 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
           tableNumber: details.tableId,
         });
 
+        const normalizedMerchantId = details.merchantId.toLowerCase();
+
         // 1) Προσπάθησε να βρεις partner από τα ήδη φορτωμένα δεδομένα
-        let found = partners.find((p) => p.id === details.merchantId) ?? null;
+        let found =
+          partners.find((p) => p.id?.toLowerCase() === normalizedMerchantId) ?? null;
 
-        // 2) Αν δεν υπάρχει και ο χρήστης είναι συνδεδεμένος, φέρε products από API
-        if (!found && isAuthenticated) {
-          const allProducts: ApiProduct[] = await api.getProducts();
-          const merchantProducts = allProducts.filter(
-            (p) => p.merchantId === details.merchantId,
-          );
+        // 2) Αν δεν υπάρχει, φέρε products από API (θέλουμε menu να δουλεύει και χωρίς login)
+        if (!found) {
+          const merchantProducts = await api.getProducts({
+            merchantId: details.merchantId,
+          });
 
-          if (merchantProducts.length > 0) {
-            const menu: Product[] = merchantProducts.map((p) => ({
-              id: p.id,
-              name: p.name,
-              description: p.description,
-              price: p.price,
-              xpReward: p.xp,
-              image:
-                'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
-              category: p.category ?? 'Menu',
-            }));
+          const menu: Product[] = merchantProducts.map((p) => ({
+            id: p.id,
+            name: p.name,
+            description: p.description,
+            price: p.price,
+            xpReward: p.xp,
+            image:
+              p.imageUrl ||
+              'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
+            category: p.category ?? 'Menu',
+          }));
 
-            found = {
-              id: details.merchantId,
-              name: `Store ${details.merchantId.slice(0, 6)}`,
-              category: 'burger',
-              image:
-                'https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?auto=compress&cs=tinysrgb&w=400',
-              location: 'Unknown',
-              rating: 4.8,
-              reviewCount: undefined,
-              deliveryTime: undefined,
-              minOrder: undefined,
-              bonusXp: undefined,
-              menu,
-            };
-          }
+          found = {
+            id: details.merchantId,
+            name: `Store ${details.merchantId.slice(0, 6)}`,
+            category: 'burger',
+            image:
+              'https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?auto=compress&cs=tinysrgb&w=400',
+            location: 'Unknown',
+            rating: 4.8,
+            reviewCount: undefined,
+            deliveryTime: undefined,
+            minOrder: undefined,
+            bonusXp: undefined,
+            menu,
+          };
         }
 
         if (!found) {
@@ -101,14 +114,26 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
         }
 
         setPartner(found);
+        resolvedShortCodeRef.current = shortCode;
       } catch (e) {
         console.error('Failed to resolve QR code', e);
+        const status = (e as { response?: { status?: number } })?.response?.status;
+        // Το menu για merchant πλέον είναι AllowAnonymous, άρα μην κατευθύνεις σε login εδώ.
         setError('Το QR δεν βρέθηκε ή έληξε.');
+      } finally {
+        // Always release flags, even if effect was cancelled,
+        // otherwise StrictMode remounts can leave the page in endless loading.
+        resolvingRef.current = false;
+        setIsResolving(false);
       }
     };
 
-    run();
-  }, [shortCode, partners, setSession]);
+    void run();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shortCode, setSession, isAuthenticated]);
 
   const handleStartOrdering = () => {
     setLanguage(selectedLang);
@@ -158,7 +183,7 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
     );
   }
 
-  if (!partner) {
+  if (!partner || isResolving) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-white">
         <div className="w-10 h-10 border-4 border-[#333] border-t-transparent rounded-full animate-spin" />

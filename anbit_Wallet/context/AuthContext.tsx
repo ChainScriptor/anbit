@@ -59,6 +59,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(userData);
       localStorage.setItem('anbit_token', response.token);
       localStorage.setItem('anbit_user', JSON.stringify(userData));
+      if (response.refreshToken) {
+        localStorage.setItem('anbit_refresh_token', response.refreshToken);
+      }
     } catch (error: unknown) {
       console.error('Login failed', error);
       const apiMessage =
@@ -89,6 +92,9 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
       setUser(userData);
       localStorage.setItem('anbit_token', response.token);
       localStorage.setItem('anbit_user', JSON.stringify(userData));
+      if ((response as { refreshToken?: string }).refreshToken) {
+        localStorage.setItem('anbit_refresh_token', (response as { refreshToken?: string }).refreshToken);
+      }
     } catch (error: unknown) {
       const res = error && typeof error === 'object' && 'response' in error
         ? (error as { response?: { data?: Record<string, unknown> } }).response?.data
@@ -111,6 +117,7 @@ export const AuthProvider: React.FC<{ children: ReactNode }> = ({ children }) =>
     setUser(null);
     localStorage.removeItem('anbit_token');
     localStorage.removeItem('anbit_user');
+    localStorage.removeItem('anbit_refresh_token');
   };
 
   const updateUser = (updates: Partial<UserData>) => {

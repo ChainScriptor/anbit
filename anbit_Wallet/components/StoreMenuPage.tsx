@@ -299,11 +299,10 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
-            className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
-              activeCategory === cat
+            className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeCategory === cat
                 ? 'bg-white text-black border border-[rgba(0,0,0,0.12)] shadow-sm'
                 : 'bg-white text-black border border-[rgba(0,0,0,0.12)] hover:bg-gray-50'
-            }`}
+              }`}
           >
             {categoryLabel(cat)}
           </button>
