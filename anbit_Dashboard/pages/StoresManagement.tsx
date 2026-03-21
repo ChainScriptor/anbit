@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import type { ApiMerchantUser, ApiProduct } from '@/services/api';
 import { api } from '@/services/api';
+import type { ApiMerchantUser, ApiProduct } from '@/services/api';
 import { Button } from '@/components/ui/button';
 
 const StoresManagement: React.FC = () => {
@@ -135,27 +135,27 @@ const StoresManagement: React.FC = () => {
       setProductMessage('Επίλεξε κατηγορία.');
       return;
     }
+
     const price = Number(String(newProductPrice).replace(',', '.'));
     if (!Number.isFinite(price) || price <= 0) {
       setProductMessage('Η τιμή πρέπει να είναι μεγαλύτερη από 0.');
       return;
     }
-    const xpValue = Number(String(newProductXp || '0').replace(',', '.'));
-    const xp = Number.isFinite(xpValue) && xpValue >= 0 ? xpValue : 0;
+      const xpValue = Number(String(newProductXp || '0').replace(',', '.'));
+      // Keep points optional in UI; use a safe backend-compatible fallback.
+      const xp = Number.isFinite(xpValue) && xpValue > 0 ? Math.trunc(xpValue) : 1;
 
     try {
       setIsCreatingProduct(true);
-      await api.createProduct(
-        {
-          name: newProductName.trim(),
-          description: newProductDescription.trim(),
-          category: newProductCategory,
-          price,
-          xp,
-          allergens: [],
-        },
-        selectedMerchantId,
-      );
+      const formData = new FormData();
+      // Backend CreateProductRequest is [FromForm] with PascalCase property names.
+      formData.append('Name', newProductName.trim());
+      formData.append('Description', newProductDescription.trim() || 'N/A');
+      formData.append('Category', newProductCategory);
+      formData.append('Price', String(price));
+      formData.append('Xp', String(xp));
+
+      await api.createProduct(formData, selectedMerchantId);
 
       setNewProductName('');
       setNewProductDescription('');
@@ -193,7 +193,7 @@ const StoresManagement: React.FC = () => {
             </h1>
             <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base">
               Επίλεξε merchant και διαμόρφωσε για λογαριασμό του κατηγορίες και
-              προϊόντα, ώστε οι νέοι συνεργάτες να έχουν έτοιμο κατάλογο.
+              προϊόντα.
             </p>
           </div>
         </div>
@@ -230,8 +230,7 @@ const StoresManagement: React.FC = () => {
                   ))}
               </select>
               <p className="text-[11px] text-slate-500">
-                Ο κατάλογος που θα φτιάξεις θα ανήκει στον επιλεγμένο merchant
-                και θα εμφανίζεται στο δικό του dashboard και στο Anbit Wallet.
+                Ο κατάλογος που θα φτιάξεις θα ανήκει στον επιλεγμένο merchant.
               </p>
             </div>
           </div>
@@ -258,6 +257,7 @@ const StoresManagement: React.FC = () => {
             {categoriesError && (
               <p className="text-xs text-red-600 mb-2">{categoriesError}</p>
             )}
+
             <div className="max-h-52 space-y-2 overflow-y-auto pb-2">
               {effectiveCategories.length === 0 && !isLoadingCategories && (
                 <p className="text-xs text-slate-500">
@@ -281,6 +281,7 @@ const StoresManagement: React.FC = () => {
                 </div>
               ))}
             </div>
+
             <div className="mt-4 space-y-2">
               <label className="text-xs font-medium text-slate-700">
                 Νέα κατηγορία

@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/AuthContext';
 
 const SIDEBAR_BG_ADMIN = '#0C0C0C';
-const SIDEBAR_BG_MERCHANT = '#e63533';
+const SIDEBAR_BG_MERCHANT = '#cf2b2b';
 
 const manageTableSubItems = [
   { to: '/reservation-list', icon: ListTodo, label: 'Reservation List' },
@@ -93,7 +93,7 @@ const Sidebar: React.FC = () => {
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 overflow-y-auto py-4">
+      <nav className="flex-1 overflow-y-auto py-5">
         <ul
           className={cn(
             'space-y-0.5',
@@ -109,7 +109,7 @@ const Sidebar: React.FC = () => {
                   className={({ isActive }) =>
                     cn(
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
                         : 'text-white/95 hover:bg-white/10',
@@ -130,7 +130,7 @@ const Sidebar: React.FC = () => {
                   className={({ isActive }) =>
                     cn(
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
                         : 'text-white/95 hover:bg-white/10',
@@ -165,10 +165,10 @@ const Sidebar: React.FC = () => {
                 </NavLink>
               </li>
 
-              {/* Admin: Wallet Users */}
+              {/* Admin: Customers */}
               <li className="w-full">
                 <NavLink
-                  to="/admin/users"
+                  to="/admin/customers"
                   className={({ isActive }) =>
                     cn(
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
@@ -181,7 +181,7 @@ const Sidebar: React.FC = () => {
                 >
                   <Users className="h-5 w-5 shrink-0" />
                   {!collapsed && (
-                    <span className="min-w-0 truncate">Wallet Users</span>
+                    <span className="min-w-0 truncate">Users & XP</span>
                   )}
                 </NavLink>
               </li>
@@ -258,7 +258,7 @@ const Sidebar: React.FC = () => {
                   onClick={handleManageTableClick}
                   className={cn(
                     'flex w-full items-center rounded-lg text-sm font-medium transition-colors',
-                    collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                    collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                     isManageTableActive
                       ? 'bg-white/15 text-white'
                       : 'text-white/95 hover:bg-white/10',
@@ -307,7 +307,7 @@ const Sidebar: React.FC = () => {
                   className={({ isActive }) =>
                     cn(
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#e63533]'
                         : 'text-white/95 hover:bg-white/10',
@@ -328,7 +328,7 @@ const Sidebar: React.FC = () => {
                   className={({ isActive }) =>
                     cn(
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#e63533]'
                         : 'text-white/95 hover:bg-white/10',

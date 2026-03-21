@@ -7,7 +7,6 @@ const API_BASE_URL = '/api/v1';
 
 const apiClient: AxiosInstance = axios.create({
   baseURL: API_BASE_URL,
-  headers: { 'Content-Type': 'application/json' },
 });
 
 apiClient.interceptors.request.use((config) => {
@@ -38,6 +37,7 @@ export interface ApiProduct {
   xp: number;
   merchantId: string;
   category: string;
+  imageUrl?: string | null;
 }
 
 export interface ApiOrder {
@@ -57,42 +57,6 @@ export interface ApiMerchantUser {
   id: string;
   username: string;
   email: string;
-}
-
-export interface ApiUserSummary {
-  id: string;
-  username: string;
-  email: string;
-  roles: string[];
-  createdAt: string;
-  isBanned: boolean;
-}
-
-export interface ApiUserLeaderboardEntry {
-  userId: string;
-  username: string;
-  email: string;
-  totalXp: number;
-  rank: number;
-}
-
-export interface ApiUserActivityProduct {
-  productId: string;
-  name: string;
-  quantity: number;
-  unitPrice: number;
-  unitXp: number;
-}
-
-export interface ApiUserActivityEntry {
-  orderId: string;
-  merchantId: string;
-  merchantName: string;
-  tableNumber: number;
-  totalPrice: number;
-  totalXp: number;
-  createdAt: string;
-  products: ApiUserActivityProduct[];
 }
 
 export interface QrCodeCreateResponse {
@@ -119,42 +83,16 @@ export const api = {
   },
 
   async createProduct(
-    payload: {
-      name: string;
-      description: string;
-      category: string;
-      price: number;
-      xp: number;
-      allergens: string[];
-    },
-    merchantId?: string,
+    formData: FormData,
+    merchantId?: string
   ): Promise<void> {
-    await apiClient.post('/Products', payload, {
+    await apiClient.post('/Products', formData, {
       params: merchantId ? { merchantId } : undefined,
     });
   },
 
   async getMerchants(): Promise<ApiMerchantUser[]> {
     const { data } = await apiClient.get<ApiMerchantUser[]>('/Auth/merchants');
-    return data;
-  },
-
-  async getUsers(): Promise<ApiUserSummary[]> {
-    const { data } = await apiClient.get<ApiUserSummary[]>('/Auth/users');
-    return data;
-  },
-
-  async getUsersLeaderboard(): Promise<ApiUserLeaderboardEntry[]> {
-    const { data } = await apiClient.get<ApiUserLeaderboardEntry[]>('/Auth/users/leaderboard');
-    return data;
-  },
-
-  async banUser(userId: string): Promise<void> {
-    await apiClient.post(`/Auth/users/${userId}/ban`);
-  },
-
-  async getUserActivity(userId: string): Promise<ApiUserActivityEntry[]> {
-    const { data } = await apiClient.get<ApiUserActivityEntry[]>(`/Auth/users/${userId}/activity`);
     return data;
   },
 

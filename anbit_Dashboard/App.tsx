@@ -9,12 +9,12 @@ import ViewTables from '@/pages/ViewTables';
 import TableHistory from '@/pages/TableHistory';
 import Help from '@/pages/Help';
 import Customers from '@/pages/Customers';
+import AdminCustomers from '@/pages/AdminCustomers';
 import AuthPage from '@/pages/Auth';
 import AdminPage from '@/pages/Admin';
 import StoresManagement from '@/pages/StoresManagement';
 import MerchantUsers from '@/pages/MerchantUsers';
 import SystemSettings from '@/pages/SystemSettings';
-import AdminUsers from '@/pages/AdminUsers';
 import { AuthProvider } from './AuthContext';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -39,9 +39,9 @@ const App: React.FC = () => {
             </Route>
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin" element={<AdminPage />} />
+              <Route path="/admin/customers" element={<AdminCustomers />} />
               <Route path="/admin/stores" element={<StoresManagement />} />
               <Route path="/admin/merchant-users" element={<MerchantUsers />} />
-              <Route path="/admin/users" element={<AdminUsers />} />
               <Route path="/admin/settings" element={<SystemSettings />} />
             </Route>
           </Route>

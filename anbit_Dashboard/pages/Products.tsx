@@ -4,22 +4,12 @@ import { Button } from '@/components/ui/button';
 import {
   Search,
   Plus,
-  LayoutGrid,
-  List,
   Filter,
+  Image as ImageIcon,
   MoreHorizontal,
-  UtensilsCrossed,
-  Coffee,
-  Cake,
-  Baby,
-  Soup,
-  Wheat,
-  Pizza,
-  Fish,
-  Sandwich,
-  Leaf,
-  Beef,
-  Globe,
+  Pencil,
+  Trash2,
+  Power,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
@@ -27,26 +17,21 @@ import { useAuth } from '@/AuthContext';
 
 const ACCENT = '#e63533';
 
-const CATEGORY_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
-  All: Globe,
-  Beverages: Coffee,
-  Desserts: Cake,
-  'Kids Menu': Baby,
-  'Main Courses': Soup,
-  'Pasta & Noodles': Wheat,
-  Pizza: Pizza,
-  Sushi: Fish,
-  Seafood: Fish,
-  Sandwiches: Sandwich,
-  Vegetarian: Leaf,
-  Burger: Beef,
-  Καφέδες: Coffee,
-  Φαγητό: UtensilsCrossed,
-  Ποτά: Coffee,
-};
-
-function getCategoryIcon(cat: string) {
-  return CATEGORY_ICONS[cat] ?? UtensilsCrossed;
+function getCategoryPreviewImage(category: string): string {
+  const key = category.toLowerCase();
+  if (key.includes('coffee') || key.includes('καφέ')) {
+    return 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=800';
+  }
+  if (key.includes('dessert') || key.includes('γλυκ')) {
+    return 'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=800';
+  }
+  if (key.includes('salad') || key.includes('lunch') || key.includes('vegan')) {
+    return 'https://images.pexels.com/photos/1213710/pexels-photo-1213710.jpeg?auto=compress&cs=tinysrgb&w=800';
+  }
+  if (key.includes('burger')) {
+    return 'https://images.pexels.com/photos/1639562/pexels-photo-1639562.jpeg?auto=compress&cs=tinysrgb&w=800';
+  }
+  return 'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=800';
 }
 
 const Products: React.FC = () => {
@@ -55,7 +40,7 @@ const Products: React.FC = () => {
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [isAddOpen, setIsAddOpen] = useState(false);
   const [isManageOpen, setIsManageOpen] = useState(false);
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [activeTab, setActiveTab] = useState<'listing' | 'options' | 'categories'>('listing');
   const [searchQuery, setSearchQuery] = useState('');
   const [newProduct, setNewProduct] = useState<Partial<Product> & { price?: string; pointsReward?: string }>({
     name: '',
@@ -66,6 +51,7 @@ const Products: React.FC = () => {
     allergens: [],
     isActive: true,
   });
+  const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null);
   const [extraCategories, setExtraCategories] = useState<string[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
@@ -77,6 +63,9 @@ const Products: React.FC = () => {
   const [isLoadingCategories, setIsLoadingCategories] = useState(false);
   const [categoriesError, setCategoriesError] = useState<string | null>(null);
   const [isSyncingCategories, setIsSyncingCategories] = useState(false);
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
+  const [openMenuProductId, setOpenMenuProductId] = useState<string | null>(null);
+  const [editingProductId, setEditingProductId] = useState<string | null>(null);
 
   const loadProducts = async () => {
     setIsLoading(true);
@@ -97,6 +86,7 @@ const Products: React.FC = () => {
         price: p.price,
         pointsReward: p.xp,
         image:
+          p.imageUrl ||
           'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
         isActive: true,
         allergens: [],
@@ -161,6 +151,28 @@ const Products: React.FC = () => {
     );
   }, [items, activeCategory, searchQuery]);
 
+  const allVisibleSelected = products.length > 0 && products.every((p) => selectedProductIds.has(p.id));
+  const selectedVisibleCount = products.filter((p) => selectedProductIds.has(p.id)).length;
+  const groupedProducts = useMemo(() => {
+    const groups = new Map<string, Product[]>();
+    products.forEach((p) => {
+      const key = p.category || 'Χωρίς κατηγορία';
+      const arr = groups.get(key) ?? [];
+      arr.push(p);
+      groups.set(key, arr);
+    });
+    return Array.from(groups.entries()).map(([category, groupItems]) => ({
+      category,
+      items: groupItems,
+      unavailableCount: groupItems.filter((p) => !p.isActive).length,
+    }));
+  }, [products]);
+
+  const optionsCount = useMemo(
+    () => items.reduce((sum, p) => sum + (p.allergens?.length ?? 0), 0),
+    [items],
+  );
+
   const resetForm = () => {
     const defaultCategory =
       activeCategory === 'All'
@@ -176,6 +188,33 @@ const Products: React.FC = () => {
       allergens: [],
       isActive: true,
     });
+    setNewProductImageFile(null);
+    // Ensure selecting the same file again triggers `onChange`.
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setEditingProductId(null);
+  };
+
+  const startEditProduct = (product: Product) => {
+    setSaveError(null);
+    setSaveSuccess(null);
+    setEditingProductId(product.id);
+    setNewProduct({
+      name: product.name,
+      description: product.description ?? '',
+      category: product.category,
+      price: String(product.price),
+      pointsReward: String(product.pointsReward ?? 0),
+      image: product.image,
+      allergens: product.allergens ?? [],
+      isActive: product.isActive,
+    });
+    setNewProductImageFile(null);
+    if (fileInputRef.current) {
+      fileInputRef.current.value = '';
+    }
+    setIsAddOpen(true);
   };
 
   const handleAddProduct = async () => {
@@ -186,23 +225,60 @@ const Products: React.FC = () => {
       setSaveError('Συμπλήρωσε τουλάχιστον όνομα προϊόντος.');
       return;
     }
+    if (!newProduct.category?.trim()) {
+      setSaveError('Επίλεξε κατηγορία.');
+      return;
+    }
     const price = Number(String(newProduct.price ?? '').replace(',', '.'));
     if (Number.isNaN(price) || price <= 0) {
       setSaveError('Η τιμή πρέπει να είναι μεγαλύτερη από 0.');
       return;
     }
     const xpValue = Number(String(newProduct.pointsReward ?? '').replace(',', '.'));
-    const xp = Number.isNaN(xpValue) || xpValue < 0 ? 0 : xpValue;
+    // Backend expects int Xp. Ensure we send a clean integer.
+    const xp = Number.isNaN(xpValue) || xpValue < 0 ? 0 : Math.trunc(xpValue);
+    if (!editingProductId && !newProductImageFile) {
+      setSaveError('Επίλεξε αρχείο εικόνας (upload).');
+      return;
+    }
+
+    if (editingProductId) {
+      setItems((prev) =>
+        prev.map((p) =>
+          p.id === editingProductId
+            ? {
+                ...p,
+                name: newProduct.name?.trim() || p.name,
+                description: newProduct.description?.trim() || p.description,
+                category: newProduct.category || p.category,
+                price,
+                pointsReward: xp > 0 ? xp : 1,
+                image: newProduct.image || p.image,
+                allergens: newProduct.allergens ?? [],
+              }
+            : p,
+        ),
+      );
+      setIsAddOpen(false);
+      resetForm();
+      setSaveSuccess('Το προϊόν ενημερώθηκε επιτυχώς!');
+      return;
+    }
     try {
       setIsSaving(true);
-      await api.createProduct({
-        name: newProduct.name.trim(),
-        description: newProduct.description?.trim() ?? '',
-        category: newProduct.category || 'Menu',
-        price,
-        xp,
-        allergens: newProduct.allergens ?? [],
-      });
+      const formData = new FormData();
+      // Backend CreateProductRequest is [FromForm] with PascalCase property names.
+      formData.append('Name', newProduct.name.trim());
+      formData.append('Description', newProduct.description?.trim() || 'N/A');
+      formData.append('Category', newProduct.category || 'Menu');
+      formData.append('Price', String(price));
+      formData.append('Xp', String(xp > 0 ? xp : 1));
+      for (const allergen of newProduct.allergens ?? []) {
+        formData.append('Allergens', allergen);
+      }
+      formData.append('Image', newProductImageFile);
+
+      await api.createProduct(formData);
       setIsAddOpen(false);
       resetForm();
       await loadProducts();
@@ -234,6 +310,7 @@ const Products: React.FC = () => {
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setNewProductImageFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
       setNewProduct((prev) => ({
@@ -244,6 +321,47 @@ const Products: React.FC = () => {
     reader.readAsDataURL(file);
   };
 
+  const toggleProductSelection = (productId: string) => {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  };
+
+  const toggleSelectAllVisible = () => {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      if (allVisibleSelected) {
+        products.forEach((p) => next.delete(p.id));
+      } else {
+        products.forEach((p) => next.add(p.id));
+      }
+      return next;
+    });
+  };
+
+  const deleteProducts = (ids: string[]) => {
+    if (ids.length === 0) return;
+    setItems((prev) => prev.filter((p) => !ids.includes(p.id)));
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev);
+      ids.forEach((id) => next.delete(id));
+      return next;
+    });
+    setOpenMenuProductId(null);
+  };
+
+  const deactivateProducts = (ids: string[]) => {
+    if (ids.length === 0) return;
+    setItems((prev) =>
+      prev.map((p) => (ids.includes(p.id) ? { ...p, isActive: false } : p)),
+    );
+    setOpenMenuProductId(null);
+  };
+
+  const selectedProductIdsArray = Array.from(selectedProductIds);
   const deleteCategory = (name: string) => {
     if (name === 'All') return;
     const used = items.some((p) => p.category === name);
@@ -254,9 +372,6 @@ const Products: React.FC = () => {
     setExtraCategories((prev) => prev.filter((c) => c !== name));
     if (activeCategory === name) setActiveCategory('All');
   };
-
-  const displayCategoryName = (cat: string) =>
-    cat === 'All' ? 'All Dishes' : cat;
 
   const handleSaveCategories = async () => {
     const toSave = categories.filter((c) => c !== 'All');
@@ -278,238 +393,255 @@ const Products: React.FC = () => {
   };
 
   return (
-    <div className="flex flex-col gap-6 text-slate-900">
-      {/* Two columns from top: Dish Category (left) δίπλα στο banner | Banner + Content (right) */}
-      <div className="flex flex-col gap-6 lg:flex-row lg:items-start">
-        {/* Left: Dish Category panel - sticky to viewport, button fixed at bottom of panel */}
-        <aside
-          className="flex w-full shrink-0 flex-col rounded-2xl border border-slate-200 bg-white lg:sticky lg:top-0 lg:h-[calc(100vh-6rem)] lg:w-64 lg:max-h-[calc(100vh-6rem)]"
-        >
-          <div className="shrink-0 border-b border-slate-200 px-4 py-3">
-            <h2 className="font-semibold text-slate-900">Dish Category</h2>
+    <div className="flex flex-col gap-6 bg-[#f8f9fa] text-slate-900">
+      <div className="space-y-6 rounded-3xl bg-[#f8f9fa] p-6 md:p-8">
+        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Menu Management</h1>
+            <p className="mt-1 text-sm font-medium text-slate-500">
+              Curate your restaurant offerings and stock levels
+            </p>
           </div>
-          <div className="min-h-0 flex-1 overflow-y-auto px-2 py-2">
-            {isLoadingCategories && (
-              <p className="px-2 pb-2 text-[11px] text-slate-500">
-                Φόρτωση κατηγοριών...
-              </p>
-            )}
-            {categories.map((cat) => {
-              const isActive = activeCategory === cat;
-              const Icon = getCategoryIcon(displayCategoryName(cat));
-              const count = categoryCounts[cat] ?? 0;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setActiveCategory(cat)}
-                  className={cn(
-                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
-                    isActive
-                      ? 'text-white'
-                      : 'text-slate-700 hover:bg-slate-100',
-                  )}
-                  style={
-                    isActive
-                      ? { backgroundColor: ACCENT }
-                      : undefined
-                  }
-                >
-                  <Icon
-                    className={cn('h-5 w-5 shrink-0', isActive ? 'text-white' : 'text-slate-500')}
-                  />
-                  <span className="min-w-0 flex-1 truncate font-medium">
-                    {displayCategoryName(cat)}
-                  </span>
-                  <span
-                    className={cn(
-                      'shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold',
-                      isActive ? 'bg-white/25 text-white' : 'bg-slate-100 text-slate-600',
-                    )}
-                  >
-                    {count}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
-          <div className="shrink-0 border-t border-slate-200 p-3">
-            <div className="flex flex-col gap-2">
-              {categoriesError && (
-                <p className="text-[11px] text-red-600">
-                  {categoriesError}
-                </p>
-              )}
-              <div className="flex gap-2">
-                <Button
-                  className="flex-1 gap-2 text-white"
-                  style={{ backgroundColor: ACCENT }}
-                  onClick={() => setIsManageOpen(true)}
-                >
-                  <Plus className="h-4 w-4" />
-                  Add Dish Category
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleSaveCategories}
-                  disabled={isSyncingCategories}
-                  className="whitespace-nowrap text-xs"
-                >
-                  {isSyncingCategories ? 'Saving…' : 'Αποθήκευση'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </aside>
-
-        {/* Right: Banner δίπλα στο Dish Category, μετά search + grid */}
-        <div className="flex min-w-0 flex-1 flex-col gap-6">
-          {/* Banner - ίδιο ύψος με το πάνελ αριστερά */}
-          <div
-            className="relative overflow-hidden rounded-2xl px-6 py-6 md:px-8 md:py-8"
-            style={{
-              background: 'linear-gradient(135deg, #fef3e2 0%, #fde8d4 50%, #fad9b8 100%)',
+          <Button
+            className="h-12 rounded-2xl px-6 text-sm font-bold text-white shadow-lg shadow-red-600/20"
+            style={{ backgroundColor: ACCENT }}
+            onClick={() => {
+              resetForm();
+              setIsAddOpen(true);
             }}
           >
-            <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
-              <div>
-                <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
-                  Effortlessly Manage Your Menu!
-                </h1>
-                <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base">
-                  Quick access to every dish—add, update, and organize your menu with ease.
-                </p>
-              </div>
-              <div className="mt-4 flex justify-center md:mt-0 md:block">
-                <div className="flex h-24 w-24 items-center justify-center rounded-full bg-white/60 text-5xl shadow-sm md:h-28 md:w-28">
-                  👨‍🍳
-                </div>
-              </div>
-            </div>
-            <div
-              className="absolute bottom-0 left-0 right-0 h-12 opacity-30"
-              style={{
-                background: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 1440 80' fill='none'%3E%3Cpath d='M0 40 Q360 0 720 40 T1440 40 V80 H0 Z' fill='%23e63533'/%3E%3C/svg%3E") no-repeat bottom center`,
-                backgroundSize: 'cover',
-              }}
-            />
-          </div>
+            <Plus className="mr-2 h-5 w-5" />
+            Add New Product
+          </Button>
+        </div>
 
-          <div className="flex flex-col gap-4">
-          {isLoading && (
-            <p className="text-sm text-slate-500">Φόρτωση προϊόντων...</p>
-          )}
-          {error && (
-            <p className="text-sm text-red-600">{error}</p>
-          )}
-          <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-              <input
-                type="text"
-                placeholder="Look up any dish you desire..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full rounded-lg border border-slate-200 bg-white py-2 pl-9 pr-3 text-sm text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-200"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => setViewMode('list')}
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors',
-                  viewMode === 'list'
-                    ? 'border-[#e63533] text-[#e63533]'
-                    : 'border-slate-200 text-slate-500 hover:bg-slate-50',
-                )}
-              >
-                <List className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setViewMode('grid')}
-                className={cn(
-                  'flex h-9 w-9 items-center justify-center rounded-lg border transition-colors',
-                  viewMode === 'grid'
-                    ? 'border-[#e63533] text-[#e63533]'
-                    : 'border-slate-200 text-slate-500 hover:bg-slate-50',
-                )}
-              >
-                <LayoutGrid className="h-4 w-4" />
-              </button>
-              <Button
-                className="gap-2 text-white"
-                style={{ backgroundColor: ACCENT }}
-              >
-                <Filter className="h-4 w-4" />
-                Filter
-              </Button>
-            </div>
-          </div>
-
-          <div
-            className={cn(
-              'grid gap-4',
-              viewMode === 'grid'
-                ? 'grid-cols-2 sm:grid-cols-3 md:grid-cols-4'
-                : 'grid-cols-1',
-            )}
-          >
-            {/* Add New Dish card - first */}
+        <div className="inline-flex w-fit items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5">
+          {[
+            { key: 'listing' as const, label: `Products (${items.length})` },
+            { key: 'options' as const, label: `Options (${optionsCount})` },
+            { key: 'categories' as const, label: `Categories (${categories.length - 1})` },
+          ].map((tab) => (
             <button
+              key={tab.key}
               type="button"
-              onClick={() => {
-                resetForm();
-                setIsAddOpen(true);
-              }}
-              className="flex min-h-[180px] flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-slate-300 bg-slate-50/50 py-6 text-slate-600 transition-colors hover:border-[#e63533] hover:bg-slate-50 hover:text-[#e63533]"
+              onClick={() => setActiveTab(tab.key)}
+              className={cn(
+                'rounded-xl px-6 py-2.5 text-sm font-semibold transition-all',
+                activeTab === tab.key
+                  ? 'bg-white text-[#e63533] shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700',
+              )}
             >
-              <Plus className="h-10 w-10" style={{ color: ACCENT }} />
-              <span className="text-center text-sm font-medium">
-                Add New Dish to {activeCategory === 'All' ? 'Menu' : activeCategory}
-              </span>
+              {tab.label}
             </button>
+          ))}
+        </div>
 
-            {/* Dish cards */}
-            {products.map((product) => (
-              <div
-                key={product.id}
-                className="flex flex-col overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm transition-shadow hover:shadow-md"
-              >
-                <div className="relative flex items-start justify-between p-2">
-                  <label className="flex cursor-pointer items-center">
-                    <input type="checkbox" className="rounded border-slate-300" />
-                  </label>
-                  <button
-                    type="button"
-                    className="rounded p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600"
-                    aria-label="Menu"
-                  >
-                    <MoreHorizontal className="h-4 w-4" />
-                  </button>
-                </div>
-                <div className="flex flex-col items-center px-4 pb-4">
-                  <div className="h-20 w-20 overflow-hidden rounded-full border-2 border-slate-100">
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="h-full w-full object-cover"
-                    />
-                  </div>
-                  <p className="mt-3 truncate text-center text-sm font-semibold text-slate-900">
-                    {product.name}
-                  </p>
-                  <p className="mt-0.5 text-sm font-medium text-slate-600">
-                    €{product.price.toFixed(2)}
-                  </p>
-                </div>
+        {activeTab === 'listing' && (
+          <div className="space-y-8">
+            {(isLoading || error) && (
+              <div className="space-y-1">
+                {isLoading && <p className="text-sm text-slate-500">Φόρτωση προϊόντων...</p>}
+                {error && <p className="text-sm text-red-600">{error}</p>}
               </div>
+            )}
+
+            <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+              <div className="relative w-full max-w-xl">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input
+                  type="text"
+                  placeholder="Search dish, category or SKU..."
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  className="w-full rounded-2xl border-0 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-[#e63533]/20"
+                />
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Button variant="outline" size="sm" className="rounded-xl gap-2">
+                  <Filter className="h-4 w-4" />
+                  Filter
+                </Button>
+                <Button variant="outline" size="sm" className="rounded-xl" onClick={toggleSelectAllVisible}>
+                  {allVisibleSelected ? 'Unselect' : 'Bulk Edit'} ({selectedVisibleCount})
+                </Button>
+                <Button variant="outline" size="sm" className="rounded-xl gap-2">
+                  <ImageIcon className="h-4 w-4" />
+                  Images
+                </Button>
+              </div>
+            </div>
+
+            {groupedProducts.map((group) => (
+              <section key={group.category} className="space-y-5">
+                <div className="flex items-center gap-4">
+                  <div className="h-10 w-1.5 rounded-full bg-[#e63533]" />
+                  <h3 className="text-xl font-bold text-slate-900">
+                    {group.category}
+                    <span className="ml-2 text-base font-medium text-slate-500">({group.items.length})</span>
+                  </h3>
+                </div>
+
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+                  {group.items.map((product) => (
+                    <article
+                      key={product.id}
+                      className="relative rounded-3xl bg-white p-5 shadow-[0_16px_40px_-24px_rgba(25,28,29,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+                    >
+                      <div className="flex items-center gap-4">
+                        <input
+                          type="checkbox"
+                          checked={selectedProductIds.has(product.id)}
+                          onChange={() => toggleProductSelection(product.id)}
+                          className="rounded border-slate-300"
+                        />
+                        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl">
+                          <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <h4 className="truncate text-base font-bold text-slate-900">{product.name}</h4>
+                          <p className="mt-0.5 text-sm font-bold text-[#e63533]">€{product.price.toFixed(2)}</p>
+                          <p className="text-xs font-semibold text-amber-700">+{product.pointsReward ?? 0} XP</p>
+                          <div className="mt-2 flex items-center gap-2">
+                            <span
+                              className={cn(
+                                'h-1.5 w-1.5 rounded-full',
+                                product.isActive ? 'bg-emerald-500' : 'bg-slate-400',
+                              )}
+                            />
+                            <span className={cn('text-[10px] font-bold uppercase tracking-wider', product.isActive ? 'text-emerald-600' : 'text-slate-500')}>
+                              {product.isActive ? 'In Stock' : 'Sold Out'}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex flex-col items-end gap-2">
+                          <button
+                            type="button"
+                            className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
+                            onClick={() =>
+                              setOpenMenuProductId((prev) => (prev === product.id ? null : product.id))
+                            }
+                          >
+                            <MoreHorizontal className="h-5 w-5" />
+                          </button>
+                        </div>
+                      </div>
+
+                      {openMenuProductId === product.id && (
+                        <div className="absolute right-4 top-14 z-20 min-w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                            onClick={() => {
+                              startEditProduct(product);
+                              setOpenMenuProductId(null);
+                            }}
+                          >
+                            <Pencil className="h-4 w-4" />
+                            Edit
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-amber-700 hover:bg-amber-50"
+                            onClick={() => deactivateProducts([product.id])}
+                          >
+                            <Power className="h-4 w-4" />
+                            Deactivate
+                          </button>
+                          <button
+                            type="button"
+                            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-red-600 hover:bg-red-50"
+                            onClick={() => deleteProducts([product.id])}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                            Delete
+                          </button>
+                        </div>
+                      )}
+                    </article>
+                  ))}
+                </div>
+              </section>
             ))}
           </div>
+        )}
+
+        {activeTab === 'options' && (
+          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
+            Εδώ εμφανίζονται οι επιλογές προϊόντων (allergens/options). Προς το παρόν: {optionsCount}{' '}
+            συνολικές επιλογές.
           </div>
-        </div>
+        )}
+
+        {activeTab === 'categories' && (
+          <div className="space-y-4">
+            {isLoadingCategories && <p className="text-sm text-slate-500">Φόρτωση κατηγοριών...</p>}
+            {categoriesError && <p className="text-sm text-red-600">{categoriesError}</p>}
+            <div className="flex items-center justify-between gap-2">
+              <div className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5">
+                <span className="rounded-xl bg-white px-4 py-2 text-xs font-semibold text-slate-600">
+                  Categories ({categories.length - 1})
+                </span>
+              </div>
+              <Button
+                onClick={() => setIsManageOpen(true)}
+                style={{ backgroundColor: ACCENT }}
+                className="rounded-xl text-white shadow-lg shadow-red-600/20"
+              >
+                <Plus className="mr-2 h-4 w-4" />
+                Add Category
+              </Button>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button onClick={() => setIsManageOpen(true)} style={{ backgroundColor: ACCENT }} className="text-white rounded-xl">
+                <Plus className="mr-2 h-4 w-4" />
+                Προσθήκη κατηγορίας
+              </Button>
+              <Button variant="outline" onClick={handleSaveCategories} disabled={isSyncingCategories} className="rounded-xl">
+                {isSyncingCategories ? 'Αποθήκευση...' : 'Αποθήκευση αλλαγών'}
+              </Button>
+            </div>
+            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+              {categories
+                .filter((c) => c !== 'All')
+                .map((cat) => (
+                  <article
+                    key={cat}
+                    className="group rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_30px_-24px_rgba(25,28,29,0.25)] transition-all hover:shadow-lg"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="min-w-0 flex-1">
+                        <div className="overflow-hidden rounded-xl">
+                          <img
+                            src={getCategoryPreviewImage(cat)}
+                            alt={cat}
+                            className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
+                          />
+                        </div>
+                        <p className="mt-2 truncate text-lg font-medium text-slate-900">{cat}</p>
+                      </div>
+                      <div className="flex flex-col items-end gap-2 pt-2 text-xs text-slate-500">
+                        <button
+                          type="button"
+                          onClick={() => setNewCategoryName(cat)}
+                          className="rounded px-2 py-1 hover:bg-slate-100"
+                        >
+                          Edit
+                        </button>
+                        <button
+                          type="button"
+                          onClick={() => deleteCategory(cat)}
+                          className="rounded px-2 py-1 text-red-600 hover:bg-red-50"
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    </div>
+                  </article>
+                ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Add product modal */}
@@ -517,8 +649,14 @@ const Products: React.FC = () => {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
           <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-lg">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Add product</h2>
-              <button className="text-sm" onClick={() => setIsAddOpen(false)}>
+              <h2 className="text-lg font-semibold">{editingProductId ? 'Edit product' : 'Add product'}</h2>
+              <button
+                className="text-sm"
+                onClick={() => {
+                  setIsAddOpen(false);
+                  resetForm();
+                }}
+              >
                 Close
               </button>
             </div>
@@ -578,15 +716,6 @@ const Products: React.FC = () => {
                 <div className="space-y-1">
                   <label className="text-xs font-medium">Image</label>
                   <div className="flex gap-2">
-                    <input
-                      type="text"
-                      value={newProduct.image || ''}
-                      onChange={(e) =>
-                        setNewProduct({ ...newProduct, image: e.target.value })
-                      }
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                      placeholder="URL or upload"
-                    />
                     <Button
                       type="button"
                       variant="outline"
@@ -604,7 +733,7 @@ const Products: React.FC = () => {
                       onChange={handleImageUpload}
                     />
                   </div>
-                  {newProduct.image && (
+                  {newProductImageFile && (
                     <p className="mt-1 text-xs text-slate-500">Image selected</p>
                   )}
                 </div>
@@ -666,7 +795,14 @@ const Products: React.FC = () => {
                 />
               </div>
               <div className="mt-4 flex justify-end gap-2">
-                <Button variant="outline" size="sm" onClick={() => setIsAddOpen(false)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setIsAddOpen(false);
+                    resetForm();
+                  }}
+                >
                   Cancel
                 </Button>
                 <Button
@@ -676,7 +812,7 @@ const Products: React.FC = () => {
                   style={{ backgroundColor: ACCENT }}
                   className="text-white"
                 >
-                  {isSaving ? 'Saving...' : 'Save product'}
+                  {isSaving ? 'Saving...' : editingProductId ? 'Save changes' : 'Save product'}
                 </Button>
               </div>
             </div>
