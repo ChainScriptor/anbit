@@ -7,6 +7,7 @@ import { AuthProvider } from './context/AuthContext';
 import { LanguageProvider } from './context/LanguageContext';
 import { ThemeProvider } from './context/ThemeContext';
 import { OrderProvider } from './context/OrderContext';
+import { CityProvider } from './context/CityContext';
 
 const rootElement = document.getElementById('root');
 if (!rootElement) {
@@ -21,7 +22,9 @@ root.render(
         <AuthProvider>
           <LanguageProvider>
             <OrderProvider>
-              <App />
+              <CityProvider>
+                <App />
+              </CityProvider>
             </OrderProvider>
           </LanguageProvider>
         </AuthProvider>

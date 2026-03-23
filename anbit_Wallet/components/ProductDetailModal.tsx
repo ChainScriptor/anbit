@@ -60,7 +60,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
                 </div>
               </div>
 
-              <div className="flex items-center justify-between bg-[#09090b] p-4 rounded-3xl border border-white/5">
+              <div className="flex items-center justify-between bg-[#0a0a0a] p-4 rounded-3xl border border-white/5">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-full overflow-hidden border-2 border-white/10">
                     <img src="https://i.pravatar.cc/150?u=merchant" className="w-full h-full object-cover" />
@@ -89,7 +89,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-[#09090b] p-4 rounded-2xl border border-white/5 flex items-center gap-3">
+                <div className="bg-[#0a0a0a] p-4 rounded-2xl border border-white/5 flex items-center gap-3">
                   <div className="w-10 h-10 bg-[#1a1a1c] rounded-xl flex items-center justify-center text-anbit-yellow">
                     <Clock className="w-5 h-5" />
                   </div>
@@ -98,7 +98,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
                     <span className="text-sm font-black text-white">25 ΛΕΠΤΑ</span>
                   </div>
                 </div>
-                <div className="bg-[#09090b] p-4 rounded-2xl border border-white/5 flex items-center gap-3">
+                <div className="bg-[#0a0a0a] p-4 rounded-2xl border border-white/5 flex items-center gap-3">
                    <div className="w-10 h-10 bg-[#1a1a1c] rounded-xl flex items-center justify-center text-anbit-yellow">
                     <Zap className="w-5 h-5" />
                   </div>
@@ -112,12 +112,12 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
           </div>
 
           <div className="absolute bottom-10 left-8 right-8 flex items-center gap-4">
-            <div className="bg-[#09090b] h-16 rounded-[28px] px-8 flex items-center justify-center border border-white/5 min-w-[120px]">
+            <div className="bg-[#0a0a0a] h-16 rounded-[28px] px-8 flex items-center justify-center border border-white/5 min-w-[120px]">
               <span className="text-xl font-black text-white italic tracking-tighter">${product.price.toFixed(2)}</span>
             </div>
             <button 
               onClick={() => { onAddToCart(product); onClose(); }}
-              className="flex-1 bg-anbit-yellow text-anbit-yellow-content h-16 rounded-[28px] font-bold italic tracking-tighter flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-95 shadow-[0_20px_40px_rgba(254,240,138,0.3)]"
+              className="flex-1 bg-anbit-yellow text-anbit-yellow-content h-16 rounded-[28px] font-bold italic tracking-tighter flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-95 shadow-[0_20px_40px_rgba(230,53,51,0.35)]"
             >
               ΠΡΟΣΘΗΚΗ <ChevronRight className="w-5 h-5" />
             </button>

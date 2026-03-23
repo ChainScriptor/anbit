@@ -200,8 +200,9 @@ class ApiService {
   async getProducts(
     params?: { limit?: number; offset?: number; merchantId?: string },
   ): Promise<ApiProduct[]> {
-    const limit = params?.limit ?? 50;
     const offset = params?.offset ?? 0;
+    // Backend: GetProductsByMerchantIdQueryValidator — limit max 100
+    const limit = Math.min(params?.limit ?? 50, 100);
 
     // For guest menu: prefer anonymous merchant endpoint.
     if (params?.merchantId) {

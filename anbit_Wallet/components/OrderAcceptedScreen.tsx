@@ -10,7 +10,7 @@ interface OrderAcceptedScreenProps {
   onBack: () => void;
 }
 
-const CONFETTI_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#ca8a04', '#9333ea'];
+const CONFETTI_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#e63533', '#9333ea'];
 
 function Confetti() {
   const [pieces] = useState(() =>

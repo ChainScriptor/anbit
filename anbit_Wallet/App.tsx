@@ -23,7 +23,7 @@ import { useAuth } from './context/AuthContext';
 import { useOrder } from './context/OrderContext';
 import { useLanguage } from './context/LanguageContext';
 import { Partner, UserData, Reward } from './types';
-import { DASHBOARD_URL } from './constants';
+import { MERCHANT_APPLY_URL } from './constants';
 import { useDashboardData } from './hooks/useDashboardData';
 import { FooterTaped } from './components/ui/FooterTaped';
 import AnbitCafeDemoScene from './components/AnbitCafeDemoScene';
@@ -227,7 +227,14 @@ const App: React.FC = () => {
           <div className="bg-anbit-bg border border-anbit-border rounded-3xl p-6 lg:p-8 text-center space-y-3">
             <h4 className="section-title text-anbit-text text-sm lg:text-base">{t('becomeMerchant')}</h4>
             <p className="text-anbit-muted text-[10px] lg:text-xs font-medium">{t('joinEcosystem')}</p>
-            <a href={DASHBOARD_URL} target="_blank" rel="noopener noreferrer" className="text-anbit-text font-semibold text-[8px] lg:text-[10px] tracking-wide border-b border-anbit-yellow pb-0.5 hover:text-anbit-yellow transition-colors">{t('applyNow')}</a>
+            <a
+              href={MERCHANT_APPLY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-anbit-text font-semibold text-[8px] lg:text-[10px] tracking-wide border-b border-anbit-yellow pb-0.5 hover:text-anbit-yellow transition-colors"
+            >
+              {t('applyNow')}
+            </a>
           </div>
         </div>
       </div>
@@ -273,7 +280,14 @@ const App: React.FC = () => {
           <div className="bg-anbit-bg border border-anbit-border rounded-3xl p-6 lg:p-8 text-center space-y-3">
             <h4 className="section-title text-anbit-text text-sm lg:text-base">{t('becomeMerchant')}</h4>
             <p className="text-anbit-muted text-[10px] lg:text-xs font-medium">{t('joinEcosystem')}</p>
-            <a href={DASHBOARD_URL} target="_blank" rel="noopener noreferrer" className="text-anbit-text font-semibold text-[8px] lg:text-[10px] tracking-wide border-b border-anbit-yellow pb-0.5 hover:text-anbit-yellow transition-colors">{t('applyNow')}</a>
+            <a
+              href={MERCHANT_APPLY_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-anbit-text font-semibold text-[8px] lg:text-[10px] tracking-wide border-b border-anbit-yellow pb-0.5 hover:text-anbit-yellow transition-colors"
+            >
+              {t('applyNow')}
+            </a>
           </div>
         </div>
       </div>

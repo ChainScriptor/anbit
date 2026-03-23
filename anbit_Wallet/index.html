@@ -7,7 +7,7 @@
     <title>Anbit | The Big Dashboard</title>
     
     <!-- PWA Primary Meta Tags -->
-    <meta name="theme-color" content="#09090b" id="theme-color-meta" />
+    <meta name="theme-color" content="#0a0a0a" id="theme-color-meta" />
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
@@ -56,17 +56,17 @@
         --sal: env(safe-area-inset-left);
       }
 
-      /* Dark theme (default) – κίτρινο accent #ca8a04 */
+      /* Dark theme (default) – brand red accent #E63533 (ίδιο με light) */
       :root,
       [data-theme="dark"] {
-        --anbit-bg: #09090b;
+        --anbit-bg: #0a0a0a;
         --anbit-card: #121214;
         --anbit-border: #27272a;
-        --anbit-yellow: #ca8a04;
-        --anbit-yellow-content: #18181b;
+        --anbit-yellow: #e63533;
+        --anbit-yellow-content: #ffffff;
         --anbit-muted: #71717a;
         --anbit-text: #ffffff;
-        --anbit-nav-bg: rgba(9, 9, 11, 0.95);
+        --anbit-nav-bg: #000000;
         --anbit-input: rgba(255, 255, 255, 0.04);
       }
 
@@ -75,7 +75,7 @@
         --anbit-bg: #FFFFFF;
         --anbit-card: #FFFFFF;
         --anbit-border: rgba(0, 0, 0, 0.08);
-        --anbit-yellow: #E63533;
+        --anbit-yellow: #e63533;
         --anbit-yellow-content: #ffffff;
         --anbit-muted: #666666;
         --anbit-text: #333333;
@@ -235,7 +235,7 @@
         background: var(--anbit-bg);
       }
       [data-theme="dark"] .auth-page-bg {
-        background: linear-gradient(160deg, #09090b 0%, #0c0c0e 40%, #0a0a0c 100%);
+        background: linear-gradient(160deg, #0a0a0a 0%, #0c0c0e 40%, #0a0a0c 100%);
       }
       [data-theme="light"] .auth-page-bg {
         background: linear-gradient(160deg, #f8f8f8 0%, #f0f0f0 50%, #e8e8e8 100%);
@@ -374,6 +374,28 @@
         border-bottom: 1px solid var(--anbit-border);
       }
 
+      /* City select modal – κόκκινο pulse (marker / my_location) */
+      @keyframes city-select-pulse-red {
+        0% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(230, 53, 51, 0.55);
+        }
+        70% {
+          transform: scale(1);
+          box-shadow: 0 0 0 14px rgba(230, 53, 51, 0);
+        }
+        100% {
+          transform: scale(0.95);
+          box-shadow: 0 0 0 0 rgba(230, 53, 51, 0);
+        }
+      }
+      .city-select-pulse-red {
+        animation: city-select-pulse-red 2s ease-out infinite;
+      }
+      .dark-city-map-vignette {
+        background: radial-gradient(circle at center, transparent 0%, #000000 100%);
+      }
+
       /* Fix for iOS PWA address bar overlap */
       @supports (padding: env(safe-area-inset-top)) {
         header {
@@ -460,7 +482,7 @@
         var theme = (stored === 'light' || stored === 'dark') ? stored : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         document.documentElement.setAttribute('data-theme', theme);
         var meta = document.getElementById('theme-color-meta');
-        if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#09090b');
+        if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#0a0a0a');
       })();
     </script>
     <script type="importmap">

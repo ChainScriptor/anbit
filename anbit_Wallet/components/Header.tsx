@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
 import { Home, MapPin, Star, User, LogOut, Zap, Sun, Moon, ChevronDown } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { useCity } from '../context/CityContext';
 import LanguageSelector from './LanguageSelector';
+import { CitySelectModal } from './CitySelectModal';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -26,6 +28,9 @@ const navPaths: { path: string; labelKey: string; icon: typeof Home }[] = [
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0, onOpenLogin, onOpenRegister }) => {
   const location = useLocation();
   const [isScrolled, setIsScrolled] = useState(false);
+  const [cityModalOpen, setCityModalOpen] = useState(false);
+  const closeCityModal = useCallback(() => setCityModalOpen(false), []);
+  const { city, cityId, setCityId, pickNearestCityFromCoords } = useCity();
   const { logout } = useAuth();
   const { t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
@@ -38,6 +43,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
   }, []);
 
   return (
+    <>
     <header className={`fixed top-0 left-0 right-0 z-50 w-full px-3 lg:px-5 py-3 lg:py-4 transition-colors duration-300 glass-nav ${isScrolled ? 'navbar-scrolled' : ''}`}>
       <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3">
 
@@ -47,12 +53,15 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
           </NavLink>
           <button
             type="button"
-            className="flex items-center gap-2 py-2 text-anbit-text hover:text-anbit-yellow transition-colors"
+            onClick={() => setCityModalOpen(true)}
+            className="flex items-center gap-2 py-2 text-anbit-text hover:text-anbit-yellow transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50"
             aria-label="Αλλαγή τοποθεσίας"
+            aria-expanded={cityModalOpen}
+            aria-haspopup="dialog"
           >
             <MapPin className="w-6 h-6 lg:w-8 lg:h-8 text-anbit-yellow shrink-0" strokeWidth={2} />
-            <span className="font-greek text-sm lg:text-base font-greek-bold max-w-[120px] truncate">Θεσσαλονίκη</span>
-            <ChevronDown className="w-4 h-4 shrink-0" />
+            <span className="font-greek text-sm lg:text-base font-greek-bold max-w-[120px] truncate">{city.labelEl}</span>
+            <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${cityModalOpen ? 'rotate-180' : ''}`} />
           </button>
         </div>
 
@@ -153,6 +162,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
         </div>
       </div>
     </header>
+    <CitySelectModal
+      isOpen={cityModalOpen}
+      onClose={closeCityModal}
+      currentCityId={cityId}
+      onConfirm={setCityId}
+      pickNearestFromCoords={pickNearestCityFromCoords}
+    />
+    </>
   );
 };
 

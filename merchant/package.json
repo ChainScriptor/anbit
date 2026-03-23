@@ -1,0 +1,13 @@
+{
+  "name": "anbit-merchant",
+  "private": true,
+  "version": "1.0.0",
+  "description": "Στατική σελίδα Anbit Merchants (Tailwind CDN) — χωρίς build βήμα",
+  "scripts": {
+    "dev": "serve . -l 5175",
+    "start": "serve . -l 5175"
+  },
+  "devDependencies": {
+    "serve": "^14.2.4"
+  }
+}

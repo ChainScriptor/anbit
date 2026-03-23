@@ -143,7 +143,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
                   </p>
                 </div>
 
-                <div className="absolute bottom-8 right-16 bg-gradient-to-r from-anbit-yellow to-amber-400 text-anbit-yellow-content rounded-2xl shadow-xl p-4 max-w-xs animate-float-delayed">
+                <div className="absolute bottom-8 right-16 bg-gradient-to-r from-anbit-yellow to-red-700 text-anbit-yellow-content rounded-2xl shadow-xl p-4 max-w-xs animate-float-delayed">
                   <p className="font-bold text-lg mb-1">Αληθινές Στιγμές</p>
                   <p className="text-sm opacity-90">
                     Αυθεντική εμπειρία εστίασης καταγεγραμμένη σε φυσικό φως.
