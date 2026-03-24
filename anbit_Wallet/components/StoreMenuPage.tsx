@@ -1,13 +1,20 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import {
-  ChevronLeft,
-  ChevronDown,
-  ShoppingBag,
+  Menu,
   Search,
-  Globe,
-  Bell,
-  Plus,
+  ShoppingBag,
+  Sun,
+  Moon,
+  UtensilsCrossed,
+  Sandwich,
+  Pizza,
+  Martini,
+  Croissant,
+  Star,
+  TrendingUp,
+  User,
+  ShoppingCart,
   X,
 } from 'lucide-react';
 import { Partner, Product } from '../types';
@@ -58,6 +65,13 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [searchQuery, setSearchQuery] = useState('');
+  const [isDarkMode, setIsDarkMode] = useState<boolean>(() => {
+    if (typeof window === 'undefined') return true;
+    const saved = localStorage.getItem('anbit_store_theme');
+    if (saved === 'dark') return true;
+    if (saved === 'light') return false;
+    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true;
+  });
 
   const menu = useMemo(() => partner.menu || [], [partner]);
   const categories = useMemo(() => {
@@ -167,8 +181,24 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     setOrderAccepted(true);
   }, []);
 
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem('anbit_store_theme', isDarkMode ? 'dark' : 'light');
+  }, [isDarkMode]);
+
   const categoryLabel = (id: string) => (id === 'All' ? t('all') : id);
   const sectionTitle = activeCategory === 'All' ? partner.name : activeCategory;
+  const featuredProduct = menu[0];
+
+  const categoryIcon = (category: string) => {
+    const c = category.toLowerCase();
+    if (category === 'All') return <UtensilsCrossed className="w-7 h-7" strokeWidth={2.2} />;
+    if (c.includes('burger') || c.includes('sandwich')) return <Sandwich className="w-7 h-7" strokeWidth={2.2} />;
+    if (c.includes('pizza')) return <Pizza className="w-7 h-7" strokeWidth={2.2} />;
+    if (c.includes('drink') || c.includes('coffee') || c.includes('bar')) return <Martini className="w-7 h-7" strokeWidth={2.2} />;
+    if (c.includes('bakery') || c.includes('sweet') || c.includes('dessert')) return <Croissant className="w-7 h-7" strokeWidth={2.2} />;
+    return <UtensilsCrossed className="w-7 h-7" strokeWidth={2.2} />;
+  };
 
   if (orderAccepted) {
     return (
@@ -231,96 +261,131 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   }
 
   return (
-    <div className="min-h-screen bg-[#f0f0f0] text-black font-sans antialiased" data-theme="light">
-      {/* Hero με background + overlay κουμπιά */}
+    <div className={`min-h-screen font-sans transition-colors ${isDarkMode ? 'bg-black text-white' : 'bg-[#f3f3f3] text-[#1b1c1c]'}`}>
       <header
-        className="relative h-44 sm:h-52 overflow-hidden"
+        className={`fixed top-0 left-0 right-0 z-50 h-16 px-6 flex items-center justify-between backdrop-blur-md border-b transition-colors ${isDarkMode ? 'bg-neutral-950/85 border-white/5' : 'bg-white/90 border-black/5'
+          }`}
         style={{ paddingTop: 'env(safe-area-inset-top)' }}
       >
-        <img
-          src={partner.image}
-          alt=""
-          className="absolute inset-0 w-full h-full object-cover"
-        />
-        <div className="absolute inset-0 bg-black/20" />
-        <div className="relative flex items-center justify-between px-4 pt-3">
-          <button
-            onClick={onBack}
-            className="w-11 h-11 rounded-full bg-white flex items-center justify-center text-black shadow-md hover:bg-gray-100 transition-colors shrink-0"
-            aria-label="Πίσω"
-          >
-            <ChevronLeft className="w-6 h-6" strokeWidth={2} />
+        <div className="flex items-center gap-4">
+          <button type="button" onClick={onBack} className="text-[#E63533] active:scale-95 transition-transform">
+            <Menu className="w-6 h-6" strokeWidth={2.4} />
           </button>
-          <div className="flex flex-col items-center gap-2">
-            <div
-              className="min-w-[4.5rem] h-14 px-3 rounded-full bg-[#0C0C0C] border-2 border-white/20 flex items-center justify-center shadow-lg shrink-0"
-              aria-hidden
-            >
-              <span
-                className="font-logoBold text-2xl font-extrabold text-white tracking-tight"
-                style={{ letterSpacing: '-0.03em' }}
-              >
-                Anbit
-              </span>
-            </div>
-          </div>
-          <div className="flex flex-col items-end gap-2">
-            <button
-              type="button"
-              className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-black shadow-md shrink-0"
-              aria-label={t('languageSelection')}
-            >
-              <Globe className="w-5 h-5" strokeWidth={2} />
-            </button>
-            <button
-              type="button"
-              className="w-10 h-10 rounded-full bg-white flex items-center justify-center text-black shadow-md shrink-0"
-              aria-label="Υπηρεσία"
-            >
-              <Bell className="w-5 h-5" strokeWidth={2} />
-            </button>
-          </div>
+          <span className="text-[#E63533] font-black italic text-3xl tracking-tighter">Anbit</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            onClick={() => setIsDarkMode((v) => !v)}
+            className={`${isDarkMode ? 'text-[#E63533]' : 'text-[#E63533]'} active:scale-95 transition-transform`}
+            aria-label={isDarkMode ? 'Switch to light mode' : 'Switch to dark mode'}
+            title={isDarkMode ? 'Light mode' : 'Dark mode'}
+          >
+            {isDarkMode ? <Sun className="w-5 h-5" strokeWidth={2.4} /> : <Moon className="w-5 h-5" strokeWidth={2.4} />}
+          </button>
+          <button type="button" className="text-[#E63533] active:scale-95 transition-transform">
+            <Search className="w-5 h-5" strokeWidth={2.4} />
+          </button>
+          <button type="button" onClick={openCheckout} className="text-[#E63533] active:scale-95 transition-transform">
+            <ShoppingBag className="w-5 h-5" strokeWidth={2.4} />
+          </button>
         </div>
       </header>
 
-      {/* Category bar: dropdown + tabs (όλα κείμενα μαύρα) */}
-      <div
-        className="flex flex-nowrap items-center gap-2 overflow-x-auto px-4 py-3 bg-white -mt-1 rounded-t-2xl no-scrollbar"
-        style={{ WebkitOverflowScrolling: 'touch' }}
-      >
-        <button
-          type="button"
-          className="w-9 h-9 rounded-full bg-white border border-[rgba(0,0,0,0.12)] flex items-center justify-center text-[#2563eb] shrink-0"
-          aria-label="Κατηγορίες"
-        >
-          <ChevronDown className="w-5 h-5" strokeWidth={2} />
-        </button>
-        {categories.map((cat) => (
-          <button
-            key={cat}
-            onClick={() => setActiveCategory(cat)}
-            className={`shrink-0 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${activeCategory === cat
-                ? 'bg-white text-black border border-[rgba(0,0,0,0.12)] shadow-sm'
-                : 'bg-white text-black border border-[rgba(0,0,0,0.12)] hover:bg-gray-50'
-              }`}
-          >
-            {categoryLabel(cat)}
-          </button>
-        ))}
-      </div>
+      <main className="pt-20 pb-36 px-6">
+        <section className="mb-8">
+          <div className="relative h-52 rounded-3xl overflow-hidden p-6 flex items-end group">
+            <img
+              src={featuredProduct?.image || partner.image}
+              alt={featuredProduct?.name || partner.name}
+              className="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
+            />
+            <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-transparent" />
+            <div className="relative z-10">
+              <span className="inline-flex px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider bg-amber-300/85 text-amber-950 mb-2">
+                Flash Deal
+              </span>
+              <h2 className="text-4xl font-extrabold tracking-tight leading-none">
+                {featuredProduct?.name || partner.name}
+                <br />
+                <span className="text-[#E63533]">50% OFF</span>
+              </h2>
+              <p className="text-neutral-400 text-sm mt-1">Valid until midnight</p>
+            </div>
+          </div>
+        </section>
 
-      {/* Λευκή κάρτα περιεχομένου */}
-      <main className="bg-white rounded-t-2xl min-h-[60vh] -mt-1 px-4 pt-6 pb-32">
-        <h2 className="text-2xl font-bold text-black tracking-tight mb-0.5">
-          {sectionTitle}
-        </h2>
-        <p className="text-sm text-black/70 mb-3">
-          {activeCategory === 'All'
-            ? partner.name
-            : `${categoryLabel(activeCategory)} – ${partner.name}`}
-        </p>
+        <section className="mb-8 -mx-6 overflow-hidden">
+          <div className="flex gap-4 overflow-x-auto px-6 pb-2 no-scrollbar">
+            {categories.map((cat) => {
+              const isActive = activeCategory === cat;
+              return (
+                <button
+                  key={cat}
+                  type="button"
+                  onClick={() => setActiveCategory(cat)}
+                  className="flex flex-col items-center gap-3 min-w-[72px] group"
+                >
+                  <div
+                    className={`w-16 h-16 rounded-2xl flex items-center justify-center transition-all group-active:scale-90 ${isActive
+                      ? 'bg-[#E63533] text-white shadow-lg shadow-[#E63533]/25'
+                      : isDarkMode
+                        ? 'bg-neutral-900 text-neutral-400'
+                        : 'bg-white border border-black/10 text-neutral-500'
+                      }`}
+                  >
+                    {categoryIcon(cat)}
+                  </div>
+                  <span className={`text-[10px] font-bold uppercase tracking-widest ${isActive ? 'text-[#E63533]' : isDarkMode ? 'text-neutral-500' : 'text-neutral-600'}`}>
+                    {categoryLabel(cat)}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+        </section>
 
-        <div className="mb-6">
+        <section className="mb-6">
+          <div className="relative">
+            <Search className={`absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 ${isDarkMode ? 'text-neutral-500' : 'text-neutral-400'}`} strokeWidth={2} />
+            <input
+              type="search"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder={t('searchProduct')}
+              className={`w-full pl-10 pr-4 py-3 rounded-xl text-sm focus:outline-none focus:ring-2 transition-colors ${isDarkMode
+                ? 'border border-neutral-800 bg-neutral-950 text-white placeholder:text-neutral-500 focus:ring-neutral-700'
+                : 'border border-black/10 bg-white text-[#1b1c1c] placeholder:text-neutral-500 focus:ring-black/20'
+                }`}
+              aria-label={t('searchProduct')}
+            />
+          </div>
+        </section>
+
+        <section className="mb-6">
+          <h3 className="text-3xl font-extrabold tracking-tight mb-1">Recommended for You</h3>
+          <p className={`text-xs uppercase tracking-widest ${isDarkMode ? 'text-neutral-500' : 'text-neutral-600'}`}>{sectionTitle}</p>
+        </section>
+
+        <section className="grid grid-cols-2 gap-x-4 gap-y-8">
+          {filteredMenu.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              isDarkMode={isDarkMode}
+              onAddToCart={() => openCustomize(product)}
+              onViewDetail={() => setSelectedProduct(product)}
+            />
+          ))}
+        </section>
+
+        {filteredMenu.length === 0 && (
+          <p className={`text-sm py-10 text-center ${isDarkMode ? 'text-neutral-500' : 'text-neutral-600'}`}>
+            Δεν βρέθηκαν προϊόντα.
+          </p>
+        )}
+
+        <div className="mt-10 opacity-95">
           <AnimatedSocialLinks
             socials={[
               {
@@ -339,71 +404,59 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
                   'https://images.unsplash.com/photo-1592609931041-40265b692757?auto=format&fit=crop&w=200&q=80',
               },
             ] satisfies Social[]}
+            className="!justify-start"
           />
         </div>
-
-        <div className="relative mb-6">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-black/40" strokeWidth={2} />
-          <input
-            type="search"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('searchProduct')}
-            className="w-full pl-10 pr-4 py-3 rounded-xl border border-black/12 bg-black/[0.03] text-black placeholder:text-black/50 text-sm focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black/20"
-            aria-label={t('searchProduct')}
-          />
-        </div>
-
-        <div className="space-y-4">
-          {filteredMenu.map((product, index) => (
-            <ProductCard
-              key={product.id}
-              index={index + 1}
-              product={product}
-              onAddToCart={() => openCustomize(product)}
-              onViewDetail={() => setSelectedProduct(product)}
-              addToCartLabel={t('addLoadout')}
-            />
-          ))}
-        </div>
-
-        {filteredMenu.length === 0 && (
-          <p className="text-sm text-black/60 py-8 text-center">
-            Δεν βρέθηκαν προϊόντα.
-          </p>
-        )}
       </main>
 
-      {/* Sticky bottom cart bar */}
       {cart.length > 0 && (
         <div
-          className="fixed bottom-0 left-0 right-0 z-40 p-4 flex items-center justify-between gap-4 bg-white border-t border-black/10 shadow-[0_-4px_20px_rgba(0,0,0,0.08)]"
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+          className="fixed left-4 right-4 z-40 rounded-2xl bg-[#E63533] text-white shadow-2xl border border-white/10 px-4 py-3 flex items-center justify-between gap-3"
+          style={{ bottom: 'calc(5.9rem + env(safe-area-inset-bottom))' }}
         >
-          <div className="flex items-center gap-3 text-black">
-            <ShoppingBag className="w-6 h-6 shrink-0" strokeWidth={2} />
-            <div>
-              <p className="font-bold text-sm text-black">
-                {cart.reduce((s, i) => s + i.quantity, 0)} προϊόντα
-              </p>
-              <p className="text-sm text-black/70">
-                €{(cartTotal + deliveryFee).toFixed(2)} {t('total')}
-                {xpTotal > 0 && (
-                  <span className="ml-1.5 text-amber-600 font-semibold">
-                    · +{xpTotal} XP
-                  </span>
-                )}
-              </p>
-            </div>
+          <div className="min-w-0">
+            <p className="text-sm font-bold">
+              {cart.reduce((s, i) => s + i.quantity, 0)} προϊόντα · €{(cartTotal + deliveryFee).toFixed(2)}
+            </p>
+            <p className="text-[11px] text-white/80">
+              {xpTotal > 0 ? `+${xpTotal} XP` : t('placeOrder')}
+            </p>
           </div>
           <button
             onClick={openCheckout}
-            className="px-6 py-3 rounded-xl font-semibold text-sm bg-black text-white hover:bg-black/90 transition-colors"
+            className="shrink-0 px-4 py-2 rounded-xl bg-black/30 hover:bg-black/45 text-sm font-semibold transition-colors"
           >
-            {t('placeOrder')}
+            Checkout
           </button>
         </div>
       )}
+
+      <nav
+        className={`fixed bottom-0 left-0 right-0 z-50 rounded-t-[2rem] px-4 pt-3 pb-8 transition-colors ${isDarkMode
+          ? 'bg-neutral-950 shadow-[0_-10px_40px_rgba(0,0,0,0.5)]'
+          : 'bg-white border-t border-black/10 shadow-[0_-10px_25px_rgba(0,0,0,0.12)]'
+          }`}
+        style={{ paddingBottom: 'calc(2rem + env(safe-area-inset-bottom))' }}
+      >
+        <div className="grid grid-cols-4 gap-2">
+          <button type="button" className="flex flex-col items-center text-[#E63533] scale-105">
+            <UtensilsCrossed className="w-5 h-5" strokeWidth={2.2} />
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest">Menu</span>
+          </button>
+          <button type="button" className={`flex flex-col items-center ${isDarkMode ? 'text-neutral-500' : 'text-neutral-400'}`}>
+            <Star className="w-5 h-5" strokeWidth={2.2} />
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest">XP Rewards</span>
+          </button>
+          <button type="button" className={`flex flex-col items-center ${isDarkMode ? 'text-neutral-500' : 'text-neutral-400'}`}>
+            <TrendingUp className="w-5 h-5" strokeWidth={2.2} />
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest">Orders</span>
+          </button>
+          <button type="button" className={`flex flex-col items-center ${isDarkMode ? 'text-neutral-500' : 'text-neutral-400'}`}>
+            <User className="w-5 h-5" strokeWidth={2.2} />
+            <span className="mt-1 text-[10px] font-semibold uppercase tracking-widest">Profile</span>
+          </button>
+        </div>
+      </nav>
 
       <CartCheckoutModal
         isOpen={showCheckoutModal}
@@ -434,72 +487,64 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
 };
 
 function ProductCard({
-  index,
   product,
+  isDarkMode,
   onAddToCart,
   onViewDetail,
-  addToCartLabel,
 }: {
-  index: number;
   product: Product;
+  isDarkMode: boolean;
   onAddToCart: () => void;
   onViewDetail: () => void;
-  addToCartLabel: string;
 }) {
   return (
-    <motion.article
+    <motion.div
       layout
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.2 }}
-      className="rounded-2xl border border-black/10 bg-white p-4 shadow-sm"
+      className="flex flex-col gap-3"
     >
-      <div className="flex gap-4">
-        <div className="flex-1 min-w-0 text-left">
-          <button onClick={onViewDetail} className="block w-full group text-left">
-            <h3 className="text-base font-bold text-black group-hover:underline tracking-tight">
-              {index}. {product.name}
-            </h3>
-            {product.description && (
-              <p className="text-sm mt-1 text-black/80 line-clamp-2">
-                {product.description}
-              </p>
-            )}
-          </button>
-          <div className="flex flex-wrap gap-1.5 mt-2">
-            <span className="inline-flex items-center px-2 py-0.5 rounded-md text-[10px] font-medium bg-green-50 text-green-800 border border-green-200">
-              Regional
-            </span>
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onViewDetail}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onViewDetail();
+          }
+        }}
+        className={`relative w-full aspect-square rounded-3xl overflow-hidden text-left cursor-pointer ${isDarkMode ? 'bg-neutral-900' : 'bg-white border border-black/5'}`}
+      >
+        <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
+        {product.xpReward > 0 && (
+          <div className="absolute top-2 left-2 bg-amber-300/90 text-amber-950 px-2 py-0.5 rounded-full flex items-center gap-1 shadow-xl">
+            <Star className="w-3 h-3 fill-current" strokeWidth={2.2} />
+            <span className="text-[8px] font-black uppercase tracking-widest">{product.xpReward} XP</span>
           </div>
-          <div className="flex items-center justify-between mt-3 gap-2">
-            <span className="text-base font-bold text-black">
-              €{product.price.toFixed(2)}
-            </span>
-            {product.xpReward > 0 && (
-              <span className="text-xs font-semibold text-amber-600 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200">
-                +{product.xpReward} XP
-              </span>
-            )}
-          </div>
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onAddToCart();
-            }}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-2.5 rounded-xl border-2 border-black/15 bg-white text-black font-semibold text-sm hover:bg-black/5 transition-colors"
-          >
-            <Plus className="w-5 h-5" strokeWidth={2.5} />
-            <span>{addToCartLabel}</span>
-          </button>
-        </div>
+        )}
         <button
-          onClick={onViewDetail}
-          className="shrink-0 w-20 h-20 rounded-xl overflow-hidden border border-black/10 focus:outline-none focus:ring-2 focus:ring-black/20"
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onAddToCart();
+          }}
+          className="absolute bottom-2 right-2 w-9 h-9 rounded-full bg-[#E63533] text-white flex items-center justify-center shadow-2xl active:scale-90 transition-all"
         >
-          <img src={product.image} alt="" className="w-full h-full object-cover" />
+          <ShoppingCart className="w-4 h-4" strokeWidth={2.4} />
         </button>
       </div>
-    </motion.article>
+      <button onClick={onViewDetail} className="text-left">
+        <div className="flex justify-between items-start mb-1 gap-2">
+          <h4 className="text-sm font-bold tracking-tight leading-tight line-clamp-1">{product.name}</h4>
+          <span className="text-[#E63533] font-extrabold text-sm tracking-tight shrink-0">€{product.price.toFixed(2)}</span>
+        </div>
+        <p className={`text-[11px] leading-tight line-clamp-2 ${isDarkMode ? 'text-neutral-500' : 'text-neutral-600'}`}>
+          {product.description}
+        </p>
+      </button>
+    </motion.div>
   );
 }
 
