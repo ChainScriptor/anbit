@@ -189,6 +189,8 @@
   "inStoreDining": "In-store dining",
   "orderPreparingTitle": "Preparing for you",
   "orderPreparingSubtitle": "Sit back and relax. We're on it!",
+  "orderDeliveredTitle": "Delivered",
+  "orderDeliveredSubtitle": "Enjoy your meal! Let us know if you need anything.",
   "servingToTable": "Serving to table",
   "trackerOrderReceived": "ORDER\nRECEIVED",
   "trackerPreparingFood": "PREPARING\nFOOD",

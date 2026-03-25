@@ -42,6 +42,7 @@ import { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
 import CartCheckoutModal, { type PaymentMethod } from './CartCheckoutModal';
 import OrderSentScreen from './OrderSentScreen';
 import OrderAcceptedScreen, { type OrderReceiptLine } from './OrderAcceptedScreen';
+import OrderDeliveredScreen from './OrderDeliveredScreen';
 import StoreXpWalletView from './StoreXpWalletView';
 
 const STORE_SOFT_BG = '#F8F9FA';
@@ -602,6 +603,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
   const [orderAccepted, setOrderAccepted] = useState(false);
+  const [orderDelivered, setOrderDelivered] = useState(false);
   const [orderRejected, setOrderRejected] = useState(false);
   const [orderPin, setOrderPin] = useState('');
   const [orderXpEarned, setOrderXpEarned] = useState(0);
@@ -677,7 +679,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     setCheckoutError(null);
     setOrderSubmitting(true);
     try {
-      const { orderId } = await api.submitOrder({
+      await api.submitOrder({
         userId: user.id,
         merchantId: partner.id,
         tableNumber: session?.tableNumber ?? 1,
@@ -691,8 +693,32 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         }))
       );
       setAcceptedOrderTotalEur(null);
+
+      // Workaround: POST /Orders doesn't return an orderId.
+      // Fetch the latest matching order for this user+merchant (and table if available).
+      const latestOrderFirstTry = await api.getLatestOrder({
+        userId: user.id,
+        merchantId: session?.merchantId ?? partner.id,
+        tableNumber: session?.tableNumber,
+      });
+
+      let latestOrder = latestOrderFirstTry;
+      if (!latestOrder) {
+        await new Promise((r) => setTimeout(r, 1000));
+        latestOrder = await api.getLatestOrder({
+          userId: user.id,
+          merchantId: session?.merchantId ?? partner.id,
+          tableNumber: session?.tableNumber,
+        });
+      }
+
+      if (!latestOrder) {
+        setCheckoutError('Δεν βρέθηκε η τελευταία παραγγελία. Δοκίμασε ξανά.');
+        return;
+      }
+
       setOrderPin(String(100000 + Math.floor(Math.random() * 900000)));
-      setPendingOrderId(orderId);
+      setPendingOrderId(latestOrder.id);
       setCart([]);
       setShowCheckoutModal(false);
       setOrderSent(true);
@@ -708,18 +734,57 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     if (!pendingOrderId || !orderSent) return;
     const poll = async () => {
       try {
-        const order = await api.getOrder(pendingOrderId);
+        // Backend doesn't implement `GET /api/v1/Orders/{orderId}`.
+        // Workaround: fetch the latest order from `GET /api/v1/Orders` and use its status.
+        const latestOrder = await api.getLatestOrder({
+          userId: user?.id ?? '',
+          merchantId: session?.merchantId ?? partner.id,
+          tableNumber: session?.tableNumber,
+        });
+
+        if (!latestOrder) return;
+        if (pendingOrderId && latestOrder.id !== pendingOrderId) {
+          // If backend order ordering is slightly different, follow the latest matching order.
+          setPendingOrderId(latestOrder.id);
+        }
+
+        const order = latestOrder;
         const status = order.status;
-        const statusNum = typeof status === 'string' ? (status === 'Accepted' ? 2 : status === 'Rejected' ? 3 : 1) : status;
+        const statusNum =
+          typeof status === 'string'
+            ? status === 'Accepted'
+              ? 2
+              : status === 'Rejected'
+                ? 3
+                : status === 'Completed' || status === 'Ready' || status === 'ready'
+                  ? 4
+                  : 1
+            : status;
+
         if (statusNum === 2) {
           if (pollRef.current) clearInterval(pollRef.current);
           pollRef.current = null;
+
+          setOrderDelivered(false);
+          setOrderAccepted(true);
+          setOrderRejected(false);
+
           setOrderXpEarned(order.totalXp ?? 0);
           const tp = order.totalPrice;
-          setAcceptedOrderTotalEur(
-            typeof tp === 'number' && !Number.isNaN(tp) ? tp : null
-          );
-          setOrderAccepted(true);
+          setAcceptedOrderTotalEur(typeof tp === 'number' && !Number.isNaN(tp) ? tp : null);
+        } else if (statusNum === 4) {
+          if (pollRef.current) clearInterval(pollRef.current);
+          pollRef.current = null;
+
+          setOrderAccepted(false);
+          setOrderDelivered(true);
+          setOrderRejected(false);
+          setOrderSent(false);
+
+          setOrderXpEarned(order.totalXp ?? 0);
+          const tp = order.totalPrice;
+          setAcceptedOrderTotalEur(typeof tp === 'number' && !Number.isNaN(tp) ? tp : null);
+
           onOrderComplete?.(order.totalXp ?? 0);
         } else if (statusNum === 3) {
           if (pollRef.current) clearInterval(pollRef.current);
@@ -737,7 +802,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     return () => {
       if (pollRef.current) clearInterval(pollRef.current);
     };
-  }, [pendingOrderId, orderSent, onOrderComplete]);
+  }, [pendingOrderId, orderSent, onOrderComplete, user?.id, partner.id, session?.merchantId, session?.tableNumber]);
 
   const handleOrderAccepted = useCallback(() => {
     setOrderSent(false);
@@ -757,6 +822,9 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   /** Κλείσιμο οθόνης accept· επιστροφή στον κατάλογο του καταστήματος (χωρίς έξοδο από /store). */
   const returnToStoreCatalog = useCallback(() => {
     setOrderAccepted(false);
+    setOrderDelivered(false);
+    setOrderRejected(false);
+    setOrderSent(false);
     setOrderPin('');
     setOrderXpEarned(0);
     setPendingOrderId(null);
@@ -786,6 +854,35 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     }
     return map;
   }, [categories, menu, partner.image]);
+
+  if (orderDelivered) {
+    return (
+      <div className="min-h-screen bg-[#ffffff]">
+        <OrderDeliveredScreen
+          pin={orderPin}
+          tableNumber={session?.tableNumber ?? 1}
+          xpEarned={orderXpEarned}
+          partnerName={partner.name}
+          orderId={pendingOrderId}
+          orderLines={orderReceiptLines}
+          orderTotalEur={acceptedOrderTotalEur}
+          onBack={() => {
+            setOrderDelivered(false);
+            setOrderAccepted(false);
+            setOrderRejected(false);
+            setOrderSent(false);
+            setOrderPin('');
+            setOrderXpEarned(0);
+            setPendingOrderId(null);
+            setOrderReceiptLines(null);
+            setAcceptedOrderTotalEur(null);
+            onBack();
+          }}
+        />
+        <StoreBottomNav activeTab="menu" onMenuPress={returnToStoreCatalog} />
+      </div>
+    );
+  }
 
   if (orderAccepted) {
     return (
@@ -1129,7 +1226,18 @@ function ProductCard({
           </div>
         )}
       </div>
-      <button onClick={onViewDetail} className="text-left">
+      <div
+        role="button"
+        tabIndex={0}
+        onClick={onViewDetail}
+        onKeyDown={(e) => {
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onViewDetail();
+          }
+        }}
+        className="text-left cursor-pointer"
+      >
         <h4 className="product-title text-sm text-[#1b1c1c] mb-0.5 line-clamp-1">{product.name}</h4>
         <p className="text-[11px] text-zinc-500 mb-3 line-clamp-1">
           {product.description}
@@ -1147,7 +1255,7 @@ function ProductCard({
             ADD
           </button>
         </div>
-      </button>
+      </div>
     </motion.div>
   );
 }

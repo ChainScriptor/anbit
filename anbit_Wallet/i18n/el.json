@@ -189,6 +189,8 @@
   "inStoreDining": "Εντός καταστήματος",
   "orderPreparingTitle": "Ετοιμάζουμε για εσάς",
   "orderPreparingSubtitle": "Χαλαρώστε — το χειριζόμαστε εμείς!",
+  "orderDeliveredTitle": "Παραδόθηκε",
+  "orderDeliveredSubtitle": "Καλή σας όρεξη! Πείτε μας αν χρειάζεστε οτιδήποτε.",
   "servingToTable": "Σερβίρισμα στο τραπέζι",
   "trackerOrderReceived": "ΠΑΡΑΛΑΒΗ\nΠΑΡΑΓΓΕΛΙΑΣ",
   "trackerPreparingFood": "ΕΤΟΙΜΑΣΙΑ\nΦΑΓΗΤΟΥ",

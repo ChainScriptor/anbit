@@ -227,9 +227,57 @@ class ApiService {
     return data;
   }
 
-  async submitOrder(payload: unknown): Promise<{ orderId: string }> {
-    const { data } = await apiClient.post<{ orderId: string }>('/Orders', payload);
-    return data;
+  async submitOrder(payload: unknown): Promise<{ success: true }> {
+    // Backend currently returns `Ok()` without any body (no orderId).
+    // We treat 200/201 as success.
+    const resp = await apiClient.post('/Orders', payload);
+    if (resp.status === 200 || resp.status === 201) {
+      return { success: true };
+    }
+    throw new Error(`Unexpected response status: ${resp.status}`);
+  }
+
+  async getLatestOrder(params: {
+    userId: string;
+    merchantId: string;
+    tableNumber?: number;
+  }): Promise<{
+    id: string;
+    userId: string;
+    merchantId: string;
+    tableNumber: number;
+    items: { productId: string; quantity: number; unitPrice?: number; unitXp?: number }[];
+    totalPrice: number;
+    totalXp: number;
+    status: number | string;
+    createdAt: string;
+    updatedAt?: string;
+  } | null> {
+    const { data } = await apiClient.get<any[]>('/Orders', {
+      params: { limit: 100, offset: 0 },
+    });
+
+    const orders = Array.isArray(data) ? data : [];
+
+    const normalizedUserId = params.userId?.toLowerCase?.() ?? '';
+    const normalizedMerchantId = params.merchantId?.toLowerCase?.() ?? '';
+
+    const filtered = orders.filter((o) => {
+      const uid = String(o?.userId ?? '').toLowerCase();
+      const mid = String(o?.merchantId ?? '').toLowerCase();
+      if (uid !== normalizedUserId) return false;
+      if (mid !== normalizedMerchantId) return false;
+      if (typeof params.tableNumber === 'number' && o?.tableNumber !== params.tableNumber) return false;
+      return true;
+    });
+
+    filtered.sort((a, b) => {
+      const at = new Date(a?.createdAt ?? 0).getTime();
+      const bt = new Date(b?.createdAt ?? 0).getTime();
+      return bt - at; // desc
+    });
+
+    return filtered[0] ?? null;
   }
 
   /** GET /Orders/{orderId} — για χρήστη, επιστρέφει την παραγγελία του */
@@ -241,7 +289,7 @@ class ApiService {
     items: { productId: string; quantity: number; unitPrice?: number; unitXp?: number }[];
     totalPrice: number;
     totalXp: number;
-    status: number;
+    status: number | string;
     createdAt: string;
     updatedAt: string;
   }> {
