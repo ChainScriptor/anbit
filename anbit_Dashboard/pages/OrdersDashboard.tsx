@@ -67,11 +67,19 @@ const OrdersDashboard: React.FC = () => {
     try {
       setError(null);
       const data = await api.getOrders();
-      setOrders(
-        data.filter(
-          (o) => o.merchantId && String(o.merchantId).toLowerCase() === String(user.id).toLowerCase(),
-        ),
+      const filtered = data.filter(
+        (o) => o.merchantId && String(o.merchantId).toLowerCase() === String(user.id).toLowerCase(),
       );
+
+      // Backend list might not be sorted. Sort client-side by `createdAt` descending
+      // so new Pending orders appear first in "Incoming".
+      filtered.sort((a, b) => {
+        const at = new Date(a.createdAt ?? 0).getTime();
+        const bt = new Date(b.createdAt ?? 0).getTime();
+        return bt - at;
+      });
+
+      setOrders(filtered);
     } catch (e) {
       console.error(e);
       setError('Αποτυχία φόρτωσης παραγγελιών.');
@@ -352,34 +360,92 @@ const OrdersDashboard: React.FC = () => {
             <span className="text-xs font-bold text-slate-400">{board.inProgressOrders.length} Order</span>
           </div>
           <div className="flex-1 space-y-4 overflow-y-auto pr-1">
-            {board.inProgressOrders.map(({ order, customerName }) => (
-              <article key={order.id} className="rounded-xl border-l-4 border-blue-600 bg-white p-4 shadow-sm">
-                <div className="mb-3 flex items-center justify-between">
-                  <div>
-                    <p className="text-xs font-bold text-blue-600">{getOrderShortNumber(order.id)}</p>
-                    <p className="font-bold text-slate-900">{customerName}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-[10px] font-bold uppercase text-slate-400">Est. Prep</p>
-                    <p className="text-sm font-bold text-slate-800">12 Mins</p>
-                  </div>
-                </div>
-                <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
-                  <div className="h-full w-2/3 rounded-full bg-blue-600" />
-                </div>
-                <div className="mt-4 flex items-center justify-between">
-                  <p className="text-xs text-slate-500">{order.items?.length ?? 0} items</p>
+            {board.inProgressOrders.map(({ order, customerName }) => {
+              const isExpanded = expandedOrderId === order.id;
+              return (
+                <article key={order.id} className="overflow-hidden rounded-xl border-l-4 border-blue-600 bg-white shadow-sm">
                   <button
                     type="button"
-                    onClick={() => handleComplete(order.id)}
-                    disabled={actionOrderId === order.id}
-                    className="rounded-lg bg-blue-600/10 px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-600 hover:text-white disabled:opacity-50"
+                    onClick={() => setExpandedOrderId((prev) => (prev === order.id ? null : order.id))}
+                    className="w-full p-4 text-left"
                   >
-                    Move to Ready
+                    <div className="mb-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-bold text-blue-600">{getOrderShortNumber(order.id)}</p>
+                        <p className="font-bold text-slate-900">{customerName}</p>
+                        <p className="text-xs text-slate-500">
+                          {order.tableNumber ? `Τραπέζι ${order.tableNumber}` : 'Delivery'}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-3">
+                        <div className="text-right">
+                          <p className="text-[10px] font-bold uppercase text-slate-400">Est. Prep</p>
+                          <p className="text-sm font-bold text-slate-800">12 Mins</p>
+                        </div>
+                        <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                      </div>
+                    </div>
+                    <div className="h-1.5 overflow-hidden rounded-full bg-slate-200">
+                      <div className="h-full w-2/3 rounded-full bg-blue-600" />
+                    </div>
+                    <div className="mt-4 flex items-center justify-between">
+                      <p className="text-xs text-slate-500">{order.items?.length ?? 0} items</p>
+                      <span className="text-xs text-slate-400">Click to view details</span>
+                    </div>
                   </button>
-                </div>
-              </article>
-            ))}
+
+                  {isExpanded && (
+                    <div className="space-y-3 border-t border-slate-100 px-4 pb-4">
+                      <div className="pt-3 text-sm text-slate-600">
+                        <div className="flex items-center gap-2">
+                          {order.tableNumber ? <Utensils className="h-4 w-4" /> : <Bike className="h-4 w-4" />}
+                          <span>{order.tableNumber ? `Τραπέζι ${order.tableNumber}` : 'Delivery'}</span>
+                        </div>
+                        <p className="mt-1 font-semibold text-slate-800">
+                          €{Number(order.totalPrice ?? 0).toFixed(2)} · {order.items?.length ?? 0} items · +{order.totalXp ?? 0} XP
+                        </p>
+                      </div>
+
+                      <div className="space-y-2">
+                        {(order.items ?? []).map((item, idx) => {
+                          const product = productsById[item.productId];
+                          const qty = Number(item.quantity ?? 0);
+                          return (
+                            <div key={`${item.productId}-${idx}`} className="flex items-center gap-3">
+                              <img
+                                src={
+                                  product?.imageUrl ||
+                                  'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400'
+                                }
+                                alt=""
+                                className="h-12 w-12 rounded-lg object-cover"
+                              />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-bold text-slate-900">{qty}x {product?.name ?? 'Product'}</p>
+                                <p className="truncate text-xs text-slate-400">
+                                  {product?.description?.slice(0, 42) || 'No modifiers'}
+                                </p>
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+
+                      <div className="flex justify-end pt-1">
+                        <button
+                          type="button"
+                          onClick={() => handleComplete(order.id)}
+                          disabled={actionOrderId === order.id}
+                          className="rounded-lg bg-blue-600/10 px-4 py-2 text-xs font-bold text-blue-600 hover:bg-blue-600 hover:text-white disabled:opacity-50"
+                        >
+                          Move to Ready
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </article>
+              );
+            })}
           </div>
         </div>
 
@@ -401,12 +467,61 @@ const OrdersDashboard: React.FC = () => {
                 <p className="mt-2 text-sm text-slate-400">Orders ready for pickup will appear here.</p>
               </div>
             ) : (
-              board.readyOrders.map(({ order, customerName }) => (
-                <article key={order.id} className="rounded-xl bg-white p-4 shadow-sm">
-                  <p className="text-xs font-bold text-emerald-600">{getOrderShortNumber(order.id)}</p>
-                  <p className="font-bold text-slate-900">{customerName}</p>
-                </article>
-              ))
+              board.readyOrders.map(({ order, customerName }) => {
+                const isExpanded = expandedOrderId === order.id;
+                return (
+                  <article key={order.id} className="overflow-hidden rounded-xl bg-white shadow-sm">
+                    <button
+                      type="button"
+                      onClick={() => setExpandedOrderId((prev) => (prev === order.id ? null : order.id))}
+                      className="flex w-full items-center justify-between p-4 text-left"
+                    >
+                      <div>
+                        <p className="text-xs font-bold text-emerald-600">{getOrderShortNumber(order.id)}</p>
+                        <p className="font-bold text-slate-900">{customerName}</p>
+                        <p className="text-xs text-slate-500">
+                          {order.tableNumber ? `Τραπέζι ${order.tableNumber}` : 'Delivery'} · {order.items?.length ?? 0} items
+                        </p>
+                      </div>
+                      <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+
+                    {isExpanded && (
+                      <div className="space-y-3 border-t border-slate-100 px-4 pb-4">
+                        <div className="pt-3 text-sm text-slate-600">
+                          <p className="font-semibold text-slate-800">
+                            €{Number(order.totalPrice ?? 0).toFixed(2)} · +{order.totalXp ?? 0} XP
+                          </p>
+                        </div>
+                        <div className="space-y-2">
+                          {(order.items ?? []).map((item, idx) => {
+                            const product = productsById[item.productId];
+                            const qty = Number(item.quantity ?? 0);
+                            return (
+                              <div key={`${item.productId}-${idx}`} className="flex items-center gap-3">
+                                <img
+                                  src={
+                                    product?.imageUrl ||
+                                    'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400'
+                                  }
+                                  alt=""
+                                  className="h-12 w-12 rounded-lg object-cover"
+                                />
+                                <div className="min-w-0 flex-1">
+                                  <p className="truncate text-sm font-bold text-slate-900">{qty}x {product?.name ?? 'Product'}</p>
+                                  <p className="truncate text-xs text-slate-400">
+                                    {product?.description?.slice(0, 42) || 'No modifiers'}
+                                  </p>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    )}
+                  </article>
+                );
+              })
             )}
           </div>
         </div>

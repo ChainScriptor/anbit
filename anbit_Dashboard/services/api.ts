@@ -274,7 +274,8 @@ export const api = {
 
   async getOrders(): Promise<ApiOrder[]> {
     const { data } = await apiClient.get<ApiOrder[]>('/Orders', {
-      params: { limit: 50, offset: 0 },
+      // Backend query is paged; limit=100 ensures newer orders are in the first page.
+      params: { limit: 100, offset: 0 },
     });
     return data;
   },
