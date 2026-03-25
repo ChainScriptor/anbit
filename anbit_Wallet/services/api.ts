@@ -11,7 +11,7 @@ export const apiClient: AxiosInstance = axios.create({
 
 // Attach JWT to every request
 apiClient.interceptors.request.use((config) => {
-  const token = localStorage.getItem('anbit_token');
+  const token = localStorage.getItem(ACCESS_TOKEN_KEY);
   if (token) {
     config.headers.Authorization = `Bearer ${token}`;
   }
@@ -19,6 +19,8 @@ apiClient.interceptors.request.use((config) => {
 });
 
 const REFRESH_TOKEN_KEY = 'anbit_refresh_token';
+const ACCESS_TOKEN_KEY = 'anbit_token';
+const USER_KEY = 'anbit_user';
 
 let refreshPromise: Promise<string> | null = null;
 
@@ -38,7 +40,8 @@ async function refreshAccessToken(): Promise<string> {
     throw new Error('Refresh succeeded but token is missing in response.');
   }
 
-  localStorage.setItem('anbit_token', newAccessToken);
+  localStorage.setItem(ACCESS_TOKEN_KEY, newAccessToken);
+  apiClient.defaults.headers.common.Authorization = `Bearer ${newAccessToken}`;
   if (newRefreshToken) {
     localStorage.setItem(REFRESH_TOKEN_KEY, newRefreshToken);
   }
@@ -47,10 +50,17 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 function logoutAndNotify(message: string) {
-  localStorage.removeItem('anbit_token');
-  localStorage.removeItem('anbit_user');
+  localStorage.removeItem(ACCESS_TOKEN_KEY);
+  localStorage.removeItem(USER_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
+  delete apiClient.defaults.headers.common.Authorization;
   window.dispatchEvent(new CustomEvent('anbit:auth:401', { detail: { message } }));
+  if (typeof window !== 'undefined') {
+    const path = window.location.pathname;
+    if (path !== '/login') {
+      window.location.assign('/login');
+    }
+  }
 }
 
 // On 401:
@@ -84,6 +94,7 @@ apiClient.interceptors.response.use(
           });
         }
 
+        // While refreshPromise is in-flight, concurrent 401 requests wait here.
         const newAccessToken = await refreshPromise;
         originalRequest.headers = originalRequest.headers ?? {};
         originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
@@ -145,6 +156,19 @@ export interface UserXpBreakdownItem {
   xp: number;
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ApiOrderListItem {
+  id: string;
+  userId: string;
+  merchantId: string;
+  tableNumber: number;
+  items: { productId: string; quantity: number; unitPrice?: number; unitXp?: number }[];
+  totalPrice: number;
+  totalXp: number;
+  status: number | string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
 function loginResponseToUserData(data: LoginResponse): UserData {
@@ -235,6 +259,16 @@ class ApiService {
       return { success: true };
     }
     throw new Error(`Unexpected response status: ${resp.status}`);
+  }
+
+  async getOrders(params?: { limit?: number; offset?: number }): Promise<ApiOrderListItem[]> {
+    const { data } = await apiClient.get<ApiOrderListItem[]>('/Orders', {
+      params: {
+        limit: params?.limit ?? 100,
+        offset: params?.offset ?? 0,
+      },
+    });
+    return data;
   }
 
   async getLatestOrder(params: {

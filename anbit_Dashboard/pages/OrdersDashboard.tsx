@@ -61,6 +61,9 @@ const OrdersDashboard: React.FC = () => {
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [actionOrderId, setActionOrderId] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedDate, setSelectedDate] = useState('');
+  const [fromTime, setFromTime] = useState('');
+  const [toTime, setToTime] = useState('');
 
   const loadOrders = useCallback(async () => {
     if (!user?.id) return;
@@ -160,12 +163,49 @@ const OrdersDashboard: React.FC = () => {
   );
 
   const visibleOrders = useMemo(() => {
-    if (!searchQuery.trim()) return orders;
-    const q = searchQuery.toLowerCase();
-    return orders.filter((o) =>
-      [o.id, o.userId, o.tableNumber != null ? `table ${o.tableNumber}` : 'delivery'].join(' ').toLowerCase().includes(q),
-    );
-  }, [orders, searchQuery]);
+    const q = searchQuery.trim().toLowerCase();
+
+    const parseMinutes = (hhmm: string): number | null => {
+      if (!hhmm) return null;
+      const [h, m] = hhmm.split(':').map(Number);
+      if (Number.isNaN(h) || Number.isNaN(m)) return null;
+      return h * 60 + m;
+    };
+
+    const fromMinutes = parseMinutes(fromTime);
+    const toMinutes = parseMinutes(toTime);
+
+    return orders.filter((o) => {
+      // Text filter
+      if (q) {
+        const haystack = [o.id, o.userId, o.tableNumber != null ? `table ${o.tableNumber}` : 'delivery']
+          .join(' ')
+          .toLowerCase();
+        if (!haystack.includes(q)) return false;
+      }
+
+      const created = new Date(o.createdAt);
+      if (Number.isNaN(created.getTime())) return false;
+
+      // Day filter
+      if (selectedDate) {
+        const y = created.getFullYear();
+        const m = String(created.getMonth() + 1).padStart(2, '0');
+        const d = String(created.getDate()).padStart(2, '0');
+        const orderDate = `${y}-${m}-${d}`;
+        if (orderDate !== selectedDate) return false;
+      }
+
+      // Time range filter (local time)
+      if (fromMinutes != null || toMinutes != null) {
+        const orderMinutes = created.getHours() * 60 + created.getMinutes();
+        if (fromMinutes != null && orderMinutes < fromMinutes) return false;
+        if (toMinutes != null && orderMinutes > toMinutes) return false;
+      }
+
+      return true;
+    });
+  }, [orders, searchQuery, selectedDate, fromTime, toTime]);
 
   const board = useMemo(() => {
     const mapped = visibleOrders.map((order) => ({
@@ -203,6 +243,42 @@ const OrdersDashboard: React.FC = () => {
                 placeholder="Search orders, customers..."
                 className="w-full rounded-full border-0 bg-white py-2 pl-10 pr-3 text-sm shadow-sm ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-[#E63533]/20"
               />
+            </div>
+            <div className="flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-sm ring-1 ring-slate-200">
+              <input
+                type="date"
+                value={selectedDate}
+                onChange={(e) => setSelectedDate(e.target.value)}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#E63533]/20"
+                title="Filter by day"
+              />
+              <input
+                type="time"
+                value={fromTime}
+                onChange={(e) => setFromTime(e.target.value)}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#E63533]/20"
+                title="From hour"
+              />
+              <span className="text-xs font-semibold text-slate-400">-</span>
+              <input
+                type="time"
+                value={toTime}
+                onChange={(e) => setToTime(e.target.value)}
+                className="rounded-md border border-slate-200 px-2 py-1 text-xs text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#E63533]/20"
+                title="To hour"
+              />
+              <button
+                type="button"
+                onClick={() => {
+                  setSelectedDate('');
+                  setFromTime('');
+                  setToTime('');
+                }}
+                className="rounded-md px-2 py-1 text-[11px] font-bold uppercase tracking-wide text-slate-500 hover:bg-slate-100"
+                title="Clear day/time filters"
+              >
+                Clear
+              </button>
             </div>
             <button className="relative rounded-full p-2 text-slate-500 hover:text-[#E63533]">
               <Bell className="h-5 w-5" />

@@ -33,6 +33,7 @@ interface StoreXpWalletViewProps {
   onBackToMenu: () => void;
   onOpenProfile: () => void;
   onOpenLogin?: () => void;
+  onStoreBalanceChange?: (xp: number | null) => void;
 }
 
 const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
@@ -41,8 +42,10 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
   onBackToMenu,
   onOpenProfile,
   onOpenLogin,
+  onStoreBalanceChange,
 }) => {
   const { t } = useLanguage();
+  const [storeBalanceXp, setStoreBalanceXp] = useState<number | null>(null);
   const [xpRows, setXpRows] = useState<
     { id: string; title: string; subtitle: string; xp: number; variant: 'food' | 'visit' | 'review' }[]
   >([]);
@@ -50,18 +53,39 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
   useEffect(() => {
     if (!user) {
       setXpRows([]);
+      onStoreBalanceChange?.(null);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const items = await api.getUserXP({ limit: 8 });
+        const pageSize = 100;
+        let offset = 0;
+        let allItems: Awaited<ReturnType<typeof api.getUserXP>> = [];
+
+        // Fetch full XP history in pages to compute accurate store balance.
+        while (true) {
+          const page = await api.getUserXP({ limit: pageSize, offset });
+          allItems = allItems.concat(page);
+          if (page.length < pageSize) break;
+          offset += pageSize;
+        }
+
         if (cancelled) return;
-        if (items.length > 0) {
+
+        const storeItems = allItems.filter(
+          (it) => String(it.merchantId).toLowerCase() === String(partner.id).toLowerCase(),
+        );
+        const balance = storeItems.reduce((sum, it) => sum + Number(it.xp ?? 0), 0);
+        const normalizedBalance = Math.max(0, balance);
+        setStoreBalanceXp(normalizedBalance);
+        onStoreBalanceChange?.(normalizedBalance);
+
+        if (storeItems.length > 0) {
           setXpRows(
-            items.map((it, i) => ({
+            storeItems.slice(0, 8).map((it, i) => ({
               id: it.id,
-              title: it.merchantId === partner.id ? partner.name : t('xpWalletActivityOrder'),
+              title: t('xpWalletActivityOrder'),
               subtitle: partner.name,
               xp: it.xp,
               variant: (['food', 'visit', 'review'] as const)[i % 3],
@@ -73,6 +97,9 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
         /* fallback demo */
       }
       if (cancelled) return;
+      const fallbackBalance = user?.storeXP?.[partner.id] ?? null;
+      setStoreBalanceXp(fallbackBalance);
+      onStoreBalanceChange?.(fallbackBalance);
       setXpRows([
         {
           id: 'demo-1',
@@ -100,17 +127,18 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
     return () => {
       cancelled = true;
     };
-  }, [user, partner.id, partner.name, t]);
+  }, [user, partner.id, partner.name, t, onStoreBalanceChange]);
 
-  const displayXp = user ? Math.max(0, user.totalXP) : 0;
-  const level = user?.currentLevel ?? 1;
-  const levelName = user?.currentLevelName ?? t('xpWalletLevelDefault');
-  const rawProgress = user?.levelProgress ?? 0;
-  const progressPct = Math.min(
-    100,
-    Math.max(0, Math.round((rawProgress <= 1 ? rawProgress : rawProgress / 100) * 100))
+  const displayXp = Math.max(
+    0,
+    storeBalanceXp ?? user?.storeXP?.[partner.id] ?? user?.totalXP ?? 0,
   );
-  const toGo = user?.nextLevelXP ?? 100;
+  const LEVEL_STEP_XP = 500;
+  const level = Math.floor(displayXp / LEVEL_STEP_XP) + 1;
+  const levelName = tierLabel(level, t);
+  const remainder = displayXp % LEVEL_STEP_XP;
+  const progressPct = Math.round((remainder / LEVEL_STEP_XP) * 100);
+  const toGo = remainder === 0 ? LEVEL_STEP_XP : LEVEL_STEP_XP - remainder;
 
   const iconWrap = (variant: 'food' | 'visit' | 'review') => {
     const base = 'flex h-12 w-12 shrink-0 items-center justify-center rounded-full';
@@ -236,18 +264,18 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
         <section className="space-y-4">
           <div className="flex items-center justify-between">
             <h3
-              className="text-lg font-bold italic text-white"
+              className="text-lg font-bold italic text-[#0a0a0a]"
               style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
             >
               {t('xpWalletHistory')}
             </h3>
-            <button type="button" className="text-xs font-bold uppercase tracking-widest text-white/40">
+            <button type="button" className="text-xs font-bold uppercase tracking-widest text-[#0a0a0a]/45">
               {t('xpWalletViewAll')}
             </button>
           </div>
           <div className="space-y-3">
             {xpRows.length === 0 && user && (
-              <p className="py-6 text-center text-sm text-white/45">{t('xpWalletNoActivity')}</p>
+              <p className="py-6 text-center text-sm text-[#0a0a0a]/45">{t('xpWalletNoActivity')}</p>
             )}
             {xpRows.map((row) => (
               <div
@@ -274,7 +302,7 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
 
         <section className="space-y-6">
           <h3
-            className="text-lg font-bold italic text-white"
+            className="text-lg font-bold italic text-[#0a0a0a]"
             style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
           >
             {t('xpWalletBadges')}

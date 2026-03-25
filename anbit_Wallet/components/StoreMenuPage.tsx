@@ -166,7 +166,325 @@ function StoreProfilePanel({
 }) {
   const { t } = useLanguage();
   const memberLabel = user?.currentLevel && user.currentLevel >= 15 ? t('xpWalletTierGold') : user ? t('xpWalletTierSilver') : '';
-  const [profileView, setProfileView] = useState<'home' | 'help' | 'settings'>('home');
+  const [profileView, setProfileView] = useState<'home' | 'help' | 'settings' | 'orders' | 'badges'>('home');
+  const [orderHistoryLoading, setOrderHistoryLoading] = useState(false);
+  const [orderHistoryError, setOrderHistoryError] = useState<string | null>(null);
+  const [orderHistoryItems, setOrderHistoryItems] = useState<
+    {
+      id: string;
+      totalPrice: number;
+      totalXp: number;
+      status: number | string;
+      createdAt: string;
+      items: { productId: string; quantity: number }[];
+    }[]
+  >([]);
+
+  useEffect(() => {
+    if (!user || profileView !== 'orders') return;
+    let isActive = true;
+
+    const loadOrderHistory = async () => {
+      setOrderHistoryLoading(true);
+      setOrderHistoryError(null);
+      try {
+        const data = await api.getOrders({ limit: 150, offset: 0 });
+        if (!isActive) return;
+        const filtered = (Array.isArray(data) ? data : [])
+          .filter((order) => String(order.userId).toLowerCase() === String(user.id).toLowerCase())
+          .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime())
+          .slice(0, 30)
+          .map((order) => ({
+            id: order.id,
+            totalPrice: Number(order.totalPrice ?? 0),
+            totalXp: Number(order.totalXp ?? 0),
+            status: order.status,
+            createdAt: order.createdAt,
+            items: Array.isArray(order.items)
+              ? order.items.map((item) => ({
+                  productId: String(item?.productId ?? ''),
+                  quantity: Number(item?.quantity ?? 0),
+                }))
+              : [],
+          }));
+        setOrderHistoryItems(filtered);
+      } catch {
+        if (isActive) {
+          setOrderHistoryError('Δεν ήταν δυνατή η φόρτωση από το server. Εμφάνιση demo history.');
+        }
+      } finally {
+        if (isActive) setOrderHistoryLoading(false);
+      }
+    };
+
+    loadOrderHistory();
+    return () => {
+      isActive = false;
+    };
+  }, [profileView, t, user]);
+
+  const formatOrderStatus = (status: number | string) => {
+    const normalized = String(status ?? '').toLowerCase();
+    if (normalized === '2' || normalized.includes('accepted') || normalized.includes('completed')) {
+      return { label: 'COMPLETED', className: 'border-white/20 bg-white/10 text-white' };
+    }
+    if (normalized === '3' || normalized.includes('rejected') || normalized.includes('cancel')) {
+      return { label: 'CANCELLED', className: 'border-white/15 bg-[#0a0a0a] text-white/70' };
+    }
+    return { label: 'PENDING', className: 'border-white/20 bg-white/10 text-white/85' };
+  };
+
+  const formatOrderDate = (isoDate: string) => {
+    const date = new Date(isoDate);
+    if (Number.isNaN(date.getTime())) return '-';
+    return date.toLocaleString('el-GR', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+  };
+
+  const fallbackHistoryItems = [
+    { id: 'AB-9021', totalPrice: 34, totalXp: 200, status: 'completed', createdAt: '2023-10-24T20:45:00.000Z', items: [{ productId: 'demo-1', quantity: 2 }] },
+    { id: 'AB-8842', totalPrice: 18.5, totalXp: 0, status: 'cancelled', createdAt: '2023-10-18T14:20:00.000Z', items: [{ productId: 'demo-2', quantity: 1 }] },
+    { id: 'AB-8710', totalPrice: 52, totalXp: 350, status: 'completed', createdAt: '2023-10-12T19:15:00.000Z', items: [{ productId: 'demo-3', quantity: 3 }] },
+  ];
+  const visibleOrderHistory = orderHistoryItems.length > 0 ? orderHistoryItems : fallbackHistoryItems;
+
+  if (profileView === 'badges') {
+    return (
+      <div className="min-h-screen bg-[#ffffff] text-[#0a0a0a]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <header className="sticky top-0 z-50 w-full bg-[#0a0a0a] shadow-[0_12px_28px_-12px_rgba(0,0,0,0.38)]">
+          <div className="flex h-16 items-center justify-between px-6">
+            <button
+              type="button"
+              onClick={() => setProfileView('home')}
+              className="text-white/90 transition-opacity hover:opacity-75 active:scale-95"
+              aria-label={t('back')}
+            >
+              <ArrowLeft className="h-6 w-6" strokeWidth={2.2} />
+            </button>
+            <h1 className="text-base font-extrabold tracking-tight text-white sm:text-lg">Badges &amp; Achievements</h1>
+            <button
+              type="button"
+              onClick={onOpenXp}
+              className="text-white/90 transition-opacity hover:opacity-75 active:scale-95"
+              aria-label={t('navXpRewards')}
+            >
+              <Wallet className="h-5 w-5" strokeWidth={2.1} />
+            </button>
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-2xl space-y-8 px-6 pb-[calc(8.35rem+env(safe-area-inset-bottom))] pt-6">
+          <section className="rounded-3xl border border-[#0a0a0a]/10 bg-[#0a0a0a] p-5 text-white">
+            <div className="mb-4 flex items-end justify-between gap-4">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/65">Current Status</p>
+                <h2 className="mt-1 text-3xl font-extrabold tracking-tight">Level 12</h2>
+              </div>
+              <p className="text-sm font-bold text-white/90">2,450 / 3,000 XP</p>
+            </div>
+            <div className="h-3 w-full overflow-hidden rounded-full bg-white/15">
+              <div className="h-full w-[81%] rounded-full bg-white" />
+            </div>
+            <p className="mt-4 text-xs text-white/70">550 XP more to reach Vanguard Tier</p>
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-extrabold tracking-tight text-[#0a0a0a]">Active Badges</h3>
+              <span className="text-[11px] font-bold uppercase tracking-widest text-[#0a0a0a]/55">Recent wins</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { title: 'Early Adopter', icon: <BadgeCheck className="h-7 w-7 text-white" strokeWidth={2.1} /> },
+                { title: '7-Day Streak', icon: <Milestone className="h-7 w-7 text-white" strokeWidth={2.1} /> },
+                { title: 'Elite Member', icon: <Star className="h-7 w-7 fill-white text-white" strokeWidth={2} /> },
+              ].map((badge) => (
+                <article key={badge.title} className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-4 text-center text-white">
+                  <div className="mx-auto mb-3 flex h-14 w-14 items-center justify-center rounded-full border border-white/20 bg-white/10">
+                    {badge.icon}
+                  </div>
+                  <p className="text-[10px] font-bold uppercase tracking-wider">{badge.title}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="text-2xl font-extrabold tracking-tight text-[#0a0a0a]">Dining Milestones</h3>
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                { title: 'Burger Master', subtitle: 'First 5 burger orders', emoji: '🍔' },
+                { title: 'Pizza Lover', subtitle: 'Explored 3 pizzerias', emoji: '🍕' },
+              ].map((milestone) => (
+                <article key={milestone.title} className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-5 text-center text-white">
+                  <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-2xl bg-white/10 text-4xl">
+                    {milestone.emoji}
+                  </div>
+                  <h4 className="text-sm font-bold">{milestone.title}</h4>
+                  <p className="mt-1 text-[10px] text-white/65">{milestone.subtitle}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <h3 className="text-2xl font-extrabold tracking-tight text-[#0a0a0a]">Loyalty Peaks</h3>
+            <div className="space-y-3">
+              <article className="flex items-center gap-4 rounded-3xl border border-white/10 bg-[#0a0a0a] p-4 text-white">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+                  <Milestone className="h-6 w-6" strokeWidth={2.1} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold">Weekly Regular</h4>
+                  <p className="text-xs text-white/65">Ordered every day for a week</p>
+                </div>
+                <BadgeCheck className="h-5 w-5 text-white" strokeWidth={2.3} />
+              </article>
+
+              <article className="flex items-center gap-4 rounded-3xl border border-[#0a0a0a]/10 bg-[#0a0a0a]/70 p-4 text-white/65">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white/10">
+                  <Lock className="h-6 w-6" strokeWidth={2.1} />
+                </div>
+                <div className="flex-1">
+                  <h4 className="text-sm font-bold">Anbit Veteran</h4>
+                  <p className="text-xs text-white/60">Unlock after 1 year of membership</p>
+                </div>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-white/65">Locked</span>
+              </article>
+            </div>
+          </section>
+
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-2xl font-extrabold tracking-tight text-[#0a0a0a]">Social Achievements</h3>
+              <span className="text-[10px] font-bold uppercase tracking-wider text-[#0a0a0a]/55">New challenges</span>
+            </div>
+            <div className="grid grid-cols-3 gap-3">
+              {[
+                { title: 'Friend Referral', icon: <User className="h-5 w-5" strokeWidth={2.1} />, muted: true },
+                { title: 'Reviewer', icon: <CreditCard className="h-5 w-5" strokeWidth={2.1} />, muted: false },
+                { title: 'Socialite', icon: <Star className="h-5 w-5" strokeWidth={2.1} />, muted: true },
+              ].map((item) => (
+                <article
+                  key={item.title}
+                  className={`rounded-2xl border p-3 text-center ${item.muted ? 'border-[#0a0a0a]/10 bg-[#0a0a0a]/65 text-white/55' : 'border-white/10 bg-[#0a0a0a] text-white'}`}
+                >
+                  <div className={`mx-auto mb-2 flex h-11 w-11 items-center justify-center rounded-full ${item.muted ? 'border border-dashed border-white/30' : 'bg-white/10'}`}>
+                    {item.icon}
+                  </div>
+                  <p className="text-[9px] font-bold">{item.title}</p>
+                </article>
+              ))}
+            </div>
+          </section>
+
+          <p className="pb-2 text-center text-xs text-[#0a0a0a]/55">
+            Keep ordering to earn more XP and unlock exclusive digital collectibles.
+          </p>
+        </main>
+      </div>
+    );
+  }
+
+  if (profileView === 'orders') {
+    return (
+      <div className="min-h-screen bg-[#ffffff] text-[#0a0a0a]" style={{ paddingTop: 'env(safe-area-inset-top)' }}>
+        <header className="sticky top-0 z-50 w-full bg-[#0a0a0a] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)]">
+          <div className="flex h-16 items-center justify-between px-6">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={() => setProfileView('home')}
+                className="text-white/95 active:scale-95 transition-transform"
+                aria-label={t('back')}
+              >
+                <ArrowLeft className="h-6 w-6" strokeWidth={2.2} />
+              </button>
+              <h1 className="text-xl font-bold tracking-tight text-white">{t('xpWalletOrderHistory')}</h1>
+            </div>
+            <div className="h-8 w-8 rounded-full bg-white/10" />
+          </div>
+        </header>
+
+        <main className="mx-auto max-w-2xl space-y-6 px-6 pb-[calc(8.35rem+env(safe-area-inset-bottom))] pt-8">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#0a0a0a]/45">MY ACCOUNT</p>
+            <h2 className="mt-2 text-3xl font-extrabold tracking-tight text-[#0a0a0a]">{t('xpWalletOrderHistory')}</h2>
+            <div className="mt-3 h-1 w-12 rounded-full bg-[#0a0a0a]" />
+          </div>
+
+          {orderHistoryLoading ? (
+            <div className="rounded-2xl border border-[#0a0a0a]/12 bg-[#0a0a0a]/[0.03] p-5 text-sm text-[#0a0a0a]/70">
+              Loading orders...
+            </div>
+          ) : null}
+
+          {orderHistoryError ? (
+            <div className="rounded-2xl border border-[#0a0a0a]/15 bg-[#0a0a0a]/[0.03] p-5 text-sm text-[#0a0a0a]/70">
+              {orderHistoryError}
+            </div>
+          ) : null}
+
+          {!orderHistoryLoading && !orderHistoryError && orderHistoryItems.length === 0 ? (
+            <div className="rounded-2xl border border-[#0a0a0a]/15 bg-[#0a0a0a]/[0.03] p-5 text-sm text-[#0a0a0a]/70">
+              Δεν βρέθηκαν παραγγελίες για αυτό το προφίλ. Προβολή demo history.
+            </div>
+          ) : null}
+
+          <section className="space-y-4">
+            {visibleOrderHistory.map((order) => {
+              const statusMeta = formatOrderStatus(order.status);
+              return (
+                <article key={order.id} className="rounded-3xl border border-white/10 bg-[#0a0a0a] p-5 text-white">
+                  <div className="mb-4 flex items-start justify-between gap-4">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-wider text-white/70">
+                        #{String(order.id).slice(0, 8).toUpperCase()}
+                      </p>
+                      <p className="mt-1 text-sm text-white/70">{formatOrderDate(order.createdAt)}</p>
+                    </div>
+                    <span
+                      className={`inline-flex rounded-full border px-3 py-1 text-[10px] font-bold uppercase tracking-wider ${statusMeta.className}`}
+                    >
+                      {statusMeta.label}
+                    </span>
+                  </div>
+
+                  <div className="mb-5 rounded-2xl bg-white/5 px-4 py-3">
+                    <p className="text-sm text-white/85">
+                      {order.items.length > 0
+                        ? `${order.items.reduce((acc, item) => acc + item.quantity, 0)} items in this order`
+                        : 'Order details unavailable'}
+                    </p>
+                  </div>
+
+                  <div className="flex items-end justify-between gap-4">
+                    <div>
+                      <p className="text-3xl font-black leading-none text-white">€{order.totalPrice.toFixed(2)}</p>
+                      <p className="mt-2 text-[11px] font-bold uppercase tracking-wider text-white/65">
+                        {order.totalXp > 0 ? `+${order.totalXp} XP EARNED` : 'NO XP AWARDED'}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="rounded-full border border-white/20 bg-white/10 px-5 py-2 text-xs font-bold uppercase tracking-wider text-white transition-opacity hover:opacity-90"
+                    >
+                      Details
+                    </button>
+                  </div>
+                </article>
+              );
+            })}
+          </section>
+        </main>
+      </div>
+    );
+  }
 
   if (profileView === 'help') {
     return (
@@ -503,7 +821,7 @@ function StoreProfilePanel({
             <section className="grid grid-cols-2 gap-4">
               {[
                 { key: 'settings', title: t('settings'), icon: <Settings className="h-5 w-5 text-white" strokeWidth={2} /> },
-                { key: 'payments', title: t('xpWalletPaymentMethods'), subtitle: 'XP • Card', icon: <CreditCard className="h-5 w-5 text-white" strokeWidth={2} /> },
+                { key: 'badges', title: t('xpWalletBadges'), subtitle: 'XP • Achievements', icon: <CreditCard className="h-5 w-5 text-white" strokeWidth={2} /> },
                 { key: 'orders', title: t('xpWalletOrderHistory'), icon: <History className="h-5 w-5 text-white" strokeWidth={2} /> },
                 { key: 'help', title: t('xpWalletHelp'), icon: <HelpCircle className="h-5 w-5 text-white" strokeWidth={2} /> },
               ].map((item) => (
@@ -513,6 +831,8 @@ function StoreProfilePanel({
                   onClick={() => {
                     if (item.key === 'help') setProfileView('help');
                     if (item.key === 'settings') setProfileView('settings');
+                    if (item.key === 'orders') setProfileView('orders');
+                    if (item.key === 'badges') setProfileView('badges');
                   }}
                   className="group flex flex-col items-start rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 text-left transition-all hover:opacity-95 active:scale-95"
                 >
@@ -623,6 +943,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true;
   });
   const [storeTab, setStoreTab] = useState<StoreNavTab>('menu');
+  const [storeBalanceXp, setStoreBalanceXp] = useState<number | null>(null);
 
   const menu = useMemo(() => partner.menu || [], [partner]);
   const categories = useMemo(() => {
@@ -843,6 +1164,44 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     localStorage.setItem('anbit_store_theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
+  const loadStoreBalanceXp = useCallback(async () => {
+    if (!user?.id) {
+      setStoreBalanceXp(null);
+      return;
+    }
+    try {
+      const pageSize = 100;
+      let offset = 0;
+      let totalForStore = 0;
+
+      while (true) {
+        const page = await api.getUserXP({ limit: pageSize, offset });
+        for (const item of page) {
+          if (String(item.merchantId).toLowerCase() === String(partner.id).toLowerCase()) {
+            totalForStore += Number(item.xp ?? 0);
+          }
+        }
+        if (page.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      setStoreBalanceXp(Math.max(0, totalForStore));
+    } catch {
+      setStoreBalanceXp(user.storeXP?.[partner.id] ?? null);
+    }
+  }, [user?.id, user?.storeXP, partner.id]);
+
+  useEffect(() => {
+    void loadStoreBalanceXp();
+    if (!user?.id) return;
+    const id = setInterval(() => {
+      void loadStoreBalanceXp();
+    }, 10000);
+    return () => clearInterval(id);
+  }, [loadStoreBalanceXp, user?.id]);
+
+  const topStoreXp = Math.max(0, storeBalanceXp ?? user?.storeXP?.[partner.id] ?? user?.totalXP ?? 0);
+
   const categoryLabel = (id: string) => (id === 'All' ? t('all') : id);
   const sectionTitle = activeCategory === 'All' ? partner.name : activeCategory;
   const featuredProduct = menu[0];
@@ -989,7 +1348,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
               <span
                 className={`anbit-wordmark truncate ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-[#e63533] sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(230,53,51,0.45),0_1px_0_rgba(0,0,0,0.25)]`}
               >
-                {Math.max(2450, user.totalXP ?? 0).toLocaleString()} XP
+                {topStoreXp.toLocaleString()} XP
               </span>
             </div>
           ) : (
@@ -1139,6 +1498,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
           onBackToMenu={() => setStoreTab('menu')}
           onOpenProfile={() => setStoreTab('profile')}
           onOpenLogin={onOpenLogin}
+          onStoreBalanceChange={setStoreBalanceXp}
         />
       )}
 
