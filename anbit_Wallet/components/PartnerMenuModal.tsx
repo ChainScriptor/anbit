@@ -13,6 +13,7 @@ import { useOrder } from '../context/OrderContext';
 import { api } from '../services/api';
 import { useLanguage } from '../context/LanguageContext';
 import ProductDetailModal from './ProductDetailModal';
+import AnbitWordmark from './AnbitWordmark';
 
 interface CartItem extends Product {
   quantity: number;
@@ -314,7 +315,7 @@ const PartnerMenuModal: React.FC<PartnerMenuModalProps> = ({ isOpen, onClose, pa
                     <div className="w-8 h-8 rounded-lg bg-red-500 flex items-center justify-center">
                       <span className="text-white font-black text-sm">A</span>
                     </div>
-                    <span className="text-white font-bold text-sm hidden sm:inline">Anbit</span>
+                    <AnbitWordmark className="hidden text-sm text-white sm:inline" />
                   </div>
                   <div className="flex-1 max-w-md mx-4">
                     <div className="flex items-center gap-2 bg-[#1e1e1e] rounded-full px-4 py-2.5 border border-white/5">

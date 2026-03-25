@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, Mail, Lock, User, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import AnbitWordmark from './AnbitWordmark';
 
 interface AuthModalProps {
   isOpen: boolean;
@@ -83,8 +84,18 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
           </button>
 
           <div className="p-6 sm:p-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-anbit-text text-center mb-6">
-              {isRegister ? 'Δημιουργία λογαριασμού Anbit' : 'Σύνδεση στο Anbit'}
+            <h2 className="mb-6 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-center text-xl sm:text-2xl font-bold text-anbit-text">
+              {isRegister ? (
+                <>
+                  <span>Δημιουργία λογαριασμού</span>
+                  <AnbitWordmark className="text-xl sm:text-2xl text-anbit-text" />
+                </>
+              ) : (
+                <>
+                  <span>Σύνδεση στο</span>
+                  <AnbitWordmark className="text-xl sm:text-2xl text-anbit-text" />
+                </>
+              )}
             </h2>
 
             {/* Social login – Wolt style */}
@@ -249,7 +260,8 @@ const AuthModal: React.FC<AuthModalProps> = ({ isOpen, onClose, mode, onSwitchMo
             <p className="text-xs text-anbit-muted text-center leading-relaxed">
               Παρακαλούμε επισκεφτείτε την{' '}
               <a href="#" className="text-anbit-yellow hover:underline">Δήλωση Προστασίας Προσωπικών Δεδομένων</a>
-              {' '}για να μάθετε σχετικά με την επεξεργασία προσωπικών δεδομένων στο Anbit.
+              {' '}για να μάθετε σχετικά με την επεξεργασία προσωπικών δεδομένων στο{' '}
+              <AnbitWordmark className="inline text-xs text-anbit-muted sm:text-sm" />.
             </p>
           </div>
         </motion.div>

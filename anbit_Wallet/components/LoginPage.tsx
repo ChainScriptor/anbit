@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import AnbitWordmark from './AnbitWordmark';
 
 const LoginPage: React.FC = () => {
   const { login } = useAuth();
@@ -50,7 +51,10 @@ const LoginPage: React.FC = () => {
           <div className="space-y-6">
             <div className="flex items-center gap-4">
               <div className="w-10 h-10 bg-anbit-yellow rounded-xl flex items-center justify-center shadow-lg transform -rotate-6"><span className="text-anbit-yellow-content font-black text-xl italic">A</span></div>
-              <h2 className="text-lg lg:text-xl font-black text-white uppercase italic tracking-tighter">Anbit Rewards</h2>
+              <h2 className="flex flex-wrap items-baseline gap-2 text-lg lg:text-xl font-black text-white uppercase italic tracking-tighter">
+                <AnbitWordmark className="text-lg lg:text-xl text-white" />
+                <span>Rewards</span>
+              </h2>
             </div>
             <div className="space-y-2">
               <h1 className="text-4xl lg:text-7xl font-black text-white tracking-tighter uppercase leading-[0.9] italic">Member<br/><span className="text-anbit-yellow">Portal.</span></h1>

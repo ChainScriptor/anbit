@@ -1,6 +1,7 @@
 import React from 'react';
 import { Smartphone, Wifi, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import AnbitWordmark from './AnbitWordmark';
 
 interface PhotoSceneProps {
   className?: string;
@@ -29,8 +30,9 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
               {/* Left Side */}
               <div className="space-y-6 bg-anbit-card/95 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-2xl border border-anbit-border">
                 <div className="space-y-4">
-                  <Badge className="bg-anbit-yellow text-anbit-yellow-content hover:opacity-90">
-                    Εμπειρία ANBIT
+                  <Badge className="inline-flex items-center gap-1.5 bg-anbit-yellow text-anbit-yellow-content hover:opacity-90">
+                    <span>Εμπειρία</span>
+                    <AnbitWordmark className="text-sm text-anbit-yellow-content" />
                   </Badge>
                   <h1 className="text-3xl md:text-4xl lg:text-5xl font-black text-anbit-text leading-tight">
                     Απρόσκοπτη Εστίαση με Τεχνολογία NFC
@@ -105,7 +107,9 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
                     </div>
                     <div>
                       <p className="font-semibold text-anbit-text">Άγγιγμα NFC</p>
-                      <p className="text-xs text-anbit-muted">Βάση τραπεζιού με λογότυπο ANBIT</p>
+                      <p className="text-xs text-anbit-muted">
+                        Βάση τραπεζιού με λογότυπο <AnbitWordmark className="inline text-xs text-anbit-text" />
+                      </p>
                     </div>
                   </div>
                   <p className="text-sm text-anbit-muted">

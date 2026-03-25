@@ -32,6 +32,7 @@ import { GREEK_OFFERS } from './data/greekOffers';
 import ScanPage from './components/ScanPage';
 import StoreFromQrPage from './components/StoreFromQrPage';
 import { api } from './services/api';
+import PwaHomeScreen from './components/PwaHomeScreen';
 
 const App: React.FC = () => {
   const { isAuthenticated, user, isLoading: isAuthLoading, logout } = useAuth();
@@ -163,7 +164,7 @@ const App: React.FC = () => {
     if (!userData || !selectedPartner) return;
     
     setActiveOrderPartner(selectedPartner.name);
-    
+
     setTimeout(async () => {
       setUserData(prev => {
         if (!prev) return null;
@@ -240,7 +241,6 @@ const App: React.FC = () => {
       </div>
     </>
   ) : (
-    /* Αρχική σελίδα για επισκέπτη (χωρίς σύνδεση) */
     <>
       <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6 lg:mb-8">
         <AnbitCafeDemoScene />
@@ -294,7 +294,8 @@ const App: React.FC = () => {
     </>
   );
 
-  const isStoreOrderLink = location.pathname.startsWith('/store/');
+  const isStoreOrderLink =
+    location.pathname.startsWith('/store/') || location.pathname === '/scan';
 
   return (
     <div className="min-h-screen bg-anbit-bg text-anbit-text font-sans antialiased overflow-x-hidden">
@@ -335,6 +336,16 @@ const App: React.FC = () => {
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/dashboard" element={dashboardContent} />
                 <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
+                <Route
+                  path="/scan"
+                  element={
+                    <PwaHomeScreen
+                      totalXP={userData?.totalXP ?? 2450}
+                      isAuthenticated={!!userData}
+                      onOpenLogin={openLogin}
+                    />
+                  }
+                />
                 <Route path="/scan/:shortCode" element={<ScanPage />} />
                 <Route
                   path="/store/:shortCode"

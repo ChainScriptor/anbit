@@ -7,6 +7,7 @@ import { useTheme } from '../context/ThemeContext';
 import { useCity } from '../context/CityContext';
 import LanguageSelector from './LanguageSelector';
 import { CitySelectModal } from './CitySelectModal';
+import AnbitWordmark from './AnbitWordmark';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -48,8 +49,8 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
       <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3">
 
         <div className="flex items-center gap-3 shrink-0">
-          <NavLink to="/dashboard" className="logo-anbit text-3xl sm:text-4xl lg:text-5xl cursor-pointer tracking-tight">
-            Anbit
+          <NavLink to="/dashboard" className="logo-anbit cursor-pointer">
+            <AnbitWordmark className="text-3xl sm:text-4xl lg:text-5xl" />
           </NavLink>
           <button
             type="button"

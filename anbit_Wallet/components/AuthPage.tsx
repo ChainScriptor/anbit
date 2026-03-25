@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Loader2, Eye, EyeOff, Sparkles } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import AnbitWordmark from './AnbitWordmark';
 
 type Mode = 'login' | 'register';
 
@@ -73,7 +74,7 @@ const AuthPage: React.FC = () => {
             <div className="auth-logo-wrap w-11 h-11 rounded-xl flex items-center justify-center -rotate-6">
               <span className="text-anbit-yellow-content font-black text-xl italic">A</span>
             </div>
-            <span className="auth-logo-text text-xl font-black text-anbit-text uppercase italic tracking-tighter">Anbit</span>
+            <AnbitWordmark className="auth-logo-text text-xl text-anbit-text" />
           </div>
 
           <h1 className="text-2xl sm:text-3xl lg:text-4xl font-black text-anbit-text tracking-tight mb-2">

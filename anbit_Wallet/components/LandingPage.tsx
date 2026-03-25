@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import AuthModal from './AuthModal';
+import AnbitWordmark from './AnbitWordmark';
 
 const LandingPage: React.FC = () => {
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -25,7 +26,7 @@ const LandingPage: React.FC = () => {
             <div className="w-9 h-9 bg-anbit-yellow rounded-lg flex items-center justify-center -rotate-6">
               <span className="text-anbit-yellow-content font-black text-lg italic">A</span>
             </div>
-            <span className="font-black text-lg uppercase italic tracking-tighter">Anbit</span>
+            <AnbitWordmark className="text-lg text-anbit-text" />
           </div>
           <div className="flex items-center gap-2 sm:gap-3">
             <button
@@ -100,7 +101,10 @@ const LandingPage: React.FC = () => {
           transition={{ duration: 0.4, delay: 0.1 }}
           className="rounded-2xl border border-anbit-border bg-anbit-card p-6 sm:p-8 lg:p-10 mb-12"
         >
-          <h2 className="text-xl sm:text-2xl font-black text-anbit-text uppercase italic mb-2">Anbit Rewards</h2>
+          <h2 className="mb-2 flex flex-wrap items-baseline gap-2 text-xl sm:text-2xl font-black uppercase italic text-anbit-text">
+            <AnbitWordmark className="text-xl sm:text-2xl text-anbit-text" />
+            <span>Rewards</span>
+          </h2>
           <p className="text-anbit-muted text-sm sm:text-base mb-6 max-w-2xl">
             Μέλος του δικτύου; Κάνε σκανάρισμα στο κατάστημα, συγκέντρωσε πόντους και ξεκλείδωσε rewards.
           </p>

@@ -13,6 +13,7 @@ import {
 } from 'lucide-react';
 import type { WalletCity, WalletCityId } from '../data/walletCities';
 import { WALLET_CITIES } from '../data/walletCities';
+import AnbitWordmark from './AnbitWordmark';
 
 const MERCHANT_AVATARS = [
   'https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?w=128&h=128&fit=crop',
@@ -113,10 +114,10 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
             <aside className="w-full md:w-[420px] md:max-w-[42%] h-[52%] md:h-full bg-black flex flex-col relative z-20 border-b md:border-b-0 md:border-r border-zinc-900 shrink-0">
               <div className="p-6 md:p-8 flex-1 overflow-y-auto min-h-0">
                 <div className="flex items-center gap-3 mb-8 md:mb-12">
-                  <div className="w-10 h-10 bg-[#E63533] rounded-xl flex items-center justify-center shrink-0">
+                  <div className="w-10 h-10 bg-[#0a0a0a] rounded-xl flex items-center justify-center shrink-0">
                     <Building2 className="w-5 h-5 text-white" strokeWidth={2.2} />
                   </div>
-                  <span className="text-white font-semibold text-xl md:text-2xl tracking-tighter">Anbit</span>
+                  <AnbitWordmark className="text-white text-xl md:text-2xl" />
                 </div>
 
                 <div className="mb-8 md:mb-10">
@@ -131,13 +132,13 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                 <div className="space-y-4 mb-8 md:mb-10">
                   <div className="relative group">
                     <div className="absolute inset-y-0 left-4 flex items-center pointer-events-none">
-                      <Search className="w-5 h-5 text-zinc-600 group-focus-within:text-[#E63533] transition-colors" />
+                      <Search className="w-5 h-5 text-zinc-600 group-focus-within:text-[#0a0a0a] transition-colors" />
                     </div>
                     <input
                       type="search"
                       value={search}
                       onChange={(e) => setSearch(e.target.value)}
-                      className="w-full bg-zinc-900 border-none rounded-2xl py-3.5 md:py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:ring-1 focus:ring-[#E63533]/50 transition-all font-medium outline-none"
+                      className="w-full bg-zinc-900 border-none rounded-2xl py-3.5 md:py-4 pl-12 pr-4 text-white placeholder-zinc-600 focus:ring-1 focus:ring-[#0a0a0a]/50 transition-all font-medium outline-none"
                       placeholder="Αναζήτηση πόλης"
                       autoComplete="off"
                     />
@@ -150,8 +151,8 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                   >
                     <div className="flex items-center gap-3">
                       <div className="relative flex items-center justify-center w-9 h-9">
-                        <div className="absolute inset-0 rounded-full bg-[#E63533]/20 city-select-pulse-red" aria-hidden />
-                        <Crosshair className="w-5 h-5 text-[#E63533] relative z-[1]" strokeWidth={2} />
+                        <div className="absolute inset-0 rounded-full bg-[#0a0a0a]/20 city-select-pulse-red" aria-hidden />
+                        <Crosshair className="w-5 h-5 text-[#0a0a0a] relative z-[1]" strokeWidth={2} />
                       </div>
                       <span className="text-zinc-300 font-medium text-sm">
                         {geoLoading ? 'Λήψη τοποθεσίας…' : 'Use Current Location'}
@@ -177,7 +178,7 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                           onClick={() => setDraftId(city.id)}
                           className={`group w-full flex items-center justify-between p-4 rounded-2xl transition-all text-left ${
                             active
-                              ? 'bg-[#E63533]/5 border border-[#E63533]/20'
+                              ? 'bg-[#0a0a0a]/5 border border-[#0a0a0a]/20'
                               : 'hover:bg-zinc-900/50 border border-transparent'
                           }`}
                         >
@@ -185,7 +186,7 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                             <div
                               className={`w-2 h-2 rounded-full shrink-0 ${
                                 active
-                                  ? 'bg-[#E63533] shadow-[0_0_8px_#E63533]'
+                                  ? 'bg-[#0a0a0a] shadow-[0_0_8px_#0a0a0a]'
                                   : 'bg-zinc-800 group-hover:bg-zinc-500'
                               }`}
                             />
@@ -198,7 +199,7 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                             </span>
                           </div>
                           {active ? (
-                            <CheckCircle2 className="w-5 h-5 text-[#E63533] shrink-0" strokeWidth={2} />
+                            <CheckCircle2 className="w-5 h-5 text-[#0a0a0a] shrink-0" strokeWidth={2} />
                           ) : (
                             <ChevronRight className="w-5 h-5 text-zinc-700 opacity-0 group-hover:opacity-100 transition-opacity shrink-0" />
                           )}
@@ -213,7 +214,7 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                 <button
                   type="button"
                   onClick={confirm}
-                  className="w-full bg-[#E63533] hover:bg-red-600 text-white font-bold py-4 md:py-5 rounded-2xl transition-all transform active:scale-[0.98] shadow-[0_20px_40px_rgba(230,53,51,0.2)]"
+                  className="w-full bg-[#0a0a0a] hover:bg-black text-white font-bold py-4 md:py-5 rounded-2xl transition-all transform active:scale-[0.98] shadow-[0_20px_40px_rgba(10,10,10,0.2)]"
                 >
                   Επιβεβαίωση Πόλης
                 </button>
@@ -253,7 +254,7 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                       alt=""
                       className="w-9 h-9 md:w-10 md:h-10 rounded-full border-2 border-zinc-900 object-cover"
                     />
-                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full border-2 border-zinc-900 bg-[#E63533] flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white">
+                    <div className="w-9 h-9 md:w-10 md:h-10 rounded-full border-2 border-zinc-900 bg-[#0a0a0a] flex items-center justify-center text-[9px] md:text-[10px] font-bold text-white">
                       +{extraMerchants}
                     </div>
                   </div>
@@ -270,10 +271,10 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
 
               <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-10">
                 <div className="relative flex flex-col items-center">
-                  <div className="w-8 h-8 bg-[#E63533] rounded-full border-4 border-white/20 shadow-[0_0_20px_#E63533] city-select-pulse-red flex items-center justify-center">
+                  <div className="w-8 h-8 bg-[#0a0a0a] rounded-full border-4 border-white/20 shadow-[0_0_20px_#0a0a0a] city-select-pulse-red flex items-center justify-center">
                     <div className="w-2 h-2 bg-white rounded-full" />
                   </div>
-                  <div className="absolute top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#E63533] px-3 py-1 rounded-full text-white text-[10px] font-bold uppercase tracking-widest">
+                  <div className="absolute top-10 left-1/2 -translate-x-1/2 whitespace-nowrap bg-[#0a0a0a] px-3 py-1 rounded-full text-white text-[10px] font-bold uppercase tracking-widest">
                     Selected
                   </div>
                 </div>
@@ -282,7 +283,7 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
               <div className="absolute top-1/3 right-[18%] md:right-1/4 z-10 hidden sm:block">
                 <button
                   type="button"
-                  className="w-4 h-4 bg-zinc-700/50 rounded-full border-2 border-zinc-600 flex items-center justify-center hover:bg-[#E63533]/50 transition-colors"
+                  className="w-4 h-4 bg-zinc-700/50 rounded-full border-2 border-zinc-600 flex items-center justify-center hover:bg-[#0a0a0a]/50 transition-colors"
                   aria-label="Άλλο σημείο"
                 >
                   <div className="w-1.5 h-1.5 bg-zinc-400 rounded-full" />
@@ -311,7 +312,7 @@ export const CitySelectModal: React.FC<CitySelectModalProps> = ({
                 </div>
                 <button
                   type="button"
-                  className="w-12 h-12 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400 hover:text-[#E63533] transition-all shadow-xl"
+                  className="w-12 h-12 bg-zinc-900/90 backdrop-blur-md border border-zinc-800 rounded-2xl flex items-center justify-center text-zinc-400 hover:text-[#0a0a0a] transition-all shadow-xl"
                   aria-label="Layers"
                 >
                   <Layers className="w-5 h-5" />

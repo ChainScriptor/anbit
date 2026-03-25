@@ -12,10 +12,32 @@ import {
   Pencil,
   Star,
   Wallet,
-  ArrowRight,
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import type { CartItemData } from '../types';
+import AnbitWordmark, { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
+
+const BRAND_RED = '#e63533';
+const BRAND_BLACK = '#0a0a0a';
+
+function CheckoutFooterWave() {
+  return (
+    <div className="pointer-events-none absolute inset-x-0 -top-6 h-6 overflow-hidden" aria-hidden>
+      <svg viewBox="0 0 1200 120" preserveAspectRatio="none" className="h-full w-full">
+        <path
+          d="M0,64 C120,24 240,24 360,64 C480,104 600,104 720,64 C840,24 960,24 1080,64 C1140,84 1170,94 1200,104 L1200,120 L0,120 Z"
+          fill={BRAND_BLACK}
+        />
+        <path
+          d="M0,68 C120,28 240,28 360,68 C480,108 600,108 720,68 C840,28 960,28 1080,68 C1140,88 1170,98 1200,108"
+          fill="none"
+          stroke="rgba(255,255,255,0.85)"
+          strokeWidth="1.75"
+        />
+      </svg>
+    </div>
+  );
+}
 
 export type PaymentMethod = 'cash' | 'card' | 'xp' | 'online';
 
@@ -108,91 +130,113 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-          className="relative w-full max-w-lg bg-black rounded-t-3xl sm:rounded-3xl h-[100dvh] max-h-[100dvh] overflow-hidden flex flex-col shadow-2xl text-white"
+          className="relative flex h-[100dvh] max-h-[100dvh] w-full max-w-lg flex-col overflow-hidden bg-white text-[#0a0a0a] shadow-2xl sm:rounded-3xl"
         >
-          <header className="shrink-0 h-20 px-6 flex items-center justify-between bg-black/80 backdrop-blur-xl border-b border-neutral-900/60">
-            <div className="flex items-center gap-3">
+          <header className="flex h-20 shrink-0 items-center justify-between border-b border-white/10 bg-[#0a0a0a] px-5 sm:px-6">
+            <div className="flex items-center gap-3 sm:gap-4">
               <button
                 type="button"
                 onClick={onClose}
-                className="w-10 h-10 rounded-full bg-neutral-900 flex items-center justify-center active:scale-95 transition-transform"
+                className="flex h-10 w-10 items-center justify-center rounded-full bg-white/[0.12] text-white transition-transform hover:bg-white/20 active:scale-95"
               >
-                <ArrowLeft className="w-5 h-5 text-white" />
+                <ArrowLeft className="h-5 w-5" strokeWidth={2.2} />
               </button>
-              <h1 className="font-extrabold italic tracking-tighter text-3xl text-[#E63533]">Anbit</h1>
+              <AnbitWordmark className="text-white text-[1.65rem] sm:text-[1.85rem]" />
             </div>
-            <div className="text-neutral-400 text-sm font-semibold tracking-widest uppercase">Checkout</div>
+            <div className={`anbit-wordmark ${ANBIT_DISPLAY_FONT} text-base text-white/55 sm:text-lg`}>
+              Checkout
+            </div>
           </header>
 
-          <div className="flex-1 overflow-y-auto px-6 pt-6 pb-44 no-scrollbar">
+          <div className="no-scrollbar flex-1 overflow-y-auto px-5 pb-52 pt-6 sm:px-6 sm:pb-56">
             {step === 2 ? (
-              <div className="rounded-3xl border border-neutral-800 bg-neutral-950 p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Zap className="w-5 h-5 text-amber-500" strokeWidth={2} />
-                  <h3 className="text-base font-bold text-white">{t('earnXpTitle')}</h3>
+              <>
+                <div className="mb-6 rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 text-white shadow-[0_16px_40px_-12px_rgba(10,10,10,0.35)]">
+                  <div className="mb-4 flex items-center gap-2">
+                    <Zap className="h-5 w-5 text-[#e63533]" strokeWidth={2} />
+                    <h3 className="text-base font-bold text-white">{t('earnXpTitle')}</h3>
+                  </div>
+                  <p className="mb-4 text-sm text-white/65">{t('xpEarnShort', { count: totalXp })}</p>
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      onClick={handleSignInToEarn}
+                      className="flex w-full items-center gap-3 rounded-xl border border-white/15 bg-white/5 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/10"
+                    >
+                      <LogIn className="h-5 w-5" strokeWidth={2} />
+                      {t('earnXpSignIn', { count: totalXp })}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleRegisterToEarn}
+                      className="flex w-full items-center gap-3 rounded-xl border border-white/15 bg-white/10 px-4 py-3 text-sm font-semibold text-white transition-colors hover:bg-white/[0.14]"
+                    >
+                      <UserPlus className="h-5 w-5" strokeWidth={2} />
+                      {t('earnXpRegister', { count: totalXp })}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleContinueAsGuest}
+                      className="w-full rounded-xl border border-white/10 bg-black/30 px-4 py-3 text-sm font-medium text-white/80 transition-colors hover:bg-black/45"
+                    >
+                      {t('continueAsGuest')}
+                    </button>
+                  </div>
                 </div>
-                <p className="text-sm text-neutral-300 mb-4">
-                  {t('xpEarnShort', { count: totalXp })}
-                </p>
-                <div className="space-y-2">
-                  <button
-                    type="button"
-                    onClick={handleSignInToEarn}
-                    className="w-full flex items-center gap-3 py-3 px-4 rounded-xl border border-white/10 bg-black text-white font-semibold text-sm hover:bg-neutral-900 transition-colors"
-                  >
-                    <LogIn className="w-5 h-5" strokeWidth={2} />
-                    {t('earnXpSignIn', { count: totalXp })}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleRegisterToEarn}
-                    className="w-full flex items-center gap-3 py-3 px-4 rounded-xl border border-white/10 bg-neutral-900 text-white font-semibold text-sm hover:bg-neutral-800 transition-colors"
-                  >
-                    <UserPlus className="w-5 h-5" strokeWidth={2} />
-                    {t('earnXpRegister', { count: totalXp })}
-                  </button>
-                  <button
-                    type="button"
-                    onClick={handleContinueAsGuest}
-                    className="w-full py-3 px-4 rounded-xl border border-white/10 bg-neutral-950 text-neutral-300 font-medium text-sm hover:bg-neutral-900 transition-colors"
-                  >
-                    {t('continueAsGuest')}
-                  </button>
-                </div>
-              </div>
+                <img
+                  src="/maskot.jpg"
+                  alt=""
+                  decoding="async"
+                  className="mx-auto block h-auto w-full max-h-[min(420px,52vh)] max-w-[min(100%,520px)] object-contain object-bottom sm:max-h-[min(520px,50vh)] sm:max-w-[min(100%,640px)]"
+                />
+              </>
             ) : (
               <>
-                <section className="space-y-6 mb-8">
-                  <div className="flex items-baseline justify-between">
-                    <h2 className="text-5xl font-bold tracking-tight">Your Selection</h2>
-                    <span className="text-neutral-500 text-sm">{itemCount} Items</span>
+                <section className="mb-10 space-y-6">
+                  <div className="flex items-baseline justify-between gap-3">
+                    <h2 className="text-3xl font-bold leading-tight tracking-tight text-[#0a0a0a] sm:text-4xl">
+                      Your Selection
+                    </h2>
+                    <span className="shrink-0 text-sm font-medium text-[#0a0a0a]/50">
+                      {itemCount} {itemCount === 1 ? 'Item' : 'Items'}
+                    </span>
                   </div>
                   <div className="grid gap-4">
                     {cart.map((item, i) => (
-                      <div key={`${item.id}-${i}`} className="flex gap-4 p-4 rounded-3xl bg-neutral-950 border border-neutral-900/60">
-                        <div className="w-20 h-20 rounded-2xl overflow-hidden bg-neutral-900 shrink-0">
-                          <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                      <div
+                        key={`${item.id}-${i}`}
+                        className="group relative flex gap-4 rounded-xl border border-white/10 bg-[#0a0a0a] p-4 text-white shadow-[0_12px_32px_-10px_rgba(10,10,10,0.45)] transition-all sm:gap-5"
+                      >
+                        <div className="h-24 w-24 shrink-0 overflow-hidden rounded-lg bg-white/10">
+                          <img src={item.image} alt={item.name} className="h-full w-full object-cover" />
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h3 className="font-bold text-2xl leading-tight line-clamp-2">{item.name}</h3>
-                            <span className="font-bold text-2xl shrink-0">€{(item.price * item.quantity).toFixed(2)}</span>
+                        <div className="flex min-w-0 flex-grow flex-col justify-between py-0.5">
+                          <div>
+                            <div className="flex items-start justify-between gap-2">
+                              <h3 className="line-clamp-2 text-lg font-bold leading-snug text-white">{item.name}</h3>
+                              <span className="shrink-0 text-lg font-bold text-white">
+                                €{(item.price * item.quantity).toFixed(2)}
+                              </span>
+                            </div>
+                            <p className="mt-1 line-clamp-2 text-sm text-white/55">
+                              {[item.options?.extras, item.comments].filter(Boolean).join(', ') || item.description}
+                            </p>
                           </div>
-                          <p className="text-sm text-neutral-500 line-clamp-1 mt-1">
-                            {[item.options?.extras, item.comments].filter(Boolean).join(', ') || item.description}
-                          </p>
-                          <div className="flex items-center justify-between mt-3">
-                            <div className="flex items-center gap-3 bg-black rounded-full px-3 py-1 border border-neutral-800">
-                              <button type="button" className="text-neutral-400 cursor-not-allowed">
-                                <Minus className="w-3.5 h-3.5" />
+                          <div className="mt-3 flex items-center justify-between">
+                            <div className="flex items-center gap-3 rounded-full border border-white/15 bg-black/40 px-3 py-1">
+                              <button type="button" className="cursor-not-allowed text-white/35" aria-hidden>
+                                <Minus className="h-3.5 w-3.5" />
                               </button>
-                              <span className="text-sm font-bold w-4 text-center">{item.quantity}</span>
-                              <button type="button" className="text-neutral-400 cursor-not-allowed">
-                                <Plus className="w-3.5 h-3.5" />
+                              <span className="w-4 text-center text-sm font-bold text-white">{item.quantity}</span>
+                              <button type="button" className="cursor-not-allowed text-white/35" aria-hidden>
+                                <Plus className="h-3.5 w-3.5" />
                               </button>
                             </div>
-                            <button type="button" className="text-neutral-500 text-xs font-bold uppercase tracking-wider flex items-center gap-1">
-                              <Pencil className="w-3.5 h-3.5" /> Edit
+                            <button
+                              type="button"
+                              className="flex items-center gap-1 text-xs font-bold uppercase tracking-wider text-white/45 transition-colors hover:text-white"
+                            >
+                              <Pencil className="h-3.5 w-3.5" /> Edit
                             </button>
                           </div>
                         </div>
@@ -202,19 +246,29 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                 </section>
 
                 {totalXp > 0 && (
-                  <section className="mb-8">
-                    <div className="relative overflow-hidden rounded-3xl p-5 bg-[#CA8A04] shadow-[0_0_50px_rgba(202,138,4,0.2)]">
-                      <div className="relative flex items-center justify-between gap-3">
-                        <div>
-                          <div className="flex items-center gap-2 mb-1">
-                            <Star className="w-4 h-4 text-black fill-current" />
-                            <span className="font-extrabold text-black uppercase tracking-tight">Anbit Loyalty</span>
+                  <section className="mb-10">
+                    <div className="group relative overflow-hidden rounded-xl border border-[#e63533]/35 bg-[#0a0a0a] p-5 shadow-[0_16px_40px_-12px_rgba(10,10,10,0.4)] sm:p-6">
+                      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#e63533]/15 blur-3xl" aria-hidden />
+                      <div className="relative flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
+                        <div className="min-w-0 space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Star className="h-5 w-5 shrink-0 fill-[#e63533] text-[#e63533] sm:h-6 sm:w-6" strokeWidth={2} />
+                            <span className="flex flex-wrap items-baseline gap-1.5 font-extrabold uppercase tracking-tight text-white">
+                              <AnbitWordmark className="text-sm text-white sm:text-base" /> Loyalty
+                            </span>
                           </div>
-                          <p className="text-black text-lg">
-                            Apply your {totalXp} XP for a <span className="font-bold underline">€{redeemableDiscount.toFixed(0)} discount</span>
+                          <p className="text-base font-medium text-white/85 sm:text-lg">
+                            Apply your {totalXp} XP for a{' '}
+                            <span className="font-bold text-[#e63533] underline decoration-[#e63533]/80">
+                              €{redeemableDiscount.toFixed(0)} discount
+                            </span>
                           </p>
                         </div>
-                        <button type="button" className="bg-black text-white px-6 py-2 rounded-full font-bold text-sm">
+                        <button
+                          type="button"
+                          className="shrink-0 rounded-full px-6 py-3 text-sm font-bold text-white transition-transform active:scale-95"
+                          style={{ backgroundColor: BRAND_RED }}
+                        >
                           Apply
                         </button>
                       </div>
@@ -222,89 +276,91 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                   </section>
                 )}
 
-                <section className="space-y-5 mb-8">
-                  <h2 className="text-4xl font-bold">Payment Method</h2>
+                <section className="mb-10 space-y-6">
+                  <h2 className="text-xl font-bold text-[#0a0a0a] sm:text-2xl">Payment Method</h2>
                   <div className="grid grid-cols-3 gap-3">
                     <label className="cursor-pointer">
                       <input
                         className="peer sr-only"
-                        name="payment"
+                        name="payment-checkout"
                         type="radio"
                         checked={paymentMethod === 'xp'}
                         onChange={() => setPaymentMethod('xp')}
                       />
-                      <div className="h-24 flex flex-col items-center justify-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-950 peer-checked:border-[#CA8A04] peer-checked:bg-neutral-900 transition-all">
-                        <Star className="w-8 h-8 text-[#CA8A04] fill-current" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">XP</span>
+                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-[#e63533] peer-checked:ring-1 peer-checked:ring-[#e63533]/40 peer-checked:[&>span]:text-white sm:h-28">
+                        <Star className="h-9 w-9 fill-[#e63533] text-[#e63533]" strokeWidth={2} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/45">XP</span>
                       </div>
                     </label>
                     <label className="cursor-pointer">
                       <input
                         className="peer sr-only"
-                        name="payment"
+                        name="payment-checkout"
                         type="radio"
                         checked={paymentMethod === 'card'}
                         onChange={() => setPaymentMethod('card')}
                       />
-                      <div className="h-24 flex flex-col items-center justify-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-950 peer-checked:border-[#E63533] peer-checked:bg-neutral-900 transition-all">
-                        <CreditCard className="w-8 h-8" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Card</span>
+                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-[#e63533] peer-checked:ring-1 peer-checked:ring-[#e63533]/40 peer-checked:[&>span]:text-white sm:h-28">
+                        <CreditCard className="h-9 w-9 text-white" strokeWidth={1.75} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/45">Card</span>
                       </div>
                     </label>
                     <label className="cursor-pointer">
                       <input
                         className="peer sr-only"
-                        name="payment"
+                        name="payment-checkout"
                         type="radio"
                         checked={paymentMethod === 'cash'}
                         onChange={() => setPaymentMethod('cash')}
                       />
-                      <div className="h-24 flex flex-col items-center justify-center gap-2 rounded-2xl border border-neutral-800 bg-neutral-950 peer-checked:border-[#E63533] peer-checked:bg-neutral-900 transition-all">
-                        <Wallet className="w-8 h-8" />
-                        <span className="text-[10px] font-bold uppercase tracking-widest text-neutral-400">Wallet</span>
+                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-[#e63533] peer-checked:ring-1 peer-checked:ring-[#e63533]/40 peer-checked:[&>span]:text-white sm:h-28">
+                        <Wallet className="h-9 w-9 text-white" strokeWidth={1.75} />
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-white/45">Wallet</span>
                       </div>
                     </label>
                   </div>
                   <button
                     type="button"
                     onClick={() => setShowTotalDetail((v) => !v)}
-                    className="w-full flex items-center justify-end gap-1 text-neutral-400"
+                    className="flex w-full items-center justify-end gap-1 text-[#0a0a0a]/50"
                   >
                     <span className="text-xs uppercase tracking-widest">{t('total')}</span>
-                    <ChevronDown className={`w-4 h-4 transition-transform ${showTotalDetail ? 'rotate-180' : ''}`} />
+                    <ChevronDown className={`h-4 w-4 transition-transform ${showTotalDetail ? 'rotate-180' : ''}`} />
                   </button>
                 </section>
 
-                <section className="bg-neutral-950/60 p-6 rounded-3xl border border-neutral-900/40 space-y-3">
-                  <div className="flex justify-between text-neutral-400">
+                <section className="mb-6 space-y-4 rounded-xl border border-white/10 bg-[#0a0a0a] p-6 text-white shadow-[0_16px_40px_-12px_rgba(10,10,10,0.4)]">
+                  <div className="flex justify-between font-medium text-white/60">
                     <span>Subtotal</span>
                     <span>€{subtotal.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-neutral-400">
+                  <div className="flex justify-between font-medium text-white/60">
                     <span>Delivery Fee</span>
                     <span>€{deliveryFee.toFixed(2)}</span>
                   </div>
-                  <div className="flex justify-between text-neutral-400">
+                  <div className="flex justify-between font-medium text-white/60">
                     <span>Service Tax (10%)</span>
                     <span>€{serviceTax.toFixed(2)}</span>
                   </div>
                   {showTotalDetail && (
-                    <div className="pt-2 text-sm text-neutral-500 border-t border-neutral-900">
+                    <div className="border-t border-white/10 pt-2 text-sm text-white/50">
                       {cart.map((item, i) => (
                         <div key={`${item.id}-detail-${i}`} className="flex justify-between">
-                          <span>{item.name} x {item.quantity}</span>
+                          <span>
+                            {item.name} x {item.quantity}
+                          </span>
                           <span>€{(item.price * item.quantity).toFixed(2)}</span>
                         </div>
                       ))}
                     </div>
                   )}
-                  <div className="pt-4 border-t border-neutral-900 flex justify-between items-baseline">
-                    <span className="font-bold text-3xl">Total</span>
-                    <span className="font-black text-5xl">€{grandTotal.toFixed(2)}</span>
+                  <div className="flex items-baseline justify-between border-t border-white/15 pt-4">
+                    <span className="text-xl font-bold text-white">Total</span>
+                    <span className="text-3xl font-black tracking-tight text-white">€{grandTotal.toFixed(2)}</span>
                   </div>
                   {totalXp > 0 && (
-                    <div className="flex justify-end items-center gap-1.5 text-[#CA8A04] font-bold text-xs uppercase tracking-wider">
-                      <Star className="w-3.5 h-3.5 fill-current" />
+                    <div className="flex items-center justify-end gap-1.5 text-xs font-bold uppercase tracking-wider text-[#e63533]">
+                      <Star className="h-4 w-4 fill-[#e63533] text-[#e63533]" strokeWidth={2} />
                       <span>+{totalXp} XP earned with this order</span>
                     </div>
                   )}
@@ -314,34 +370,38 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
           </div>
 
           {externalError && (
-            <div className="px-6 pb-2 shrink-0">
-              <p className="text-red-500 text-sm text-center">{externalError}</p>
+            <div className="shrink-0 px-5 pb-2 sm:px-6">
+              <p className="text-center text-sm text-red-600">{externalError}</p>
             </div>
           )}
 
-          <footer className="absolute bottom-0 left-0 right-0 p-6 bg-black/90 backdrop-blur-2xl border-t border-neutral-900/60 z-10">
-            {step === 2 ? (
-              <button
-                type="button"
-                onClick={() => setStep(1)}
-                className="w-full py-4 rounded-2xl font-bold text-base bg-neutral-900 border border-neutral-700 text-white hover:bg-neutral-800 transition-colors"
-              >
-                {t('back')}
-              </button>
-            ) : (
-              <button
-                type="button"
-                onClick={handleConfirm}
-                disabled={paymentMethod === 'online' || isSubmitting}
-                className="w-full bg-[#E63533] text-white py-5 rounded-2xl font-black text-xl tracking-tight uppercase transition-all hover:brightness-110 active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
-              >
-                {isSubmitting ? 'Αποστολή...' : t('confirmOrder')}
-                {!isSubmitting && <ArrowRight className="w-5 h-5" />}
-              </button>
-            )}
-            <p className="text-center text-[10px] text-neutral-600 mt-4 font-bold uppercase tracking-[0.2em]">
-              Secure Checkout • Encrypted by Anbit Core
-            </p>
+          <footer className="absolute bottom-0 left-0 right-0 z-10 border-t border-white/10 bg-[#0a0a0a] backdrop-blur-2xl">
+            <CheckoutFooterWave />
+            <div className="max-w-2xl px-5 pb-6 pt-2 sm:mx-auto sm:px-6">
+              {step === 2 ? (
+                <button
+                  type="button"
+                  onClick={() => setStep(1)}
+                  className="w-full rounded-lg border border-white/15 bg-white/10 py-4 text-base font-bold text-white transition-colors hover:bg-white/[0.14]"
+                >
+                  {t('back')}
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={handleConfirm}
+                  disabled={paymentMethod === 'online' || isSubmitting}
+                  className="w-full rounded-2xl border border-white/20 bg-gradient-to-b from-[#141414] to-[#0a0a0a] px-6 py-4 text-center text-sm font-extrabold uppercase tracking-[0.2em] text-white shadow-[0_12px_36px_-10px_rgba(0,0,0,0.75)] ring-1 ring-white/10 transition-all hover:border-white/30 hover:from-[#181818] hover:shadow-[0_16px_40px_-10px_rgba(0,0,0,0.65)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a] active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-45 disabled:active:scale-100 sm:py-[1.15rem] sm:text-[15px]"
+                >
+                  {isSubmitting ? 'Αποστολή...' : t('confirmOrder')}
+                </button>
+              )}
+              <p className="mt-4 flex flex-wrap items-baseline justify-center gap-x-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-white/40">
+                <span>Secure Checkout • Encrypted by</span>
+                <AnbitWordmark className="text-[10px] tracking-tight text-white/45" />
+                <span>Core</span>
+              </p>
+            </div>
           </footer>
         </motion.div>
       </div>

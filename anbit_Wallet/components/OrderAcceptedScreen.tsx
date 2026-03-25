@@ -1,180 +1,210 @@
-import React, { useEffect, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Check } from 'lucide-react';
+import React from 'react';
+import {
+  Menu,
+  ShoppingBag,
+  Check,
+  UtensilsCrossed,
+  ConciergeBell,
+  Sparkles,
+} from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
+import AnbitWordmark, { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
+
+const BRAND_RED = '#e63533';
+const XP_GOLD = '#ca8a04';
+
+/** Όλο το κείμενο: Omnes Bold Italic (AnbitFont / public/fonts/OmnesBoldItalic.ttf) */
+const ORDER_BODY_FONT =
+  'font-anbit font-normal not-italic normal-case tracking-tight [font-synthesis:none] leading-normal';
+
+export type OrderReceiptLine = {
+  name: string;
+  quantity: number;
+  unitPrice: number;
+};
+
+function formatOrderRef(orderId: string | null | undefined): string {
+  if (!orderId?.trim()) return '—';
+  const compact = orderId.replace(/[^a-zA-Z0-9]/g, '').toUpperCase();
+  const core = (compact.slice(0, 8) || orderId.slice(0, 8)).toUpperCase();
+  return `AB-${core.slice(0, 6)}`;
+}
 
 interface OrderAcceptedScreenProps {
   pin: string;
   tableNumber?: number;
   xpEarned?: number;
+  partnerName: string;
+  orderId: string | null;
+  orderLines: OrderReceiptLine[] | null;
+  /** Από API· αν λείπει, υπολογίζεται από τις γραμμές */
+  orderTotalEur: number | null;
   onBack: () => void;
-}
-
-const CONFETTI_COLORS = ['#2563eb', '#dc2626', '#16a34a', '#e63533', '#9333ea'];
-
-function Confetti() {
-  const [pieces] = useState(() =>
-    Array.from({ length: 24 }, (_, i) => ({
-      id: i,
-      left: Math.random() * 100 - 5,
-      delay: Math.random() * 0.5,
-      color: CONFETTI_COLORS[i % CONFETTI_COLORS.length],
-      size: 6 + Math.random() * 6,
-      rotation: Math.random() * 360,
-    }))
-  );
-
-  return (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-      {pieces.map((p) => (
-        <motion.div
-          key={p.id}
-          className="absolute rounded-sm"
-          style={{
-            left: `${p.left}%`,
-            top: '-10%',
-            width: p.size,
-            height: p.size,
-            backgroundColor: p.color,
-            rotate: p.rotation,
-          }}
-          initial={{ y: 0, opacity: 1 }}
-          animate={{
-            y: '120vh',
-            opacity: 0,
-            rotate: p.rotation + 360,
-          }}
-          transition={{
-            duration: 2.5 + Math.random(),
-            delay: p.delay,
-            ease: 'easeIn',
-          }}
-        />
-      ))}
-    </div>
-  );
 }
 
 const OrderAcceptedScreen: React.FC<OrderAcceptedScreenProps> = ({
   pin,
   tableNumber = 1,
   xpEarned = 0,
+  partnerName,
+  orderId,
+  orderLines,
+  orderTotalEur,
   onBack,
 }) => {
   const { t } = useLanguage();
-  const [showConfetti, setShowConfetti] = useState(true);
-
-  useEffect(() => {
-    const t = setTimeout(() => setShowConfetti(false), 3000);
-    return () => clearTimeout(t);
-  }, []);
-
-  const pinDigits = pin.replace(/\D/g, '').slice(0, 6).split('');
-  const pinPart1 = pinDigits.slice(0, 3);
-  const pinPart2 = pinDigits.slice(3, 6);
+  const lines = orderLines ?? [];
+  const sumLines = lines.reduce((s, l) => s + l.unitPrice * l.quantity, 0);
+  const total = orderTotalEur != null && !Number.isNaN(orderTotalEur) ? orderTotalEur : sumLines;
+  const pinDigits = pin.replace(/\D/g, '').slice(0, 6);
+  const pinFormatted =
+    pinDigits.length >= 6 ? `${pinDigits.slice(0, 3)}-${pinDigits.slice(3, 6)}` : pin || '—';
 
   return (
     <div
-      className="fixed inset-0 z-[310] bg-white flex flex-col items-center overflow-y-auto"
-      style={{
-        paddingTop: 'env(safe-area-inset-top)',
-        paddingBottom: 'env(safe-area-inset-bottom)',
-      }}
+      className={`flex min-h-screen flex-col bg-[#ffffff] text-[#0a0a0a] antialiased ${ORDER_BODY_FONT}`}
+      style={{ paddingTop: 'env(safe-area-inset-top)' }}
     >
-      {showConfetti && <Confetti />}
+      <header className="sticky top-0 z-40 flex h-16 w-full shrink-0 items-center border-b border-white/10 bg-[#0a0a0a] px-5 shadow-[0_8px_24px_-8px_rgba(0,0,0,0.35)] sm:px-6">
+        <div className="flex w-full items-center justify-between">
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-10 w-10 items-center justify-center text-white/85 transition-transform active:scale-95"
+            aria-label={t('back')}
+          >
+            <Menu className="h-6 w-6" strokeWidth={2} />
+          </button>
+          <AnbitWordmark as="span" className="text-2xl text-white sm:text-[1.65rem]" />
+          <span className="flex h-10 w-10 items-center justify-center text-white/85" aria-hidden>
+            <ShoppingBag className="h-6 w-6" strokeWidth={2} />
+          </span>
+        </div>
+      </header>
 
-      <div className="flex-1 flex flex-col items-center justify-center px-6 py-8 text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', damping: 14, stiffness: 200 }}
-          className="w-24 h-24 rounded-full bg-green-500 flex items-center justify-center mb-6 shadow-lg"
-        >
-          <Check className="w-12 h-12 text-white" strokeWidth={3} />
-        </motion.div>
-        <h1 className="text-xl font-bold text-black mb-6 max-w-[300px]">
-          {t('thankYouOrderReceived')}
-        </h1>
-
-        {xpEarned > 0 && (
-          <div className="mb-6 px-4 py-3 rounded-xl bg-amber-50 border border-amber-200">
-            <p className="text-sm font-medium text-amber-800">{t('pointsEarnedWithOrder')}</p>
-            <p className="text-2xl font-bold text-amber-700 mt-0.5">+{xpEarned} XP</p>
+      <main className="mx-auto w-full max-w-2xl flex-1 space-y-8 overflow-y-auto px-6 pb-[calc(8.35rem+env(safe-area-inset-bottom))] pt-6">
+        <section className="space-y-4 py-2 text-center">
+          <div
+            className={`inline-block rounded-full border border-white/10 bg-[#0a0a0a] px-4 py-1.5 text-[10px] font-bold uppercase tracking-widest text-white/50 ${ORDER_BODY_FONT}`}
+          >
+            {t('inStoreDining')}
           </div>
-        )}
-
-        <div className="mb-2">
-          <p className="text-sm font-semibold text-black/80 mb-2">{t('pin')}</p>
-          <div className="flex justify-center items-center gap-1">
-            {pinPart1.map((d, i) => (
-              <span
-                key={`a-${i}`}
-                className="w-10 h-12 rounded-lg border-2 border-gray-300 flex items-center justify-center text-lg font-bold text-black bg-gray-50"
-              >
-                {d}
-              </span>
-            ))}
-            <span className="text-gray-400 font-bold mx-1">-</span>
-            {pinPart2.map((d, i) => (
-              <span
-                key={`b-${i}`}
-                className="w-10 h-12 rounded-lg border-2 border-gray-300 flex items-center justify-center text-lg font-bold text-black bg-gray-50"
-              >
-                {d}
-              </span>
-            ))}
-          </div>
-          <p className="text-xs text-black/50 mt-2 max-w-[260px] mx-auto">
-            {t('pinHint')}
+          <p
+            className={`anbit-wordmark ${ANBIT_DISPLAY_FONT} px-1 text-3xl tracking-tight text-[#0a0a0a] sm:text-4xl`}
+          >
+            {t('orderPreparingTitle')}
           </p>
-        </div>
+          <p className="text-base font-medium text-[#0a0a0a]/60">{t('orderPreparingSubtitle')}</p>
+        </section>
 
-        <div className="w-full max-w-[320px] mt-8 text-left">
-          <div className="flex items-center justify-between mb-4">
-            <h2 className="text-base font-bold text-black">{t('orderTimeline')}</h2>
-            <span className="text-xs font-medium px-2 py-0.5 rounded bg-red-100 text-red-700">
-              → {tableNumber}
-            </span>
-          </div>
-          <div className="space-y-0">
-            {[
-              { step: t('stepYouCreated'), label: 'Created' },
-              { step: t('stepStaffSeen'), label: 'Seen' },
-              { step: t('stepStaffAccepted'), label: 'Accepted' },
-            ].map((item, i) => (
-              <div key={i} className="flex items-center gap-3 py-2">
-                <div className="w-8 h-8 rounded-full bg-[#2563eb] flex items-center justify-center text-white text-sm font-bold shrink-0">
-                  {i + 1}
-                </div>
-                <div className="flex-1">
-                  <p className="text-xs text-black/50">{t('minuteAgo')}</p>
-                  <p className="text-sm font-medium text-black">{item.step}</p>
-                </div>
-                <span className="text-xs text-black/40 bg-gray-100 px-2 py-1 rounded">
-                  {item.label}
-                </span>
+        <section className="flex flex-col items-center justify-center space-y-2 rounded-2xl border border-white/10 bg-[#0a0a0a] p-8">
+          <p className="text-xs font-bold uppercase tracking-[0.3em] text-white/45">
+            {t('servingToTable')}
+          </p>
+          <p className="text-5xl font-black tracking-tighter text-white sm:text-6xl">T-{tableNumber}</p>
+          <div className="mt-2 h-1 w-12 rounded-full" style={{ backgroundColor: BRAND_RED }} />
+          <p className="mt-4 text-xs text-white/40">
+            {t('pin')}:{' '}
+            <span className="text-sm font-bold tracking-wider text-white/90">{pinFormatted}</span>
+          </p>
+          <p className="max-w-xs text-[11px] leading-snug text-white/35">{t('pinHint')}</p>
+        </section>
+
+        <section className="relative px-2 py-6 sm:px-4">
+          <div className="relative mx-auto flex max-w-sm justify-between">
+            <div
+              className="absolute left-0 top-5 z-0 h-0.5 w-full rounded-full bg-[#0a0a0a]/12"
+              aria-hidden
+            />
+            <div
+              className="absolute left-0 top-5 z-0 h-0.5 w-1/2 rounded-full"
+              style={{ backgroundColor: BRAND_RED }}
+              aria-hidden
+            />
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#ffffff] shadow-sm"
+                style={{ backgroundColor: BRAND_RED }}
+              >
+                <Check className="h-4 w-4 text-white" strokeWidth={3} />
               </div>
-            ))}
+              <span className="max-w-[4.5rem] whitespace-pre-line text-center text-[10px] font-bold uppercase leading-tight tracking-tight text-[#0a0a0a]/45">
+                {t('trackerOrderReceived')}
+              </span>
+            </div>
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <div
+                className="flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#ffffff] shadow-[0_0_15px_rgba(230,53,51,0.45)]"
+                style={{ backgroundColor: BRAND_RED }}
+              >
+                <UtensilsCrossed className="h-4 w-4 text-white" strokeWidth={2.5} />
+              </div>
+              <span className="max-w-[4.5rem] whitespace-pre-line text-center text-[10px] font-bold uppercase leading-tight tracking-tight text-[#0a0a0a]">
+                {t('trackerPreparingFood')}
+              </span>
+            </div>
+            <div className="relative z-10 flex flex-col items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#ffffff] bg-[#0a0a0a]/35 shadow-sm">
+                <ConciergeBell className="h-4 w-4 text-white/35" strokeWidth={2} />
+              </div>
+              <span className="max-w-[4.5rem] whitespace-pre-line text-center text-[10px] font-bold uppercase leading-tight tracking-tight text-[#0a0a0a]/40">
+                {t('trackerBeingServed')}
+              </span>
+            </div>
           </div>
-        </div>
-      </div>
+        </section>
 
-      <div className="w-full max-w-lg px-4 pb-6 flex gap-3">
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex-1 py-3.5 rounded-xl font-semibold text-sm bg-[#2563eb] text-white hover:bg-[#1d4ed8] transition-colors"
-        >
-          {t('back').toUpperCase()}
-        </button>
-        <button
-          type="button"
-          onClick={onBack}
-          className="flex-1 py-3.5 rounded-xl font-semibold text-sm bg-red-500 text-white hover:bg-red-600 transition-colors"
-        >
-          {t('close').toUpperCase()}
-        </button>
-      </div>
+        <section className="space-y-6 rounded-2xl border border-white/10 bg-[#0a0a0a] p-6">
+          <div className="flex items-start justify-between gap-4">
+            <div className="min-w-0">
+              <p className="text-lg font-bold text-white">{t('orderNumberShort', { id: formatOrderRef(orderId) })}</p>
+              <p className="mt-1 text-sm text-white/45">{t('orderAcceptedDiningAt', { name: partnerName })}</p>
+            </div>
+            <div className="shrink-0 text-right">
+              <p className="text-xs font-bold uppercase tracking-widest text-white/45">{t('total')}</p>
+              <p className="text-xl font-black text-white">€{total.toFixed(2)}</p>
+              {xpEarned > 0 && (
+                <div className="mt-1 flex items-center justify-end gap-1" style={{ color: XP_GOLD }}>
+                  <Sparkles className="h-3.5 w-3.5 shrink-0" strokeWidth={2} />
+                  <span className="text-[10px] font-bold uppercase tracking-wider">
+                    +{xpEarned} {t('xpEarnedShort')}
+                  </span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="border-t border-white/10 pt-4">
+            <p className="mb-4 text-[10px] font-bold uppercase tracking-widest text-white/45">
+              {t('yourSelection')}
+            </p>
+            <div className="space-y-3">
+              {lines.length === 0 ? (
+                <p className="text-sm text-white/40">{t('orderItemsUnavailable')}</p>
+              ) : (
+                lines.map((line, i) => (
+                  <div key={`${line.name}-${i}`} className="flex items-center justify-between gap-3 text-sm">
+                    <span className="min-w-0 text-white/80">
+                      {line.quantity}× {line.name}
+                    </span>
+                    <span className="shrink-0 font-medium text-white">
+                      €{(line.unitPrice * line.quantity).toFixed(2)}
+                    </span>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </section>
+
+        <div className="py-2 text-center">
+          <button
+            type="button"
+            className="text-xs font-bold uppercase tracking-[0.2em] text-[#0a0a0a]/45 transition-colors hover:text-[#0a0a0a]"
+          >
+            {t('needHelpAlertStaff')}
+          </button>
+        </div>
+      </main>
     </div>
   );
 };

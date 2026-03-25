@@ -3,6 +3,7 @@ import { NavLink } from 'react-router-dom';
 import { cn } from '../../lib/utils';
 import { Linkedin, Twitter } from 'lucide-react';
 import { DASHBOARD_URL } from '../../constants';
+import AnbitWordmark from '../AnbitWordmark';
 
 const tape = (
   <svg xmlns="http://www.w3.org/2000/svg" width="95" height="80" viewBox="0 0 95 80" fill="none">
@@ -35,12 +36,15 @@ export const FooterTaped: React.FC<FooterTapedProps> = ({ t, className }) => {
           <div className="flex flex-col items-start gap-2">
             <NavLink
               to="/dashboard"
-              className="flex flex-row gap-2 items-center justify-start text-xl md:text-2xl font-bold tracking-tighter italic text-anbit-text hover:opacity-90"
+              className="flex flex-row items-baseline justify-start gap-2 text-xl font-bold tracking-tighter text-anbit-text hover:opacity-90 md:text-2xl"
             >
-              <div className="w-8 h-8 bg-anbit-yellow rounded-lg flex items-center justify-center flex-shrink-0">
-                <span className="text-anbit-yellow-content font-black text-lg italic">A</span>
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-lg bg-anbit-yellow">
+                <span className="text-lg font-black italic text-anbit-yellow-content">A</span>
               </div>
-              Anbit Wallet
+              <span className="flex items-baseline gap-1.5">
+                <AnbitWordmark className="text-xl text-anbit-text md:text-2xl" />
+                <span>Wallet</span>
+              </span>
             </NavLink>
             <p className="text-anbit-muted font-medium text-sm max-w-md">
               Loyalty rewards & partner network. Earn points, unlock rewards, explore stores.
@@ -105,8 +109,10 @@ export const FooterTaped: React.FC<FooterTapedProps> = ({ t, className }) => {
 
       <div className="my-4 px-4 md:px-8 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 text-sm text-anbit-muted">
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-8 items-start sm:items-center">
-          <p className="whitespace-nowrap text-[10px] font-medium tracking-wide">
-            ©{currentYear} Anbit Wallet. All rights reserved.
+          <p className="flex flex-wrap items-baseline gap-x-1 text-[10px] font-medium tracking-wide">
+            <span>©{currentYear}</span>
+            <AnbitWordmark className="text-[10px] text-anbit-muted" />
+            <span>Wallet. All rights reserved.</span>
           </p>
           <div className="flex flex-row gap-4 text-[10px] font-medium tracking-wide">
             <a href="#" className="hover:text-anbit-yellow transition-colors">

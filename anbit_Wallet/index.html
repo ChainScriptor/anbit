@@ -17,10 +17,13 @@
 
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700;1,800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
     <script>
       tailwind.config = {
         theme: {
@@ -33,7 +36,7 @@
               'anbit-yellow-content': 'var(--anbit-yellow-content)',
               'anbit-muted': 'var(--anbit-muted)',
               'anbit-text': 'var(--anbit-text)',
-              'brand-red': '#E63533',
+              'brand-red': '#0a0a0a',
               'brand-black': '#333333',
             },
             fontFamily: {
@@ -43,6 +46,7 @@
               greek: ['Noto Sans Display', 'Inter', 'sans-serif'],
               logo: ['Great Vibes', 'cursive'],
               logoBold: ['Poppins', 'sans-serif'],
+              anbit: ['AnbitFont', 'Inter', 'sans-serif'],
             },
           },
         },
@@ -54,6 +58,11 @@
         --sar: env(safe-area-inset-right);
         --sab: env(safe-area-inset-bottom);
         --sal: env(safe-area-inset-left);
+        --font-body: 'Inter', sans-serif;
+        --font-header: 'Varela Round', sans-serif;
+        --brand-red: #0a0a0a;
+        --xp-gold: #CA8A04;
+        --store-soft-bg: #F8F9FA;
       }
 
       /* Dark theme (default) – brand red accent #E63533 (ίδιο με light) */
@@ -62,7 +71,7 @@
         --anbit-bg: #0a0a0a;
         --anbit-card: #121214;
         --anbit-border: #27272a;
-        --anbit-yellow: #e63533;
+        --anbit-yellow: #0a0a0a;
         --anbit-yellow-content: #ffffff;
         --anbit-muted: #71717a;
         --anbit-text: #ffffff;
@@ -75,7 +84,7 @@
         --anbit-bg: #FFFFFF;
         --anbit-card: #FFFFFF;
         --anbit-border: rgba(0, 0, 0, 0.08);
-        --anbit-yellow: #e63533;
+        --anbit-yellow: #0a0a0a;
         --anbit-yellow-content: #ffffff;
         --anbit-muted: #666666;
         --anbit-text: #333333;
@@ -86,6 +95,7 @@
       body {
         background-color: var(--anbit-bg);
         color: var(--anbit-text);
+        font-family: var(--font-body);
         font-size: 14px;
         -webkit-tap-highlight-color: transparent;
         overscroll-behavior-y: contain;
@@ -136,7 +146,7 @@
 
       /* Fixed navbar: solid red background on scroll only in light mode (Pax-style) */
       [data-theme="light"] .glass-nav.navbar-scrolled {
-        background: #e63533;
+        background: #0a0a0a;
         border-bottom-color: rgba(255, 255, 255, 0.2);
         color: #fff;
       }
@@ -198,9 +208,12 @@
 
       /* Logo Anbit – χρώμα ανά theme */
       .logo-anbit {
-        font-family: 'Poppins', sans-serif;
-        font-weight: 800;
-        letter-spacing: -0.03em;
+        font-family: 'AnbitFont', 'Inter', sans-serif;
+        font-weight: normal;
+        font-style: normal;
+        font-synthesis: none;
+        letter-spacing: -0.02em;
+        line-height: 1;
         transition: color 0.2s ease;
       }
       [data-theme="dark"] .logo-anbit {
@@ -220,6 +233,14 @@
       }
       [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit:hover {
         color: rgba(255, 255, 255, 0.9);
+      }
+
+      /* Λογότυπο Anbit: πάντα Omnes (AnbitFont) — υπερισχύει [data-theme] h1/h2 (Oswald κ.λπ.) */
+      .anbit-wordmark {
+        font-family: 'AnbitFont', 'Inter', sans-serif !important;
+        font-weight: normal !important;
+        font-style: normal !important;
+        font-synthesis: none;
       }
 
       .no-scrollbar {
@@ -275,6 +296,12 @@
         box-shadow: 0 0 20px rgba(230, 53, 51, 0.35);
       }
       .auth-logo-text {
+        font-family: 'AnbitFont', 'Inter', sans-serif;
+        font-weight: normal;
+        font-style: normal;
+        font-synthesis: none;
+        letter-spacing: -0.02em;
+        line-height: 1;
         text-shadow: 0 0 20px rgba(202, 138, 4, 0.2);
       }
       [data-theme="light"] .auth-logo-text {
@@ -367,6 +394,30 @@
         transform: translateY(-2px);
       }
 
+      /* Store-only Wolt style */
+      .store-wolt {
+        font-family: var(--font-body);
+        background: var(--store-soft-bg);
+        color: #1b1c1c;
+      }
+      .store-wolt h1,
+      .store-wolt h2,
+      .store-wolt h3,
+      .store-wolt .product-title,
+      .store-wolt .primary-button,
+      .store-wolt .category-label,
+      .store-wolt .xp-badge {
+        font-family: var(--font-header);
+        font-weight: 700;
+        letter-spacing: -0.02em;
+      }
+      .store-wolt .rounded-premium {
+        border-radius: 20px;
+      }
+      .store-wolt .rounded-premium-sm {
+        border-radius: 16px;
+      }
+
       .glass-nav {
         background: var(--anbit-nav-bg);
         backdrop-filter: blur(12px);
@@ -391,6 +442,21 @@
       }
       .city-select-pulse-red {
         animation: city-select-pulse-red 2s ease-out infinite;
+      }
+
+      /* Order waiting — concentric pulse (brand black on white) */
+      @keyframes order-sent-pulse {
+        0% {
+          transform: scale(0.8);
+          opacity: 0.45;
+        }
+        100% {
+          transform: scale(2.5);
+          opacity: 0;
+        }
+      }
+      .order-sent-pulse-ring {
+        animation: order-sent-pulse 2s infinite ease-out;
       }
       .dark-city-map-vignette {
         background: radial-gradient(circle at center, transparent 0%, #000000 100%);

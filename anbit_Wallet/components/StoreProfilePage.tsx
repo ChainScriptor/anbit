@@ -15,6 +15,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedSocialLinks, { type Social } from './ui/social-links';
+import AnbitWordmark from './AnbitWordmark';
 
 interface LocationState {
   partner?: Partner;
@@ -99,8 +100,9 @@ const StoreProfilePage: React.FC = () => {
           >
             ← Πίσω στα καταστήματα
           </button>
-          <span className="text-xs font-semibold uppercase tracking-[0.2em] text-slate-400">
-            Anbit Store Profile
+          <span className="flex flex-wrap items-baseline justify-end gap-2 text-slate-400">
+            <AnbitWordmark className="text-sm text-slate-500" />
+            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Store Profile</span>
           </span>
         </div>
       </header>
