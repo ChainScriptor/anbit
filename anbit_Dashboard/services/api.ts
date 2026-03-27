@@ -69,9 +69,16 @@ export interface MerchantTableQr {
   createdAt: string;
 }
 
+export interface QrCodeDetailsResponse {
+  merchantId: string;
+  tableId: number;
+}
+
 export interface MerchantCategoriesPayload {
   categories: string[];
 }
+
+const MERCHANT_QR_CACHE_KEY = 'anbit_dashboard_qr_tables_v1';
 
 /** Το backend απορρίπτει Guid.Empty· φιλτράρουμε και μη-GUID strings. */
 const MERCHANT_GUID_RE =
@@ -96,6 +103,146 @@ function normalizeMerchantUserFromApi(raw: unknown): ApiMerchantUser | null {
     String(r.username ?? r.Username ?? '').trim() || `merchant-${id.slice(0, 8)}`;
   const email = String(r.email ?? r.Email ?? '').trim() || '—';
   return { id, username, email };
+}
+
+function unwrapQrTablePayload(data: unknown): unknown[] {
+  if (Array.isArray(data)) return data;
+  if (data && typeof data === 'object') {
+    const o = data as Record<string, unknown>;
+    const inner =
+      o.data ??
+      o.Data ??
+      o.items ??
+      o.Items ??
+      o.results ??
+      o.Results ??
+      o.qrCodes ??
+      o.QrCodes;
+    if (Array.isArray(inner)) return inner;
+  }
+  return [];
+}
+
+function normalizeMerchantTableQr(raw: unknown): MerchantTableQr | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const tableId = Number(
+    r.tableId ?? r.TableId ?? r.tableNumber ?? r.TableNumber,
+  );
+  const shortCode = String(r.shortCode ?? r.ShortCode ?? '').trim();
+  if (!shortCode || !Number.isFinite(tableId) || tableId <= 0) return null;
+  const idRaw = String(r.id ?? r.Id ?? '').trim();
+  const id =
+    idRaw && idRaw !== 'undefined' ? idRaw : `${tableId}-${shortCode}`;
+  const ca = r.createdAt ?? r.CreatedAt;
+  let createdAt = new Date().toISOString();
+  if (typeof ca === 'string' && ca) createdAt = ca;
+  else if (typeof ca === 'number' && Number.isFinite(ca))
+    createdAt = new Date(ca).toISOString();
+  return { id, tableId, shortCode, createdAt };
+}
+
+function mapQrTableResponse(data: unknown): MerchantTableQr[] {
+  return unwrapQrTablePayload(data)
+    .map((row) => normalizeMerchantTableQr(row))
+    .filter((x): x is MerchantTableQr => x !== null);
+}
+
+type QrCache = Record<string, MerchantTableQr[]>;
+
+function readQrCache(): QrCache {
+  try {
+    const raw = localStorage.getItem(MERCHANT_QR_CACHE_KEY);
+    if (!raw) return {};
+    const parsed = JSON.parse(raw) as unknown;
+    if (!parsed || typeof parsed !== 'object') return {};
+    const out: QrCache = {};
+    for (const [merchantId, listRaw] of Object.entries(parsed as Record<string, unknown>)) {
+      const mapped = mapQrTableResponse(listRaw);
+      if (mapped.length > 0) out[merchantId] = mapped;
+    }
+    return out;
+  } catch {
+    return {};
+  }
+}
+
+function writeQrCache(cache: QrCache): void {
+  try {
+    localStorage.setItem(MERCHANT_QR_CACHE_KEY, JSON.stringify(cache));
+  } catch {
+    // ignore storage quota / private mode errors
+  }
+}
+
+function readMerchantTablesFromCache(merchantId: string): MerchantTableQr[] {
+  const cache = readQrCache();
+  const list = cache[merchantId] ?? [];
+  return [...list].sort((a, b) => {
+    const at = new Date(a.createdAt ?? 0).getTime();
+    const bt = new Date(b.createdAt ?? 0).getTime();
+    return bt - at;
+  });
+}
+
+function writeMerchantTablesToCache(merchantId: string, list: MerchantTableQr[]): void {
+  const cache = readQrCache();
+  cache[merchantId] = [...list];
+  writeQrCache(cache);
+}
+
+function upsertMerchantTableToCache(
+  merchantId: string,
+  tableId: number,
+  shortCode: string,
+): void {
+  const cache = readQrCache();
+  const current = cache[merchantId] ?? [];
+  const nextItem: MerchantTableQr = {
+    id: `${merchantId}-${tableId}-${shortCode}`,
+    tableId,
+    shortCode,
+    createdAt: new Date().toISOString(),
+  };
+  const deduped = current.filter(
+    (x) =>
+      x.shortCode.toLowerCase() !== shortCode.toLowerCase() &&
+      !(x.tableId === tableId && x.shortCode.toLowerCase() === shortCode.toLowerCase()),
+  );
+  cache[merchantId] = [nextItem, ...deduped];
+  writeQrCache(cache);
+}
+
+/**
+ * Admin: `GET /Merchants` (limit ≤ 100). Επιστρέφει `MerchantResponse` (id, username, email).
+ * `null` = αποτυχία κλήσης (π.χ. 403)· κενός πίνακας = επιτυχία χωρίς εγγραφές.
+ */
+async function fetchAllMerchantsFromMerchantsApi(): Promise<ApiMerchantUser[] | null> {
+  const pageSize = 100;
+  const all: ApiMerchantUser[] = [];
+  try {
+    for (let offset = 0; ; offset += pageSize) {
+      const { data } = await apiClient.get<unknown[]>('/Merchants', {
+        params: { limit: pageSize, offset },
+      });
+      const batch = Array.isArray(data) ? data : [];
+      for (const row of batch) {
+        const m = normalizeMerchantUserFromApi(row);
+        if (m) {
+          all.push(m);
+        }
+      }
+      if (batch.length < pageSize) {
+        break;
+      }
+    }
+    return all;
+  } catch (e) {
+    if (isAxiosError(e) && e.response?.status === 401) {
+      throw e;
+    }
+    return null;
+  }
 }
 
 async function collectMerchantIdsFromPagedProducts(): Promise<Set<string>> {
@@ -186,37 +333,33 @@ export const api = {
     });
   },
 
-  /** Καλεί πάντα `GET /Auth/merchants`. Για admin λίστα χωρίς 404 χρησιμοποίησε `getMerchantsDirectory`. */
+  /** Καλεί `GET /Merchants` (σελιδοποίηση). Απαιτεί admin Bearer token. */
   async getMerchants(): Promise<ApiMerchantUser[]> {
-    const { data } = await apiClient.get<ApiMerchantUser[]>('/Auth/merchants');
-    return data;
+    const list = await fetchAllMerchantsFromMerchantsApi();
+    if (list === null) {
+      throw new Error('Merchants list unavailable (GET /Merchants)');
+    }
+    return list;
   },
 
   /**
    * Λίστα merchants για admin:
-   * - Αν `VITE_FETCH_AUTH_MERCHANTS=true` και υπάρχει `GET /Auth/merchants` → username/email/uuid από τη ΒΔ.
-   * - Συμπληρωματικά: uuid από σελιδοποιημένα Products + Orders (έως 50×100 εγγραφές το καθένα).
-   * Χωρίς Auth endpoint δεν είναι δυνατό να φανούν όλοι οι merchants χωρίς προϊόν/παραγγελία.
+   * - `GET /Merchants?limit&offset` → username / email / uuid από τη ΒΔ (`MerchantResponse`).
+   * - Συμπληρωματικά: uuid από Products + Orders αν λείπουν από τη λίστα χρηστών.
    */
   async getMerchantsDirectory(): Promise<{
     merchants: ApiMerchantUser[];
     source: 'auth' | 'derived' | 'mixed';
   }> {
     let fromAuth: ApiMerchantUser[] = [];
-    const useAuthList = import.meta.env.VITE_FETCH_AUTH_MERCHANTS === 'true';
-
-    if (useAuthList) {
-      try {
-        const { data } = await apiClient.get<unknown[]>('/Auth/merchants');
-        if (Array.isArray(data)) {
-          fromAuth = data
-            .map((row) => normalizeMerchantUserFromApi(row))
-            .filter((x): x is ApiMerchantUser => x !== null);
-        }
-      } catch (e) {
-        if (isAxiosError(e) && e.response?.status === 401) {
-          throw e;
-        }
+    try {
+      const fromApi = await fetchAllMerchantsFromMerchantsApi();
+      if (fromApi !== null) {
+        fromAuth = fromApi;
+      }
+    } catch (e) {
+      if (isAxiosError(e) && e.response?.status === 401) {
+        throw e;
       }
     }
 
@@ -239,7 +382,7 @@ export const api = {
           id,
           username: '—',
           email:
-            '— (στη ΒΔ υπάρχει ο λογαριασμός· για username/email όρισε VITE_FETCH_AUTH_MERCHANTS=true αν το API έχει GET /Auth/merchants)',
+            '— (uuid από προϊόν/παραγγελία· λείπει από GET /Merchants — έλεγξε ρόλο Merchant στη ΒΔ)',
         });
       }
     }
@@ -261,15 +404,57 @@ export const api = {
   },
 
   async generateQrCode(payload: { merchantId: string; tableId: number }): Promise<string> {
-    const { data } = await apiClient.post<QrCodeCreateResponse>('/QrCodes', payload);
-    return data.shortCode;
+    const { data } = await apiClient.post<QrCodeCreateResponse | { ShortCode?: string }>('/QrCodes', payload);
+    const shortCode = String((data as { shortCode?: string }).shortCode ?? (data as { ShortCode?: string }).ShortCode ?? '').trim();
+    if (!shortCode) {
+      throw new Error('QR generation succeeded but shortCode is missing.');
+    }
+    if (isUsableMerchantId(payload.merchantId) && Number.isFinite(payload.tableId) && payload.tableId > 0) {
+      upsertMerchantTableToCache(payload.merchantId, payload.tableId, shortCode);
+    }
+    return shortCode;
   },
 
   async getMerchantTables(merchantId: string): Promise<MerchantTableQr[]> {
-    const { data } = await apiClient.get<MerchantTableQr[]>('/QrCodes', {
-      params: { merchantId },
-    });
-    return data;
+    if (!isUsableMerchantId(merchantId)) {
+      return [];
+    }
+    try {
+      const pageSize = 100;
+      const all: MerchantTableQr[] = [];
+      for (let offset = 0; ; offset += pageSize) {
+        const { data } = await apiClient.get<unknown>('/QrCodes', {
+          params: { merchantId, limit: pageSize, offset },
+        });
+        const batch = mapQrTableResponse(data);
+        all.push(...batch);
+        if (batch.length < pageSize) break;
+      }
+      writeMerchantTablesToCache(merchantId, all);
+      return all;
+    } catch (e) {
+      if (isAxiosError(e) && e.response?.status === 401) {
+        throw e;
+      }
+      // Fallback για παλιότερο backend χωρίς list-by-merchant endpoint.
+      return readMerchantTablesFromCache(merchantId);
+    }
+  },
+
+  async getQrCodeDetails(shortCode: string): Promise<QrCodeDetailsResponse> {
+    const clean = shortCode.trim();
+    const { data } = await apiClient.get<{
+      merchantId?: string;
+      MerchantId?: string;
+      tableId?: number;
+      TableId?: number;
+    }>(`/QrCodes/${encodeURIComponent(clean)}`);
+    const merchantId = String(data.merchantId ?? data.MerchantId ?? '').trim();
+    const tableId = Number(data.tableId ?? data.TableId ?? 0);
+    if (isUsableMerchantId(merchantId) && Number.isFinite(tableId) && tableId > 0) {
+      upsertMerchantTableToCache(merchantId, tableId, clean);
+    }
+    return { merchantId, tableId };
   },
 
   async getOrders(): Promise<ApiOrder[]> {

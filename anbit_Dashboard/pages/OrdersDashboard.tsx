@@ -1,4 +1,5 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import { isAxiosError } from 'axios';
 import { api, type ApiOrder, type ApiProduct } from '@/services/api';
 import { useAuth } from '@/AuthContext';
 import {
@@ -53,8 +54,35 @@ function getTimerPercent(createdAt: string): number {
   return Math.max(8, Math.min(100, Math.round((ageMin / 20) * 100)));
 }
 
+function sortByCreatedAtDesc<T extends { order: ApiOrder }>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const at = new Date(a.order.createdAt ?? 0).getTime();
+    const bt = new Date(b.order.createdAt ?? 0).getTime();
+    return bt - at;
+  });
+}
+
+function sortByCreatedAtAsc<T extends { order: ApiOrder }>(list: T[]): T[] {
+  return [...list].sort((a, b) => {
+    const at = new Date(a.order.createdAt ?? 0).getTime();
+    const bt = new Date(b.order.createdAt ?? 0).getTime();
+    return at - bt;
+  });
+}
+
+function formatSentTime(createdAt: string): string {
+  const d = new Date(createdAt);
+  if (Number.isNaN(d.getTime())) return '--:--';
+  return d.toLocaleTimeString('el-GR', {
+    hour: '2-digit',
+    minute: '2-digit',
+    hour12: false,
+  });
+}
+
 const OrdersDashboard: React.FC = () => {
   const { user } = useAuth();
+  const canManageOrders = Boolean(user?.roles?.includes('Merchant'));
   const [orders, setOrders] = useState<ApiOrder[]>([]);
   const [productsById, setProductsById] = useState<Record<string, ApiProduct>>({});
   const [error, setError] = useState<string | null>(null);
@@ -116,50 +144,74 @@ const OrdersDashboard: React.FC = () => {
 
   const handleAccept = useCallback(
     async (orderId: string) => {
+      if (!canManageOrders) {
+        setError('Το Accept επιτρέπεται μόνο σε λογαριασμό Merchant.');
+        return;
+      }
       setActionOrderId(orderId);
       try {
         await api.acceptOrder(orderId);
         updateOrderStatus(orderId, 2);
       } catch (e) {
         console.error(e);
-        setError('Αποτυχία αποδοχής παραγγελίας.');
+        if (isAxiosError(e) && e.response?.status === 403) {
+          setError('403: Δεν έχεις δικαίωμα Accept. Συνδέσου ως Merchant για αυτό το κατάστημα.');
+        } else {
+          setError('Αποτυχία αποδοχής παραγγελίας.');
+        }
       } finally {
         setActionOrderId(null);
       }
     },
-    [updateOrderStatus],
+    [canManageOrders, updateOrderStatus],
   );
 
   const handleReject = useCallback(
     async (orderId: string) => {
+      if (!canManageOrders) {
+        setError('Το Reject επιτρέπεται μόνο σε λογαριασμό Merchant.');
+        return;
+      }
       setActionOrderId(orderId);
       try {
         await api.rejectOrder(orderId);
         updateOrderStatus(orderId, 3);
       } catch (e) {
         console.error(e);
-        setError('Αποτυχία απόρριψης παραγγελίας.');
+        if (isAxiosError(e) && e.response?.status === 403) {
+          setError('403: Δεν έχεις δικαίωμα Reject. Συνδέσου ως Merchant για αυτό το κατάστημα.');
+        } else {
+          setError('Αποτυχία απόρριψης παραγγελίας.');
+        }
       } finally {
         setActionOrderId(null);
       }
     },
-    [updateOrderStatus],
+    [canManageOrders, updateOrderStatus],
   );
 
   const handleComplete = useCallback(
     async (orderId: string) => {
+      if (!canManageOrders) {
+        setError('Το Complete επιτρέπεται μόνο σε λογαριασμό Merchant.');
+        return;
+      }
       setActionOrderId(orderId);
       try {
         await api.completeOrder(orderId);
         updateOrderStatus(orderId, 4);
       } catch (e) {
         console.error(e);
-        setError('Αποτυχία ολοκλήρωσης παραγγελίας.');
+        if (isAxiosError(e) && e.response?.status === 403) {
+          setError('403: Δεν έχεις δικαίωμα Complete. Συνδέσου ως Merchant για αυτό το κατάστημα.');
+        } else {
+          setError('Αποτυχία ολοκλήρωσης παραγγελίας.');
+        }
       } finally {
         setActionOrderId(null);
       }
     },
-    [updateOrderStatus],
+    [canManageOrders, updateOrderStatus],
   );
 
   const visibleOrders = useMemo(() => {
@@ -214,15 +266,22 @@ const OrdersDashboard: React.FC = () => {
       customerName: getCustomerName(order),
     }));
     return {
-      newOrders: mapped.filter((x) => x.flow === 'new'),
-      inProgressOrders: mapped.filter((x) => x.flow === 'inProgress'),
-      readyOrders: mapped.filter((x) => x.flow === 'ready'),
+      newOrders: sortByCreatedAtDesc(mapped.filter((x) => x.flow === 'new')),
+      // In Progress: oldest first, so newly accepted orders appear at the bottom.
+      inProgressOrders: sortByCreatedAtAsc(mapped.filter((x) => x.flow === 'inProgress')),
+      readyOrders: sortByCreatedAtDesc(mapped.filter((x) => x.flow === 'ready')),
     };
   }, [visibleOrders]);
 
   return (
     <div className="flex h-[calc(100vh-4rem)] flex-col overflow-hidden bg-[#f8f9fa]">
       {error && <p className="mx-8 mt-4 rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">{error}</p>}
+      {!canManageOrders && (
+        <p className="mx-8 mt-4 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+          Είσαι συνδεδεμένος χωρίς role Merchant. Βλέπεις τις παραγγελίες, αλλά τα Accept/Reject/Complete
+          απαιτούν merchant λογαριασμό.
+        </p>
+      )}
 
       <section className="px-8 py-5">
         <div className="flex items-center justify-between">
@@ -455,8 +514,8 @@ const OrdersDashboard: React.FC = () => {
                       </div>
                       <div className="flex items-center gap-3">
                         <div className="text-right">
-                          <p className="text-[10px] font-bold uppercase text-slate-400">Est. Prep</p>
-                          <p className="text-sm font-bold text-slate-800">12 Mins</p>
+                          <p className="text-[10px] font-bold uppercase text-slate-400">Sent At</p>
+                          <p className="text-sm font-bold text-slate-800">{formatSentTime(order.createdAt)}</p>
                         </div>
                         <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                       </div>

@@ -14,6 +14,15 @@ if (!rootElement) {
   throw new Error("Could not find root element to mount to");
 }
 
+// Prevent stale PWA cache during local development.
+if (import.meta.env.DEV && typeof window !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.getRegistrations().then((registrations) => {
+    registrations.forEach((registration) => {
+      void registration.unregister();
+    });
+  });
+}
+
 const root = ReactDOM.createRoot(rootElement);
 root.render(
   <React.StrictMode>

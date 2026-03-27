@@ -9,6 +9,7 @@ import { useDashboardData } from '../hooks/useDashboardData';
 import { useLanguage } from '../context/LanguageContext';
 
 const STORE_LANG_KEY = 'anbit-store-lang-chosen';
+const STORE_QR_PARTNER_CACHE_PREFIX = 'anbit-store-partner-cache:';
 
 const LANGUAGES = [
   { code: 'el' as const, name: 'Ελληνικά', flag: '🇬🇷' },
@@ -29,6 +30,18 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
   onOpenRegister,
 }) => {
   const { shortCode } = useParams<{ shortCode: string }>();
+  const cachedPartner =
+    typeof window !== 'undefined' && shortCode
+      ? (() => {
+          try {
+            const raw = sessionStorage.getItem(`${STORE_QR_PARTNER_CACHE_PREFIX}${shortCode}`);
+            return raw ? (JSON.parse(raw) as Partner) : null;
+          } catch {
+            return null;
+          }
+        })()
+      : null;
+
   const navigate = useNavigate();
   const { setSession } = useOrder();
   const { partners } = useDashboardData(isAuthenticated);
@@ -38,7 +51,7 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
     typeof window !== 'undefined' ? localStorage.getItem(STORE_LANG_KEY) === '1' : false
   );
   const [selectedLang, setSelectedLang] = useState<'el' | 'en'>(language);
-  const [partner, setPartner] = useState<Partner | null>(null);
+  const [partner, setPartner] = useState<Partner | null>(cachedPartner);
   const [error, setError] = useState<string | null>(null);
   const [isResolving, setIsResolving] = useState(false);
   const resolvingRef = useRef(false);
@@ -114,6 +127,9 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
         }
 
         setPartner(found);
+        if (shortCode && typeof window !== 'undefined') {
+          sessionStorage.setItem(`${STORE_QR_PARTNER_CACHE_PREFIX}${shortCode}`, JSON.stringify(found));
+        }
         resolvedShortCodeRef.current = shortCode;
       } catch (e) {
         console.error('Failed to resolve QR code', e);
@@ -183,7 +199,19 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
     );
   }
 
-  if (!partner || isResolving) {
+  if (!partner && isResolving) {
+    return (
+      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-white">
+        <div className="w-10 h-10 border-4 border-[#333] border-t-transparent rounded-full animate-spin" />
+        <p className="text-xs text-[#666] font-medium tracking-wide uppercase">
+          Φόρτωση καταλόγου καταστήματος...
+        </p>
+      </div>
+    );
+  }
+
+  // Guard against race conditions where resolving finished but partner is still null.
+  if (!partner) {
     return (
       <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-white">
         <div className="w-10 h-10 border-4 border-[#333] border-t-transparent rounded-full animate-spin" />

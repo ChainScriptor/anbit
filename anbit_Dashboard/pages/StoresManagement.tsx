@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { isAxiosError } from 'axios';
 import { api } from '@/services/api';
+import { useAuth } from '@/AuthContext';
 import {
   isLocalRegistryMerchantId,
   mergeMerchantsWithLocalRegistry,
@@ -9,6 +10,7 @@ import type { ApiMerchantUser, ApiProduct } from '@/services/api';
 import { Button } from '@/components/ui/button';
 
 const StoresManagement: React.FC = () => {
+  const { user } = useAuth();
   const [merchants, setMerchants] = useState<ApiMerchantUser[]>([]);
   const [selectedMerchantId, setSelectedMerchantId] = useState<string>('');
 
@@ -116,6 +118,10 @@ const StoresManagement: React.FC = () => {
     () => Array.from(new Set(categories)).sort(),
     [categories],
   );
+  const canMutateSelectedMerchant =
+    Boolean(user?.id) &&
+    Boolean(selectedMerchantId) &&
+    String(user?.id).toLowerCase() === String(selectedMerchantId).toLowerCase();
 
   const handleAddCategoryLocal = () => {
     const value = newCategoryName.trim();
@@ -139,6 +145,12 @@ const StoresManagement: React.FC = () => {
 
   const handleSaveCategories = async () => {
     if (!selectedMerchantId) return;
+    if (!canMutateSelectedMerchant) {
+      setCategoriesError(
+        'Το backend επιτρέπει αποθήκευση κατηγοριών μόνο όταν είσαι συνδεδεμένος ως ο ίδιος ο merchant.',
+      );
+      return;
+    }
     setIsSavingCategories(true);
     setCategoriesError(null);
     try {
@@ -163,6 +175,12 @@ const StoresManagement: React.FC = () => {
   const handleCreateProduct = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!selectedMerchantId) return;
+    if (!canMutateSelectedMerchant) {
+      setProductMessage(
+        'Το backend επιτρέπει δημιουργία προϊόντος μόνο όταν είσαι συνδεδεμένος ως ο ίδιος ο merchant.',
+      );
+      return;
+    }
 
     setProductMessage(null);
 
@@ -301,9 +319,9 @@ const StoresManagement: React.FC = () => {
               size="sm"
               type="button"
               onClick={() => void handleSaveCategories()}
-              disabled={isSavingCategories || !selectedMerchantId}
+              disabled={isSavingCategories || !selectedMerchantId || !canMutateSelectedMerchant}
               className="text-xs"
-              title="Μπορεί να αποτύχει με 403 αν το API δέχεται μόνο merchant"
+              title="Αποθήκευση επιτρέπεται μόνο για τον ίδιο merchant χρήστη"
             >
               {isSavingCategories ? 'Αποθήκευση...' : 'Αποθήκευση στο API'}
             </Button>
@@ -406,6 +424,12 @@ const StoresManagement: React.FC = () => {
             merchant· αν αποτύχει, χρησιμοποίησε το merchant panel ή έλεγξε
             δικαιώματα.
           </p>
+          {!canMutateSelectedMerchant && selectedMerchantId && (
+            <p className="mb-4 rounded-md bg-amber-50 px-3 py-2 text-xs text-amber-800">
+              Είσαι συνδεδεμένος ως <strong>{user?.username ?? 'admin'}</strong>. Για τον merchant που
+              έχεις επιλέξει απαιτείται login ως αυτός ο merchant για create/update catalog.
+            </p>
+          )}
           <form onSubmit={handleCreateProduct} className="space-y-4">
             {productMessage && (
               <p className="rounded-md bg-sky-50 px-3 py-2 text-xs text-sky-700">
@@ -481,7 +505,7 @@ const StoresManagement: React.FC = () => {
             <div className="pt-2">
               <Button
                 type="submit"
-                disabled={isCreatingProduct || !selectedMerchantId}
+                disabled={isCreatingProduct || !selectedMerchantId || !canMutateSelectedMerchant}
                 className="inline-flex w-full items-center justify-center rounded-lg bg-[#0C0C0C] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#0C0C0C]/30 transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-70"
               >
                 {isCreatingProduct ? 'Δημιουργία...' : 'Δημιουργία προϊόντος'}

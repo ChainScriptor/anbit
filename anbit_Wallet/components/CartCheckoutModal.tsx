@@ -82,9 +82,7 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
 
   const itemCount = cart.reduce((s, i) => s + i.quantity, 0);
   const subtotal = totalEur;
-  const deliveryFee = 2.99;
-  const serviceTax = subtotal * 0.1;
-  const grandTotal = subtotal + deliveryFee + serviceTax;
+  const grandTotal = subtotal;
   const redeemableDiscount = Math.min(5, Math.floor(totalXp / 100));
 
   const handleConfirm = () => {
@@ -333,14 +331,6 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                   <div className="flex justify-between font-medium text-white/60">
                     <span>Subtotal</span>
                     <span>€{subtotal.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-medium text-white/60">
-                    <span>Delivery Fee</span>
-                    <span>€{deliveryFee.toFixed(2)}</span>
-                  </div>
-                  <div className="flex justify-between font-medium text-white/60">
-                    <span>Service Tax (10%)</span>
-                    <span>€{serviceTax.toFixed(2)}</span>
                   </div>
                   {showTotalDetail && (
                     <div className="border-t border-white/10 pt-2 text-sm text-white/50">

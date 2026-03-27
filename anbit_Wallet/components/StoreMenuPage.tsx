@@ -51,6 +51,31 @@ const STORE_SOFT_BG = '#F8F9FA';
 const STORE_BOTTOM_NAV_VISUAL_HEIGHT = '8.35rem';
 /** Κενό ανάμεσα στο κάτω άκρο της μπάρας καλαθιού και στην κορυφή του κύματος / tab */
 const STORE_CART_TO_WAVE_GAP = '14px';
+const MERCHANT_BANNERS_STORAGE_KEY = 'anbit_merchant_banners_v1';
+
+type MerchantBanner = {
+  id: string;
+  merchantId: string;
+  title: string;
+  imageUrl: string;
+  createdAt: string;
+};
+
+function readMerchantBanners(merchantId: string): MerchantBanner[] {
+  if (typeof window === 'undefined' || !merchantId) return [];
+  try {
+    const raw = localStorage.getItem(MERCHANT_BANNERS_STORAGE_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as MerchantBanner[];
+    if (!Array.isArray(parsed)) return [];
+    return parsed
+      .filter((row) => String(row?.merchantId ?? '').toLowerCase() === merchantId.toLowerCase())
+      .filter((row) => typeof row?.imageUrl === 'string' && row.imageUrl.length > 0)
+      .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+  } catch {
+    return [];
+  }
+}
 
 function StoreWaveStrokeDivider() {
   return (
@@ -968,7 +993,6 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
 
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const xpTotal = cart.reduce((acc, item) => acc + item.xpReward * item.quantity, 0);
-  const deliveryFee = 2.0;
 
   const openCustomize = (product: Product) => {
     setProductToCustomize(product);
@@ -997,6 +1021,13 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
       setCheckoutError('Παρακαλώ συνδεθείτε για να στείλετε παραγγελία.');
       return;
     }
+    const orderItems = cart
+      .map((item) => ({ productId: String(item.id ?? '').trim(), quantity: item.quantity }))
+      .filter((item) => item.productId && item.quantity > 0);
+    if (orderItems.length !== cart.length) {
+      setCheckoutError('Κάποια προϊόντα δεν έχουν έγκυρο id. Κάνε refresh το μενού και ξαναπροσπάθησε.');
+      return;
+    }
     setCheckoutError(null);
     setOrderSubmitting(true);
     try {
@@ -1004,7 +1035,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         userId: user.id,
         merchantId: partner.id,
         tableNumber: session?.tableNumber ?? 1,
-        orderItems: cart.map((item) => ({ productId: item.id, quantity: item.quantity })),
+        orderItems,
       });
       setOrderReceiptLines(
         cart.map((item) => ({
@@ -1213,6 +1244,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     }
     return map;
   }, [categories, menu, partner.image]);
+  const merchantBanners = useMemo(() => readMerchantBanners(partner.id), [partner.id]);
 
   if (orderDelivered) {
     return (
@@ -1401,13 +1433,34 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
 
         <StoreWaveStrokeDivider />
 
-        <section className="mb-0 bg-[#0a0a0a] p-6 rounded-2xl relative overflow-hidden">
+        <section className="mb-0 rounded-2xl bg-[#0a0a0a] p-6 relative overflow-hidden">
           <div className="relative z-10">
-            <h4 className="text-xl tracking-tighter mb-1 text-white uppercase">XP Multiplier Active!</h4>
-            <p className="text-white/90 text-sm mb-4 leading-snug max-w-[70%]">Κερδίστε x2 XP σε κάθε παραγγελία για τις επόμενες 2 ώρες.</p>
-            <button type="button" className="primary-button bg-white text-black text-[10px] px-4 py-2 rounded-premium-sm uppercase tracking-widest shadow-sm hover:bg-zinc-100 transition-colors">
-              Περισσότερα
-            </button>
+            {merchantBanners.length > 0 ? (
+              <>
+                <h4 className="mb-3 text-lg tracking-tight text-white uppercase">Store Banners</h4>
+                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
+                  {merchantBanners.map((banner) => (
+                    <article key={banner.id} className="relative h-32 min-w-[240px] overflow-hidden rounded-xl border border-white/15">
+                      <img src={banner.imageUrl} alt={banner.title || 'store banner'} className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+                      {banner.title ? (
+                        <p className="absolute bottom-2 left-2 right-2 truncate text-xs font-semibold text-white">
+                          {banner.title}
+                        </p>
+                      ) : null}
+                    </article>
+                  ))}
+                </div>
+              </>
+            ) : (
+              <>
+                <h4 className="text-xl tracking-tighter mb-1 text-white uppercase">XP Multiplier Active!</h4>
+                <p className="text-white/90 text-sm mb-4 leading-snug max-w-[70%]">Κερδίστε x2 XP σε κάθε παραγγελία για τις επόμενες 2 ώρες.</p>
+                <button type="button" className="primary-button bg-white text-black text-[10px] px-4 py-2 rounded-premium-sm uppercase tracking-widest shadow-sm hover:bg-zinc-100 transition-colors">
+                  Περισσότερα
+                </button>
+              </>
+            )}
           </div>
           <span className="absolute -right-4 -bottom-4 text-[90px] text-white/10 rotate-12">✦</span>
         </section>
@@ -1474,7 +1527,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         >
           <div className="min-w-0">
             <p className="text-sm">
-              {cart.reduce((s, i) => s + i.quantity, 0)} προϊόντα · €{(cartTotal + deliveryFee).toFixed(2)}
+              {cart.reduce((s, i) => s + i.quantity, 0)} προϊόντα · €{cartTotal.toFixed(2)}
             </p>
             <p className="text-[11px] text-white/80">
               {xpTotal > 0 ? `+${xpTotal} XP` : t('placeOrder')}
@@ -1523,7 +1576,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         isOpen={showCheckoutModal}
         onClose={() => { setShowCheckoutModal(false); setCheckoutError(null); }}
         cart={cart}
-        totalEur={cartTotal + deliveryFee}
+        totalEur={cartTotal}
         totalXp={xpTotal}
         isAuthenticated={isAuthenticated}
         onOpenLogin={onOpenLogin}

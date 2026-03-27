@@ -71,7 +71,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
           id="usernameOrEmail"
           type="text"
           autoComplete="username"
-          className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none ring-0 transition focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+          className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none ring-0 transition focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
           {...register('usernameOrEmail')}
         />
         {errors.usernameOrEmail && (
@@ -91,7 +91,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
             id="password"
             type={showPassword ? 'text' : 'password'}
             autoComplete="current-password"
-            className="w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-3 pr-10 py-2.5 text-sm outline-none ring-0 transition focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+            className="w-full rounded-lg border border-slate-200 bg-slate-50/80 pl-3 pr-10 py-2.5 text-sm outline-none ring-0 transition focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
             {...register('password')}
           />
           <button
@@ -114,14 +114,14 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         <label className="inline-flex items-center gap-2">
           <input
             type="checkbox"
-            className="h-3.5 w-3.5 rounded border-slate-300 accent-[#e63533] focus:ring-[#e63533]"
+            className="h-3.5 w-3.5 rounded border-slate-300 accent-[#0a0a0a] focus:ring-[#0a0a0a]"
             {...register('remember')}
           />
           <span className="text-slate-600">Remember me</span>
         </label>
         <button
           type="button"
-          className="font-medium text-[#e63533] hover:text-[#c32a28]"
+          className="font-medium text-[#0a0a0a] hover:text-[#c32a28]"
         >
           Forgot password?
         </button>
@@ -137,7 +137,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         type="submit"
         whileTap={{ scale: 0.97 }}
         disabled={isSubmitting}
-        className="mt-1 inline-flex w-full items-center justify-center rounded-lg bg-[#e63533] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#e63533]/30 transition hover:bg-[#c32a28] disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-1 inline-flex w-full items-center justify-center rounded-lg bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#0a0a0a]/30 transition hover:bg-[#c32a28] disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSubmitting ? (
           <div className="flex items-center gap-2">
@@ -154,7 +154,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         <button
           type="button"
           onClick={onSwitchToRegister}
-          className="font-semibold text-[#e63533] hover:text-[#c32a28]"
+          className="font-semibold text-[#0a0a0a] hover:text-[#c32a28]"
         >
           Register
         </button>

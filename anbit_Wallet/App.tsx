@@ -33,6 +33,7 @@ import ScanPage from './components/ScanPage';
 import StoreFromQrPage from './components/StoreFromQrPage';
 import { api } from './services/api';
 import PwaHomeScreen from './components/PwaHomeScreen';
+import CustomerLoginPage from './components/CustomerLoginPage';
 
 const App: React.FC = () => {
   const { isAuthenticated, user, isLoading: isAuthLoading, logout } = useAuth();
@@ -40,7 +41,8 @@ const App: React.FC = () => {
   const { t } = useLanguage();
   const location = useLocation();
   const navigate = useNavigate();
-  const dashboardFeed = useDashboardData(!!isAuthenticated);
+  const isLoginRoute = location.pathname === '/login';
+  const dashboardFeed = useDashboardData(!!isAuthenticated && !isLoginRoute);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isQRModalOpen, setIsQRModalOpen] = useState(false);
   const [isRedemptionModalOpen, setIsRedemptionModalOpen] = useState(false);
@@ -116,7 +118,7 @@ const App: React.FC = () => {
       const detail = (e as CustomEvent<{ message?: string }>).detail;
       logout();
       setAuthMessage(detail?.message || 'Η συνεδρία σας έληξε. Παρακαλώ συνδεθείτε ξανά.');
-      navigate('/dashboard');
+      navigate('/login', { replace: true });
     };
     window.addEventListener('anbit:auth:401', handler);
     return () => window.removeEventListener('anbit:auth:401', handler);
@@ -138,7 +140,9 @@ const App: React.FC = () => {
     setAuthSuccessCallback(null);
     setAuthModalOpen(false);
   }, []);
-  useEffect(() => { if (!isAuthLoading) setTimeout(() => setIsLoaded(true), 600); }, [isAuthLoading]);
+  useEffect(() => {
+    if (!isAuthLoading) setIsLoaded(true);
+  }, [isAuthLoading]);
   useEffect(() => { window.scrollTo({ top: 0, behavior: 'smooth' }); }, [location.pathname]);
 
   const handleOpenPartnerMenu = (partner: Partner) => {
@@ -296,6 +300,7 @@ const App: React.FC = () => {
 
   const isStoreOrderLink =
     location.pathname.startsWith('/store/') || location.pathname === '/scan';
+  const hideChrome = isStoreOrderLink || isLoginRoute;
 
   return (
     <div className="min-h-screen bg-anbit-bg text-anbit-text font-sans antialiased overflow-x-hidden">
@@ -309,7 +314,7 @@ const App: React.FC = () => {
           </motion.div>
         ) : (
           <motion.div key="app-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-screen">
-            {authMessage && (
+            {authMessage && !isLoginRoute && (
               <div className="sticky top-0 z-[50] flex items-center justify-between gap-4 bg-amber-500/20 border-b border-amber-500/40 px-4 py-3 text-sm">
                 <p className="text-amber-200 flex-1">{authMessage}</p>
                 <div className="flex items-center gap-2 shrink-0">
@@ -322,7 +327,7 @@ const App: React.FC = () => {
                 </div>
               </div>
             )}
-            {!isStoreOrderLink && (
+            {!hideChrome && (
               <Header
                 isAuthenticated={!!userData}
                 onOpenQR={userData ? () => setIsQRModalOpen(true) : undefined}
@@ -331,9 +336,10 @@ const App: React.FC = () => {
                 onOpenRegister={!userData ? openRegister : undefined}
               />
             )}
-            <main className={isStoreOrderLink ? 'flex-1 min-h-screen w-full p-0' : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}>
+            <main className={hideChrome ? 'flex-1 min-h-screen w-full p-0' : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/login" element={userData ? <Navigate to="/dashboard" replace /> : <CustomerLoginPage />} />
                 <Route path="/dashboard" element={dashboardContent} />
                 <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
                 <Route
@@ -399,7 +405,7 @@ const App: React.FC = () => {
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
               </Routes>
             </main>
-            {!isStoreOrderLink && <FooterTaped t={t} />}
+            {!hideChrome && <FooterTaped t={t} />}
             <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} mode={authModalMode} onSwitchMode={setAuthModalMode} onSuccess={authSuccessCallback ?? undefined} />
             {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
             <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />

@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 
-const ACCENT = '#e63533';
+const ACCENT = '#0a0a0a';
 
 const ViewSelector: React.FC = () => {
   return (

@@ -97,7 +97,7 @@ const KanbanBoard: React.FC = () => {
               key={column.key}
               className={cn(
                 'flex min-h-[480px] flex-col overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm',
-                activeColumn === column.key && 'ring-2 ring-[#e63533]/30',
+                activeColumn === column.key && 'ring-2 ring-[#0a0a0a]/30',
               )}
               onDragOver={(e) => e.preventDefault()}
               onDragEnter={() => dragging && setActiveColumn(column.key)}

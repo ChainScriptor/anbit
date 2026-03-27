@@ -35,7 +35,7 @@ const AuthPage: React.FC = () => {
               </span>
               <h1 className="mt-5 text-4xl font-extrabold leading-tight drop-shadow-lg sm:text-5xl">
                 Grow your business with{' '}
-                <span className="text-[#e63533]">Anbit</span>
+                <span className="text-[#0a0a0a]">Anbit</span>
               </h1>
               <p className="mt-4 max-w-xl text-sm font-medium text-white/90 drop-shadow-md sm:text-base">
                 Join the Anbit marketplace and reach more customers with powerful
@@ -50,15 +50,15 @@ const AuthPage: React.FC = () => {
               transition={{ duration: 0.6, delay: 0.2 }}
             >
               <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-[#e63533]" />
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#0a0a0a]" />
                 <p>More customers without extra marketing.</p>
               </li>
               <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-[#e63533]" />
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#0a0a0a]" />
                 <p>Fast and reliable delivery network.</p>
               </li>
               <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-[#e63533]" />
+                <span className="mt-1 h-2 w-2 rounded-full bg-[#0a0a0a]" />
                 <p>Simple, centralized order management system.</p>
               </li>
             </motion.ul>
@@ -84,11 +84,11 @@ const AuthPage: React.FC = () => {
           transition={{ duration: 0.5, ease: 'easeOut' }}
         >
           <div className="mb-6 flex items-center justify-center gap-2 lg:justify-start">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#e63533] text-lg font-bold text-white">
+            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0a0a0a] text-lg font-bold text-white">
               A
             </div>
             <div>
-              <p className="text-sm font-medium text-[#e63533]">Anbit Merchant</p>
+              <p className="text-sm font-medium text-[#0a0a0a]">Anbit Merchant</p>
               <p className="text-xs text-slate-500">
                 Partner dashboard login & onboarding
               </p>
@@ -101,7 +101,7 @@ const AuthPage: React.FC = () => {
 
           <p className="mt-4 text-center text-xs text-slate-500 lg:text-left">
             Need help? Contact our merchant support team at{' '}
-            <span className="font-medium text-[#e63533]">support@anbit.app</span>
+            <span className="font-medium text-[#0a0a0a]">support@anbit.app</span>
           </p>
         </motion.div>
       </div>

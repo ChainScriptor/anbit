@@ -15,6 +15,8 @@ import AdminPage from '@/pages/Admin';
 import StoresManagement from '@/pages/StoresManagement';
 import MerchantUsers from '@/pages/MerchantUsers';
 import SystemSettings from '@/pages/SystemSettings';
+import AnbitManagement from '@/pages/AnbitManagement';
+import MerchantBanners from '@/pages/MerchantBanners';
 import { AuthProvider } from './AuthContext';
 import { ProtectedRoute } from './ProtectedRoute';
 
@@ -36,12 +38,14 @@ const App: React.FC = () => {
             </Route>
             <Route element={<ProtectedRoute allowedRoles={['Merchant']} />}>
               <Route path="/products" element={<Products />} />
+              <Route path="/merchant/banners" element={<MerchantBanners />} />
             </Route>
             <Route element={<ProtectedRoute allowedRoles={['Admin']} />}>
               <Route path="/admin" element={<AdminPage />} />
               <Route path="/admin/customers" element={<AdminCustomers />} />
               <Route path="/admin/stores" element={<StoresManagement />} />
               <Route path="/admin/merchant-users" element={<MerchantUsers />} />
+              <Route path="/admin/anbit-management" element={<AnbitManagement />} />
               <Route path="/admin/settings" element={<SystemSettings />} />
             </Route>
           </Route>

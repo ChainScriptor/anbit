@@ -11,6 +11,8 @@ import {
   Users,
   HelpCircle,
   Settings,
+  Sparkles,
+  Images,
   ChevronDown,
   ChevronRight,
   Menu,
@@ -20,7 +22,7 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/AuthContext';
 
 const SIDEBAR_BG_ADMIN = '#0C0C0C';
-const SIDEBAR_BG_MERCHANT = '#cf2b2b';
+const SIDEBAR_BG_MERCHANT = '#0a0a0a';
 
 const manageTableSubItems = [
   { to: '/reservation-list', icon: ListTodo, label: 'Reservation List' },
@@ -77,7 +79,11 @@ const Sidebar: React.FC = () => {
         {!collapsed && (
           <span
             className="font-logo text-3xl font-extrabold tracking-tight text-white shrink-0"
-            style={{ color: '#FFFFFF', letterSpacing: '-0.03em' }}
+            style={{
+              color: '#FFFFFF',
+              letterSpacing: '-0.03em',
+              fontFamily: isMerchant ? 'OmnesBoldItalic, AnbitFont, sans-serif' : undefined,
+            }}
           >
             Anbit
           </span>
@@ -189,6 +195,27 @@ const Sidebar: React.FC = () => {
               {/* Admin: System Settings */}
               <li className="w-full">
                 <NavLink
+                  to="/admin/anbit-management"
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
+                      isActive
+                        ? 'bg-white text-[#0C0C0C]'
+                        : 'text-white/95 hover:bg-white/10',
+                    )
+                  }
+                >
+                  <Sparkles className="h-5 w-5 shrink-0" />
+                  {!collapsed && (
+                    <span className="min-w-0 truncate">Anbit Management</span>
+                  )}
+                </NavLink>
+              </li>
+
+              {/* Admin: System Settings */}
+              <li className="w-full">
+                <NavLink
                   to="/admin/settings"
                   className={({ isActive }) =>
                     cn(
@@ -218,7 +245,7 @@ const Sidebar: React.FC = () => {
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
-                        ? 'bg-white text-[#e63533]'
+                        ? 'bg-white text-[#0a0a0a]'
                         : 'text-white/95 hover:bg-white/10',
                     )
                   }
@@ -239,7 +266,7 @@ const Sidebar: React.FC = () => {
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
-                        ? 'bg-white text-[#e63533]'
+                      ? 'bg-white text-[#0a0a0a]'
                         : 'text-white/95 hover:bg-white/10',
                     )
                   }
@@ -286,7 +313,7 @@ const Sidebar: React.FC = () => {
                             cn(
                               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
                               isActive
-                                ? 'bg-white text-[#e63533]'
+                                ? 'bg-white text-[#0a0a0a]'
                                 : 'text-white/90 hover:bg-white/10',
                             )
                           }
@@ -309,7 +336,7 @@ const Sidebar: React.FC = () => {
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
                       collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
-                        ? 'bg-white text-[#e63533]'
+                        ? 'bg-white text-[#0a0a0a]'
                         : 'text-white/95 hover:bg-white/10',
                     )
                   }
@@ -317,6 +344,27 @@ const Sidebar: React.FC = () => {
                   <UtensilsCrossed className="h-5 w-5 shrink-0" />
                   {!collapsed && (
                     <span className="min-w-0 truncate">Manage Dish</span>
+                  )}
+                </NavLink>
+              </li>
+
+              {/* Merchant: Store Banners */}
+              <li className="w-full">
+                <NavLink
+                  to="/merchant/banners"
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
+                      isActive
+                        ? 'bg-white text-[#0a0a0a]'
+                        : 'text-white/95 hover:bg-white/10',
+                    )
+                  }
+                >
+                  <Images className="h-5 w-5 shrink-0" />
+                  {!collapsed && (
+                    <span className="min-w-0 truncate">Store Banners</span>
                   )}
                 </NavLink>
               </li>
@@ -330,7 +378,7 @@ const Sidebar: React.FC = () => {
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
                       collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
-                        ? 'bg-white text-[#e63533]'
+                        ? 'bg-white text-[#0a0a0a]'
                         : 'text-white/95 hover:bg-white/10',
                     )
                   }
@@ -351,7 +399,7 @@ const Sidebar: React.FC = () => {
                       'flex items-center rounded-lg text-sm font-medium transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
-                        ? 'bg-white text-[#e63533]'
+                        ? 'bg-white text-[#0a0a0a]'
                         : 'text-white/95 hover:bg-white/10',
                     )
                   }

@@ -17,7 +17,7 @@ import {
 import { cn } from '@/lib/utils';
 import TransactionHistoryModal from '@/components/TransactionHistoryModal';
 
-const ACCENT = '#e63533';
+const ACCENT = '#0a0a0a';
 
 const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');

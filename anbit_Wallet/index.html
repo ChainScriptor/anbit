@@ -567,8 +567,12 @@
   <body>
     <div id="root"></div>
     <script>
-      // Service Worker Registration
-      if ('serviceWorker' in navigator) {
+      // Service Worker Registration (skip localhost/dev to avoid stale white screens)
+      const isLocalhost =
+        location.hostname === 'localhost' ||
+        location.hostname === '127.0.0.1' ||
+        location.hostname === '[::1]';
+      if ('serviceWorker' in navigator && !isLocalhost) {
         window.addEventListener('load', () => {
           navigator.serviceWorker.register('/sw.js').then(registration => {
             console.log('SW registered: ', registration);

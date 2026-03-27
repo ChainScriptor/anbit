@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
 import { useAuth } from '@/AuthContext';
 
-const ACCENT = '#e63533';
+const ACCENT = '#0a0a0a';
 
 function getCategoryPreviewImage(category: string): string {
   const key = category.toLowerCase();
@@ -428,7 +428,7 @@ const Products: React.FC = () => {
               className={cn(
                 'rounded-xl px-6 py-2.5 text-sm font-semibold transition-all',
                 activeTab === tab.key
-                  ? 'bg-white text-[#e63533] shadow-sm'
+                  ? 'bg-white text-[#0a0a0a] shadow-sm'
                   : 'text-slate-500 hover:text-slate-700',
               )}
             >
@@ -454,7 +454,7 @@ const Products: React.FC = () => {
                   placeholder="Search dish, category or SKU..."
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl border-0 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-[#e63533]/20"
+                  className="w-full rounded-2xl border-0 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0a0a0a]/20"
                 />
               </div>
               <div className="flex flex-wrap items-center gap-2">
@@ -475,7 +475,7 @@ const Products: React.FC = () => {
             {groupedProducts.map((group) => (
               <section key={group.category} className="space-y-5">
                 <div className="flex items-center gap-4">
-                  <div className="h-10 w-1.5 rounded-full bg-[#e63533]" />
+                  <div className="h-10 w-1.5 rounded-full bg-[#0a0a0a]" />
                   <h3 className="text-xl font-bold text-slate-900">
                     {group.category}
                     <span className="ml-2 text-base font-medium text-slate-500">({group.items.length})</span>
@@ -500,7 +500,7 @@ const Products: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <h4 className="truncate text-base font-bold text-slate-900">{product.name}</h4>
-                          <p className="mt-0.5 text-sm font-bold text-[#e63533]">€{product.price.toFixed(2)}</p>
+                          <p className="mt-0.5 text-sm font-bold text-[#0a0a0a]">€{product.price.toFixed(2)}</p>
                           <p className="text-xs font-semibold text-amber-700">+{product.pointsReward ?? 0} XP</p>
                           <div className="mt-2 flex items-center gap-2">
                             <span

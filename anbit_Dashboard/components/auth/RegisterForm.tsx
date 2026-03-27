@@ -123,7 +123,7 @@ export const RegisterForm: React.FC = () => {
               </label>
               <select
                 id="country"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                 {...register('country')}
               >
                 <option value="">Select a country</option>
@@ -149,7 +149,7 @@ export const RegisterForm: React.FC = () => {
               </label>
               <select
                 id="businessType"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                 {...register('businessType')}
               >
                 <option value="Restaurant">Restaurant</option>
@@ -178,7 +178,7 @@ export const RegisterForm: React.FC = () => {
               id="locations"
               type="number"
               min={1}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+              className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
               {...register('locations')}
             />
             {errors.locations && (
@@ -203,7 +203,7 @@ export const RegisterForm: React.FC = () => {
                 </label>
                 <input
                   id="venueName"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                   {...register('venueName')}
                 />
                 {errors.venueName && (
@@ -222,7 +222,7 @@ export const RegisterForm: React.FC = () => {
                 </label>
                 <input
                   id="streetAddress"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                   {...register('streetAddress')}
                 />
                 {errors.streetAddress && (
@@ -242,7 +242,7 @@ export const RegisterForm: React.FC = () => {
                   </label>
                   <input
                     id="postalCode"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                     {...register('postalCode')}
                   />
                   {errors.postalCode && (
@@ -260,7 +260,7 @@ export const RegisterForm: React.FC = () => {
                   </label>
                   <input
                     id="city"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                    className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                     {...register('city')}
                   />
                   {errors.city && (
@@ -288,7 +288,7 @@ export const RegisterForm: React.FC = () => {
                 </label>
                 <input
                   id="firstName"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                   {...register('firstName')}
                 />
                 {errors.firstName && (
@@ -306,7 +306,7 @@ export const RegisterForm: React.FC = () => {
                 </label>
                 <input
                   id="lastName"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                   {...register('lastName')}
                 />
                 {errors.lastName && (
@@ -327,7 +327,7 @@ export const RegisterForm: React.FC = () => {
                 </label>
                 <input
                   id="phone"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                   {...register('phone')}
                 />
                 {errors.phone && (
@@ -346,7 +346,7 @@ export const RegisterForm: React.FC = () => {
                 <input
                   id="emailOwner"
                   type="email"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/10"
+                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
                   {...register('email')}
                 />
                 {errors.email && (
@@ -366,7 +366,7 @@ export const RegisterForm: React.FC = () => {
               render={({ field }) => (
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 accent-[#e63533] focus:ring-[#e63533]"
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 accent-[#0a0a0a] focus:ring-[#0a0a0a]"
                   checked={field.value ?? false}
                   onChange={(e) => field.onChange(e.target.checked)}
                 />
@@ -383,14 +383,14 @@ export const RegisterForm: React.FC = () => {
             agree to the{' '}
             <button
               type="button"
-              className="text-[#e63533] underline-offset-2 hover:text-[#c32a28] hover:underline"
+              className="text-[#0a0a0a] underline-offset-2 hover:text-[#c32a28] hover:underline"
             >
               Terms of Service
             </button>{' '}
             and{' '}
             <button
               type="button"
-              className="text-[#e63533] underline-offset-2 hover:text-[#c32a28] hover:underline"
+              className="text-[#0a0a0a] underline-offset-2 hover:text-[#c32a28] hover:underline"
             >
               Privacy Policy
             </button>
@@ -401,7 +401,7 @@ export const RegisterForm: React.FC = () => {
             type="submit"
             whileTap={{ scale: 0.97 }}
             disabled={isSubmitting}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-[#e63533] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#e63533]/30 transition hover:bg-[#c32a28] disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#0a0a0a]/30 transition hover:bg-[#c32a28] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? (
               <div className="flex items-center gap-2">

@@ -69,7 +69,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
     <Card
       className={cn(
         'flex cursor-pointer flex-col rounded-xl border-slate-200 bg-white shadow-sm transition-all',
-        expanded && 'ring-2 ring-[#e63533] shadow-md',
+        expanded && 'ring-2 ring-[#0a0a0a] shadow-md',
       )}
       onClick={handleCardClick}
     >
@@ -222,7 +222,7 @@ const OrderCard: React.FC<OrderCardProps> = ({
                       onToggleExpand?.();
                     }}
                     className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
-                    style={{ backgroundColor: '#e63533' }}
+                    style={{ backgroundColor: '#0a0a0a' }}
                   >
                     Αποδοχή
                   </button>

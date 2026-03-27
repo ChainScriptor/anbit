@@ -21,6 +21,7 @@ apiClient.interceptors.request.use((config) => {
 const REFRESH_TOKEN_KEY = 'anbit_refresh_token';
 const ACCESS_TOKEN_KEY = 'anbit_token';
 const USER_KEY = 'anbit_user';
+const LOGIN_RETURN_TO_KEY = 'anbit_login_return_to';
 
 let refreshPromise: Promise<string> | null = null;
 
@@ -50,6 +51,15 @@ async function refreshAccessToken(): Promise<string> {
 }
 
 function logoutAndNotify(message: string) {
+  let returnTo = '/scan';
+  if (typeof window !== 'undefined') {
+    const currentPath = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (currentPath && !currentPath.startsWith('/login')) {
+      returnTo = currentPath;
+    }
+    sessionStorage.setItem(LOGIN_RETURN_TO_KEY, returnTo);
+  }
+
   localStorage.removeItem(ACCESS_TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
   localStorage.removeItem(REFRESH_TOKEN_KEY);
@@ -58,7 +68,7 @@ function logoutAndNotify(message: string) {
   if (typeof window !== 'undefined') {
     const path = window.location.pathname;
     if (path !== '/login') {
-      window.location.assign('/login');
+      window.location.assign(`/login?returnTo=${encodeURIComponent(returnTo)}`);
     }
   }
 }
@@ -171,6 +181,31 @@ export interface ApiOrderListItem {
   updatedAt?: string;
 }
 
+function normalizeApiProduct(raw: unknown): ApiProduct | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const id = String(r.id ?? r.Id ?? '').trim();
+  const merchantId = String(r.merchantId ?? r.MerchantId ?? '').trim();
+  if (!id || !merchantId) return null;
+  return {
+    id,
+    name: String(r.name ?? r.Name ?? '').trim(),
+    description: String(r.description ?? r.Description ?? '').trim(),
+    price: Number(r.price ?? r.Price ?? 0),
+    xp: Number(r.xp ?? r.Xp ?? 0),
+    merchantId,
+    category: String(r.category ?? r.Category ?? '').trim() || 'Menu',
+    imageUrl: (r.imageUrl ?? r.ImageUrl ?? null) as string | null,
+  };
+}
+
+function normalizeApiProducts(raw: unknown): ApiProduct[] {
+  const arr = Array.isArray(raw) ? raw : [];
+  return arr
+    .map((row) => normalizeApiProduct(row))
+    .filter((x): x is ApiProduct => x !== null);
+}
+
 function loginResponseToUserData(data: LoginResponse): UserData {
   return {
     id: data.userId,
@@ -230,20 +265,20 @@ class ApiService {
 
     // For guest menu: prefer anonymous merchant endpoint.
     if (params?.merchantId) {
-      const { data } = await apiClient.get<ApiProduct[]>(
+      const { data } = await apiClient.get<unknown>(
         `/Products/merchants/${encodeURIComponent(params.merchantId)}`,
         {
           params: { limit, offset },
         },
       );
-      return data;
+      return normalizeApiProducts(data);
     }
 
     // For authenticated dashboard grouping: fall back to the general list.
-    const { data } = await apiClient.get<ApiProduct[]>('/Products', {
+    const { data } = await apiClient.get<unknown>('/Products', {
       params: { limit, offset },
     });
-    return data;
+    return normalizeApiProducts(data);
   }
 
   async getQrCodeDetails(shortCode: string): Promise<QrCodeDetails> {
