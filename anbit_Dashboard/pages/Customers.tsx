@@ -18,6 +18,11 @@ import { cn } from '@/lib/utils';
 import TransactionHistoryModal from '@/components/TransactionHistoryModal';
 
 const ACCENT = '#0a0a0a';
+const OMNES_HEADING_STYLE: React.CSSProperties = {
+  fontFamily: 'OmnesBoldItalic, sans-serif',
+  fontStyle: 'italic',
+  fontWeight: 700,
+};
 
 const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -118,10 +123,10 @@ const Customers: React.FC = () => {
           >
             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+                <h1 className="text-2xl font-bold text-slate-900 md:text-3xl" style={OMNES_HEADING_STYLE}>
                   Manage Your Customers
                 </h1>
-                <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base">
+                <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base" style={OMNES_HEADING_STYLE}>
                   View spending, loyalty points, visits and preferences for each customer.
                 </p>
               </div>

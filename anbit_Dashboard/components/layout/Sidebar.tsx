@@ -82,7 +82,9 @@ const Sidebar: React.FC = () => {
             style={{
               color: '#FFFFFF',
               letterSpacing: '-0.03em',
-              fontFamily: isMerchant ? 'OmnesBoldItalic, AnbitFont, sans-serif' : undefined,
+              fontFamily: isMerchant ? 'OmnesBoldItalic, sans-serif' : undefined,
+              fontStyle: isMerchant ? 'italic' : undefined,
+              fontWeight: isMerchant ? 700 : undefined,
             }}
           >
             Anbit

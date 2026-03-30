@@ -47,6 +47,14 @@
     }
   </script>
   <style>
+    @font-face {
+      font-family: 'OmnesBoldItalic';
+      src: url('/fonts/OmnesBoldItalic.ttf') format('truetype');
+      font-weight: 700;
+      font-style: italic;
+      font-display: swap;
+    }
+
     body {
       background-color: #f3f4f6;
       color: #333333;
@@ -79,6 +87,14 @@
       100% {
         transform: translateX(100%);
       }
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
     }
   </style>
   <script type="importmap">

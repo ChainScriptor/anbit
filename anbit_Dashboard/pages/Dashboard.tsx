@@ -80,7 +80,10 @@ const Dashboard: React.FC = () => {
             <p className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-amber-700 mb-2">
               Store Manager
             </p>
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            <h1
+              className="text-2xl font-bold text-slate-900 md:text-3xl"
+              style={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
+            >
               Store Dashboard
             </h1>
             <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base">

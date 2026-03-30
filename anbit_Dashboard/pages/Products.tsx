@@ -489,26 +489,48 @@ const Products: React.FC = () => {
     }
   };
 
+  const primaryActionLabel =
+    activeTab === 'listing'
+      ? 'Add New Product'
+      : activeTab === 'options'
+        ? 'Add New Option'
+        : 'Add New Category';
+
+  const handlePrimaryAction = () => {
+    if (activeTab === 'listing') {
+      resetForm();
+      setIsAddOpen(true);
+      return;
+    }
+    if (activeTab === 'categories') {
+      setIsManageOpen(true);
+      return;
+    }
+    // Options tab: keep single top action visible (feature editor placeholder for now).
+  };
+
   return (
     <div className="flex flex-col gap-6 bg-[#f8f9fa] text-slate-900">
       <div className="space-y-6 rounded-3xl bg-[#f8f9fa] p-6 md:p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-slate-900">Menu Management</h1>
+            <h1
+              className="text-3xl font-bold tracking-tight text-slate-900"
+              style={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
+            >
+              Menu Management
+            </h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
               Curate your restaurant offerings and stock levels
             </p>
           </div>
           <Button
-            className="h-12 rounded-2xl px-6 text-sm font-bold text-white shadow-lg shadow-red-600/20"
-            style={{ backgroundColor: ACCENT }}
-            onClick={() => {
-              resetForm();
-              setIsAddOpen(true);
-            }}
+            className="h-12 rounded-2xl px-6 text-sm font-bold text-white shadow-none"
+            style={{ backgroundColor: ACCENT, fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
+            onClick={handlePrimaryAction}
           >
             <Plus className="mr-2 h-5 w-5" />
-            Add New Product
+            {primaryActionLabel}
           </Button>
         </div>
 
@@ -680,20 +702,6 @@ const Products: React.FC = () => {
                   Categories ({categories.length - 1})
                 </span>
               </div>
-              <Button
-                onClick={() => setIsManageOpen(true)}
-                style={{ backgroundColor: ACCENT }}
-                className="rounded-xl text-white shadow-lg shadow-red-600/20"
-              >
-                <Plus className="mr-2 h-4 w-4" />
-                Add Category
-              </Button>
-            </div>
-            <div className="flex items-center gap-2">
-              <Button onClick={() => setIsManageOpen(true)} style={{ backgroundColor: ACCENT }} className="text-white rounded-xl">
-                <Plus className="mr-2 h-4 w-4" />
-                Προσθήκη κατηγορίας
-              </Button>
               <Button variant="outline" onClick={handleSaveCategories} disabled={isSyncingCategories} className="rounded-xl">
                 {isSyncingCategories ? 'Αποθήκευση...' : 'Αποθήκευση αλλαγών'}
               </Button>

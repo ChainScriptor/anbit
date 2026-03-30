@@ -10,34 +10,15 @@ export const AuthTabs: React.FC = () => {
 
   return (
     <div>
-      <div className="mb-6 flex rounded-full bg-slate-100 p-1 text-xs font-medium">
-        {(['login', 'register'] as Tab[]).map((tab) => {
-          const isActive = activeTab === tab;
-          const label = tab === 'login' ? 'Login' : 'Register';
-          return (
-            <button
-              key={tab}
-              type="button"
-              onClick={() => setActiveTab(tab)}
-              className={`relative flex-1 rounded-full px-3 py-2 transition-colors ${
-                isActive
-                  ? 'text-[#0F172A]'
-                  : 'text-slate-500 hover:text-slate-700'
-              }`}
-              aria-pressed={isActive}
-            >
-              {isActive && (
-                <motion.span
-                  layoutId="authTabPill"
-                  className="absolute inset-0 rounded-full bg-white shadow-sm"
-                  transition={{ type: 'spring', stiffness: 400, damping: 30 }}
-                />
-              )}
-              <span className="relative z-10">{label}</span>
-            </button>
-          );
-        })}
-      </div>
+      {activeTab === 'register' && (
+        <button
+          type="button"
+          onClick={() => setActiveTab('login')}
+          className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/70 hover:text-white"
+        >
+          Back to Sign in
+        </button>
+      )}
 
       <AnimatePresence mode="wait">
         {activeTab === 'login' ? (

@@ -1,15 +1,34 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AuthTabs } from '@/components/auth/AuthTabs';
+import { PawPrint, X } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { HandWrittenTitle } from '@/components/ui/hand-writing-text';
 
 const HERO_IMAGE_URL =
   'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&w=1600&q=80';
 
 const AuthPage: React.FC = () => {
+  const navigate = useNavigate();
+
   return (
-    <div className="flex min-h-screen items-stretch bg-[#F8FAFC] text-[#0F172A]">
-      {/* Left side – hero (desktop only) */}
-      <div className="relative hidden overflow-hidden lg:flex lg:w-1/2">
+    <div className="omnes-auth relative flex min-h-screen flex-col bg-[#f5f3ef] text-[#0F172A] lg:flex-row">
+      <style>{`
+        @font-face {
+          font-family: 'OmnesBoldItalic';
+          src: url('/fonts/OmnesBoldItalic.ttf') format('truetype');
+          font-weight: 700;
+          font-style: italic;
+          font-display: swap;
+        }
+        .omnes-auth * {
+          font-family: OmnesBoldItalic, sans-serif !important;
+          font-weight: 700 !important;
+          font-style: italic !important;
+        }
+      `}</style>
+      {/* Left side – previous full-image background */}
+      <div className="relative z-10 flex min-h-[44vh] flex-1 items-center justify-center overflow-hidden lg:min-h-screen">
         <motion.div
           className="absolute inset-0"
           initial={{ scale: 1.05, opacity: 0 }}
@@ -23,7 +42,7 @@ const AuthPage: React.FC = () => {
           />
         </motion.div>
         <div className="absolute inset-0 bg-gradient-to-tr from-black/80 via-black/70 to-black/30" />
-        <div className="relative z-10 flex flex-col items-center justify-center p-10 text-white xl:p-14">
+        <div className="relative z-10 flex flex-col items-center justify-center px-6 py-10 text-white sm:px-10 lg:px-14">
           <div className="max-w-xl space-y-5 text-center">
             <motion.div
               initial={{ y: 20, opacity: 0 }}
@@ -35,75 +54,84 @@ const AuthPage: React.FC = () => {
               </span>
               <h1 className="mt-5 text-4xl font-extrabold leading-tight drop-shadow-lg sm:text-5xl">
                 Grow your business with{' '}
-                <span className="text-[#0a0a0a]">Anbit</span>
+                <span className="inline-flex w-[260px] translate-y-5 align-middle sm:w-[320px]">
+                  <HandWrittenTitle
+                    title="Anbit"
+                    subtitle=""
+                    className="py-0"
+                    titleClassName="text-[#0a0a0a] [text-shadow:0_1px_0_rgba(255,255,255,0.95),0_-1px_0_rgba(255,255,255,0.95),1px_0_0_rgba(255,255,255,0.95),-1px_0_0_rgba(255,255,255,0.95)] !text-4xl sm:!text-5xl"
+                    titleStyle={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
+                  />
+                </span>
               </h1>
               <p className="mt-4 max-w-xl text-sm font-medium text-white/90 drop-shadow-md sm:text-base">
-                Join the Anbit marketplace and reach more customers with powerful
-                delivery and ordering tools tailored for modern hospitality.
+                Join the Anbit marketplace and reach more customers with powerful delivery and
+                ordering tools tailored for modern hospitality.
               </p>
             </motion.div>
-
-            <motion.ul
-              className="mt-6 space-y-3 text-sm xl:text-base"
-              initial={{ y: 20, opacity: 0 }}
-              animate={{ y: 0, opacity: 1 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-[#0a0a0a]" />
-                <p>More customers without extra marketing.</p>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-[#0a0a0a]" />
-                <p>Fast and reliable delivery network.</p>
-              </li>
-              <li className="flex gap-3">
-                <span className="mt-1 h-2 w-2 rounded-full bg-[#0a0a0a]" />
-                <p>Simple, centralized order management system.</p>
-              </li>
-            </motion.ul>
           </div>
-
-          <motion.div
-            className="mt-8 text-xs text-white/60"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.4 }}
-          >
-            Powered by Anbit • Designed for restaurants, cafés, bakeries & more.
-          </motion.div>
         </div>
       </div>
 
-      {/* Right side – auth card */}
-      <div className="flex flex-1 items-center justify-center p-4 sm:p-6 lg:p-10">
-        <motion.div
-          className="w-full max-w-md"
-          initial={{ y: 16, opacity: 0 }}
-          animate={{ y: 0, opacity: 1 }}
-          transition={{ duration: 0.5, ease: 'easeOut' }}
+      {/* Wave divider: horizontal on mobile, vertical on desktop */}
+      <div className="pointer-events-none absolute inset-0 z-20">
+        <svg
+          viewBox="0 0 1440 220"
+          preserveAspectRatio="none"
+          className="absolute bottom-[48%] left-0 h-20 w-full text-[#1a1a1a] lg:hidden"
+          aria-hidden
         >
-          <div className="mb-6 flex items-center justify-center gap-2 lg:justify-start">
-            <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-[#0a0a0a] text-lg font-bold text-white">
-              A
-            </div>
-            <div>
-              <p className="text-sm font-medium text-[#0a0a0a]">Anbit Merchant</p>
-              <p className="text-xs text-slate-500">
-                Partner dashboard login & onboarding
-              </p>
-            </div>
-          </div>
+          <path
+            d="M0,120 C220,200 420,40 680,110 C930,175 1170,55 1440,120 L1440,220 L0,220 Z"
+            fill="currentColor"
+          />
+        </svg>
+        <svg
+          viewBox="0 0 220 1440"
+          preserveAspectRatio="none"
+          className="absolute right-[49%] top-0 hidden h-full w-24 text-[#1a1a1a] lg:block"
+          aria-hidden
+        >
+          <path
+            d="M98,0 C178,230 28,470 110,720 C186,970 24,1210 106,1440 L220,1440 L220,0 Z"
+            fill="currentColor"
+          />
+        </svg>
+      </div>
 
-          <div className="rounded-2xl border border-slate-100 bg-white p-6 shadow-xl shadow-slate-900/5 sm:p-7">
+      {/* Right side – login panel */}
+      <div className="relative z-10 flex flex-1 flex-col bg-[#1a1a1a] text-white">
+        <header className="flex h-16 w-full items-center justify-between px-6">
+          <div className="flex items-center gap-2">
+            <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
+              <PawPrint className="h-4.5 w-4.5 text-[#0a0a0a]" strokeWidth={2.4} />
+            </div>
+            <span className="font-semibold tracking-tight text-white">Anbit Merchant</span>
+          </div>
+          <button
+            type="button"
+            onClick={() => navigate('/')}
+            className="text-white/60 transition-opacity hover:text-white"
+            aria-label="Close"
+          >
+            <X className="h-6 w-6" />
+          </button>
+        </header>
+
+        <div className="flex flex-1 items-start justify-center px-8 pb-16 pt-10">
+          <motion.div
+            className="w-full max-w-md"
+            initial={{ y: 16, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            transition={{ duration: 0.5, ease: 'easeOut' }}
+          >
+            <div className="mb-10 text-center">
+              <h1 className="text-5xl font-extrabold tracking-tight text-white">Welcome Back,</h1>
+              <p className="mt-3 text-3xl font-medium tracking-tight text-white/55">Please login to your account</p>
+            </div>
             <AuthTabs />
-          </div>
-
-          <p className="mt-4 text-center text-xs text-slate-500 lg:text-left">
-            Need help? Contact our merchant support team at{' '}
-            <span className="font-medium text-[#0a0a0a]">support@anbit.app</span>
-          </p>
-        </motion.div>
+          </motion.div>
+        </div>
       </div>
     </div>
   );
