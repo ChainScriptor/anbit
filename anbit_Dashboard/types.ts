@@ -41,6 +41,8 @@ export interface Product {
   price: number;
   pointsReward: number;
   image: string;
+  /** URL εικόνας από API (null αν δεν υπάρχει upload στο backend). */
+  serverImageUrl?: string | null;
   isActive: boolean;
   allergens?: string[];
   stats?: ProductStat[];

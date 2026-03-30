@@ -333,6 +333,18 @@ export const api = {
     });
   },
 
+  async uploadProductImage(productId: string, file: File): Promise<void> {
+    const formData = new FormData();
+    formData.append('image', file);
+    await apiClient.put(`/Products/${encodeURIComponent(productId)}/images`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    });
+  },
+
+  async deleteProductImage(productId: string): Promise<void> {
+    await apiClient.delete(`/Products/${encodeURIComponent(productId)}/images`);
+  },
+
   /** Καλεί `GET /Merchants` (σελιδοποίηση). Απαιτεί admin Bearer token. */
   async getMerchants(): Promise<ApiMerchantUser[]> {
     const list = await fetchAllMerchantsFromMerchantsApi();

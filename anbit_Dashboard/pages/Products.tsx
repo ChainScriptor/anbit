@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { isAxiosError } from 'axios';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,12 +11,34 @@ import {
   Pencil,
   Trash2,
   Power,
+  Loader2,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
 import { useAuth } from '@/AuthContext';
 
 const ACCENT = '#0a0a0a';
+const PLACEHOLDER_PRODUCT_IMAGE =
+  'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400';
+const MAX_PRODUCT_IMAGE_BYTES = 10 * 1024 * 1024;
+
+function formatProductImageApiError(e: unknown): string {
+  if (isAxiosError(e)) {
+    const status = e.response?.status;
+    if (status === 401 || status === 403) {
+      return 'Δεν έχεις δικαίωμα για αυτή την ενέργεια. Χρειάζεται merchant λογαριασμός.';
+    }
+    if (status === 413) {
+      return 'Το αρχείο είναι πολύ μεγάλο για τον server.';
+    }
+    const data = e.response?.data as
+      | { error?: string; Error?: string; message?: string }
+      | undefined;
+    const msg = data?.error ?? data?.Error ?? data?.message;
+    if (typeof msg === 'string' && msg.trim()) return msg;
+  }
+  return 'Αποτυχία εικόνας. Δοκίμασε ξανά.';
+}
 
 function getCategoryPreviewImage(category: string): string {
   const key = category.toLowerCase();
@@ -66,8 +89,11 @@ const Products: React.FC = () => {
   const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set());
   const [openMenuProductId, setOpenMenuProductId] = useState<string | null>(null);
   const [editingProductId, setEditingProductId] = useState<string | null>(null);
+  const [imageFieldBusy, setImageFieldBusy] = useState(false);
+  const [showDeleteImageConfirm, setShowDeleteImageConfirm] = useState(false);
+  const [modalImageError, setModalImageError] = useState<string | null>(null);
 
-  const loadProducts = async () => {
+  const loadProducts = async (): Promise<Product[]> => {
     setIsLoading(true);
     setError(null);
     try {
@@ -78,23 +104,27 @@ const Products: React.FC = () => {
           ? allProducts.filter((p) => p.merchantId === currentUser.id)
           : allProducts;
 
-      const mapped: Product[] = filtered.map((p) => ({
-        id: p.id,
-        name: p.name,
-        description: p.description,
-        category: p.category ?? 'Menu',
-        price: p.price,
-        pointsReward: p.xp,
-        image:
-          p.imageUrl ||
-          'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
-        isActive: true,
-        allergens: [],
-      }));
+      const mapped: Product[] = filtered.map((p) => {
+        const url = p.imageUrl && String(p.imageUrl).trim() ? String(p.imageUrl) : null;
+        return {
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          category: p.category ?? 'Menu',
+          price: p.price,
+          pointsReward: p.xp,
+          serverImageUrl: url,
+          image: url || PLACEHOLDER_PRODUCT_IMAGE,
+          isActive: true,
+          allergens: [],
+        };
+      });
       setItems(mapped);
+      return mapped;
     } catch (e) {
       setError('Αποτυχία φόρτωσης προϊόντων.');
       console.error(e);
+      return [];
     } finally {
       setIsLoading(false);
     }
@@ -194,11 +224,16 @@ const Products: React.FC = () => {
       fileInputRef.current.value = '';
     }
     setEditingProductId(null);
+    setModalImageError(null);
+    setShowDeleteImageConfirm(false);
+    setImageFieldBusy(false);
   };
 
   const startEditProduct = (product: Product) => {
     setSaveError(null);
     setSaveSuccess(null);
+    setModalImageError(null);
+    setShowDeleteImageConfirm(false);
     setEditingProductId(product.id);
     setNewProduct({
       name: product.name,
@@ -207,6 +242,7 @@ const Products: React.FC = () => {
       price: String(product.price),
       pointsReward: String(product.pointsReward ?? 0),
       image: product.image,
+      serverImageUrl: product.serverImageUrl ?? null,
       allergens: product.allergens ?? [],
       isActive: product.isActive,
     });
@@ -307,9 +343,46 @@ const Products: React.FC = () => {
     setNewCategoryName('');
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleModalImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+    setModalImageError(null);
+
+    if (!file.type.startsWith('image/')) {
+      setModalImageError('Επίλεξε έγκυρο αρχείο εικόνας.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > MAX_PRODUCT_IMAGE_BYTES) {
+      setModalImageError('Το αρχείο είναι πολύ μεγάλο. Μέγιστο ~10MB.');
+      e.target.value = '';
+      return;
+    }
+
+    if (editingProductId) {
+      setImageFieldBusy(true);
+      try {
+        await api.uploadProductImage(editingProductId, file);
+        const list = await loadProducts();
+        const row = list.find((p) => p.id === editingProductId);
+        if (row) {
+          setNewProduct((prev) => ({
+            ...prev,
+            image: row.image,
+            serverImageUrl: row.serverImageUrl ?? null,
+          }));
+        }
+        setNewProductImageFile(null);
+      } catch (err) {
+        console.error(err);
+        setModalImageError(formatProductImageApiError(err));
+      } finally {
+        setImageFieldBusy(false);
+        e.target.value = '';
+      }
+      return;
+    }
+
     setNewProductImageFile(file);
     const reader = new FileReader();
     reader.onloadend = () => {
@@ -319,6 +392,30 @@ const Products: React.FC = () => {
       }));
     };
     reader.readAsDataURL(file);
+  };
+
+  const handleConfirmDeleteProductImage = async () => {
+    if (!editingProductId) return;
+    setModalImageError(null);
+    setImageFieldBusy(true);
+    try {
+      await api.deleteProductImage(editingProductId);
+      const list = await loadProducts();
+      const row = list.find((p) => p.id === editingProductId);
+      if (row) {
+        setNewProduct((prev) => ({
+          ...prev,
+          image: row.image,
+          serverImageUrl: row.serverImageUrl ?? null,
+        }));
+      }
+      setShowDeleteImageConfirm(false);
+    } catch (err) {
+      console.error(err);
+      setModalImageError(formatProductImageApiError(err));
+    } finally {
+      setImageFieldBusy(false);
+    }
   };
 
   const toggleProductSelection = (productId: string) => {
@@ -646,8 +743,9 @@ const Products: React.FC = () => {
 
       {/* Add product modal */}
       {isAddOpen && (
+        <>
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-          <div className="w-full max-w-xl rounded-2xl bg-white p-6 shadow-lg">
+          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-lg">
             <div className="mb-4 flex items-center justify-between">
               <h2 className="text-lg font-semibold">{editingProductId ? 'Edit product' : 'Add product'}</h2>
               <button
@@ -713,28 +811,92 @@ const Products: React.FC = () => {
                       ))}
                   </select>
                 </div>
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Image</label>
-                  <div className="flex gap-2">
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      className="whitespace-nowrap"
-                      onClick={() => fileInputRef.current?.click()}
-                    >
-                      Upload
-                    </Button>
+                <div className="space-y-2 md:col-span-2">
+                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
+                    Hero shot
+                  </label>
+                  <div
+                    className={cn(
+                      'relative overflow-hidden rounded-xl border-[3px] border-slate-900 bg-gradient-to-br from-amber-200/90 via-white to-red-100/80 p-4 shadow-[6px_6px_0_0_rgba(10,10,10,1)]',
+                      imageFieldBusy && 'pointer-events-none opacity-80',
+                    )}
+                  >
+                    <div
+                      className="pointer-events-none absolute inset-0 opacity-[0.12]"
+                      style={{
+                        backgroundImage:
+                          'radial-gradient(circle, #0a0a0a 1.2px, transparent 1.2px)',
+                        backgroundSize: '10px 10px',
+                      }}
+                      aria-hidden
+                    />
+                    <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
+                      <button
+                        type="button"
+                        onClick={() => !imageFieldBusy && fileInputRef.current?.click()}
+                        className="group relative flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-900/40 bg-white/70 px-4 py-6 text-center transition hover:border-slate-900 hover:bg-white"
+                      >
+                        {imageFieldBusy ? (
+                          <Loader2 className="h-8 w-8 animate-spin text-slate-900" />
+                        ) : (
+                          <>
+                            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-slate-900 bg-amber-300 text-slate-900 shadow-[3px_3px_0_0_#0a0a0a]">
+                              <ImageIcon className="h-6 w-6" strokeWidth={2.2} />
+                            </span>
+                            <span className="text-xs font-black uppercase tracking-wide text-slate-900">
+                              {editingProductId ? 'Drop / tap — uploads now' : 'Choose cover art'}
+                            </span>
+                            <span className="max-w-[220px] text-[11px] font-medium leading-snug text-slate-600">
+                              {editingProductId
+                                ? 'Η εικόνα ανεβαίνει αμέσως στο server (PUT).'
+                                : 'Θα σταλεί μαζί με το Save προϊόντος.'}
+                            </span>
+                          </>
+                        )}
+                      </button>
+                      <div className="relative flex w-full shrink-0 overflow-hidden rounded-lg border-2 border-slate-900 bg-slate-900 sm:w-36">
+                        <img
+                          src={newProduct.image || PLACEHOLDER_PRODUCT_IMAGE}
+                          alt=""
+                          className="h-full min-h-[120px] w-full object-cover"
+                        />
+                        <span className="absolute bottom-1 left-1 rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-900">
+                          Preview
+                        </span>
+                      </div>
+                    </div>
                     <input
                       ref={fileInputRef}
                       type="file"
                       accept="image/*"
                       className="hidden"
-                      onChange={handleImageUpload}
+                      disabled={imageFieldBusy}
+                      onChange={(ev) => void handleModalImageSelected(ev)}
                     />
+                    {editingProductId && Boolean(newProduct.serverImageUrl) && (
+                      <div className="relative mt-3 flex flex-wrap gap-2">
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          disabled={imageFieldBusy}
+                          className="h-8 border-2 border-red-600 bg-white text-[10px] font-black uppercase tracking-wide text-red-700 hover:bg-red-50"
+                          onClick={() => setShowDeleteImageConfirm(true)}
+                        >
+                          Delete image
+                        </Button>
+                      </div>
+                    )}
+                    {!editingProductId && newProductImageFile && (
+                      <p className="relative mt-2 text-[11px] font-semibold text-slate-700">
+                        Επιλέχθηκε: {newProductImageFile.name}
+                      </p>
+                    )}
                   </div>
-                  {newProductImageFile && (
-                    <p className="mt-1 text-xs text-slate-500">Image selected</p>
+                  {modalImageError && (
+                    <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
+                      {modalImageError}
+                    </p>
                   )}
                 </div>
               </div>
@@ -818,6 +980,48 @@ const Products: React.FC = () => {
             </div>
           </div>
         </div>
+        {showDeleteImageConfirm && editingProductId && (
+          <div
+            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4"
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="delete-image-title"
+          >
+            <div className="w-full max-w-sm rounded-xl border-[3px] border-slate-900 bg-white p-5 shadow-[6px_6px_0_0_#0a0a0a]">
+              <p id="delete-image-title" className="text-sm font-black uppercase tracking-wide text-slate-900">
+                Remove hero shot?
+              </p>
+              <p className="mt-2 text-xs leading-relaxed text-slate-600">
+                Η εικόνα θα αφαιρεθεί από το προϊόν στο server (DELETE).
+              </p>
+              <div className="mt-4 flex justify-end gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  disabled={imageFieldBusy}
+                  onClick={() => setShowDeleteImageConfirm(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  type="button"
+                  variant="destructive"
+                  size="sm"
+                  disabled={imageFieldBusy}
+                  onClick={() => void handleConfirmDeleteProductImage()}
+                  className="gap-2"
+                >
+                  {imageFieldBusy ? (
+                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                  ) : null}
+                  Delete
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+        </>
       )}
 
       {/* Manage categories modal */}
