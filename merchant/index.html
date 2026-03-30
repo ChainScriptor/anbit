@@ -81,6 +81,14 @@
     };
   </script>
   <style>
+    @font-face {
+      font-family: "OmnesBoldItalic";
+      src: url("./public/fonts/OmnesBoldItalic.ttf") format("truetype");
+      font-weight: 700;
+      font-style: italic;
+      font-display: swap;
+    }
+
     body {
       font-family: "Inter", sans-serif;
       background-color: #0a0a0a;
@@ -108,13 +116,14 @@
 
     /* Logo Anbit – ίδιο με anbit_Wallet (Header.tsx + index.html .logo-anbit) */
     .logo-anbit {
-      font-family: "Poppins", sans-serif;
-      font-weight: 800;
+      font-family: "OmnesBoldItalic", sans-serif;
+      font-weight: 700;
+      font-style: italic;
       letter-spacing: -0.03em;
       transition: color 0.2s ease;
     }
     a.logo-anbit:hover {
-      color: #ca8a04;
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .container-scroll-container {
