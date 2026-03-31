@@ -55,12 +55,17 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
           <button
             type="button"
             onClick={() => setCityModalOpen(true)}
-            className="flex items-center gap-2 py-2 text-anbit-text hover:text-anbit-yellow transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50"
+            className={`flex items-center gap-2 py-2 text-anbit-text transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50 ${
+              theme === 'dark' ? 'hover:text-white/80' : 'hover:text-anbit-yellow'
+            }`}
             aria-label="Αλλαγή τοποθεσίας"
             aria-expanded={cityModalOpen}
             aria-haspopup="dialog"
           >
-            <MapPin className="w-6 h-6 lg:w-8 lg:h-8 text-anbit-yellow shrink-0" strokeWidth={2} />
+            <MapPin
+              className={`w-6 h-6 lg:w-8 lg:h-8 shrink-0 ${theme === 'dark' ? 'text-white' : 'text-anbit-yellow'}`}
+              strokeWidth={2}
+            />
             <span className="font-greek text-sm lg:text-base font-greek-bold max-w-[120px] truncate">{city.labelEl}</span>
             <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${cityModalOpen ? 'rotate-180' : ''}`} />
           </button>

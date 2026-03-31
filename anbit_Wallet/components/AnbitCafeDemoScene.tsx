@@ -2,12 +2,16 @@ import React from 'react';
 import { Smartphone, Wifi, CreditCard } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import AnbitWordmark from './AnbitWordmark';
+import { useTheme } from '../context/ThemeContext';
 
 interface PhotoSceneProps {
   className?: string;
 }
 
 const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
+  const { theme } = useTheme();
+  const isDark = theme === 'dark';
+
   return (
     <div
       className={`relative w-full bg-anbit-bg ${className}`}
@@ -45,7 +49,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pt-4">
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-anbit-card border border-anbit-border">
-                    <div className="p-2 rounded-lg bg-anbit-yellow/15 text-anbit-yellow">
+                    <div className={`p-2 rounded-lg bg-anbit-yellow/15 ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>
                       <Wifi className="w-5 h-5" />
                     </div>
                     <div>
@@ -55,7 +59,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
                   </div>
 
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-anbit-card border border-anbit-border">
-                    <div className="p-2 rounded-lg bg-anbit-yellow/15 text-anbit-yellow">
+                    <div className={`p-2 rounded-lg bg-anbit-yellow/15 ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>
                       <Smartphone className="w-5 h-5" />
                     </div>
                     <div>
@@ -65,7 +69,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
                   </div>
 
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-anbit-card border border-anbit-border">
-                    <div className="p-2 rounded-lg bg-anbit-yellow/15 text-anbit-yellow">
+                    <div className={`p-2 rounded-lg bg-anbit-yellow/15 ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>
                       <CreditCard className="w-5 h-5" />
                     </div>
                     <div>
@@ -75,7 +79,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
                   </div>
 
                   <div className="flex items-start gap-3 p-4 rounded-xl bg-anbit-card border border-anbit-border">
-                    <div className="p-2 rounded-lg bg-anbit-yellow/15 text-anbit-yellow">
+                    <div className={`p-2 rounded-lg bg-anbit-yellow/15 ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>
                       <svg
                         className="w-5 h-5"
                         fill="none"
@@ -102,7 +106,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
               <div className="relative h-[420px] md:h-[520px] hidden lg:block">
                 <div className="absolute top-12 left-8 bg-anbit-card rounded-2xl shadow-xl p-4 max-w-xs border border-anbit-border animate-float">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-anbit-yellow/20 text-anbit-yellow">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-anbit-yellow/20 ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>
                       <Wifi className="w-5 h-5" />
                     </div>
                     <div>
@@ -119,7 +123,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
 
                 <div className="absolute top-48 right-8 bg-anbit-card rounded-2xl shadow-xl p-4 max-w-xs border border-anbit-border animate-float-delayed">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-anbit-yellow/20 text-anbit-yellow">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-anbit-yellow/20 ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>
                       <Smartphone className="w-5 h-5" />
                     </div>
                     <div>
@@ -134,7 +138,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
 
                 <div className="absolute bottom-32 left-12 bg-anbit-card rounded-2xl shadow-xl p-4 max-w-xs border border-anbit-border animate-float">
                   <div className="flex items-center gap-3 mb-2">
-                    <div className="w-10 h-10 rounded-full flex items-center justify-center bg-anbit-yellow/20 text-anbit-yellow">
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center bg-anbit-yellow/20 ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>
                       <CreditCard className="w-5 h-5" />
                     </div>
                     <div>
@@ -160,19 +164,19 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
             <div className="mt-8 md:mt-10 bg-anbit-card/95 backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-anbit-border">
               <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
                 <div className="text-center">
-                  <p className="text-2xl md:text-3xl font-black text-anbit-yellow">4</p>
+                  <p className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>4</p>
                   <p className="text-xs md:text-sm text-anbit-muted mt-1">Φίλοι που τρώνε</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl md:text-3xl font-black text-anbit-yellow">1</p>
+                  <p className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>1</p>
                   <p className="text-xs md:text-sm text-anbit-muted mt-1">Άγγιγμα NFC</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl md:text-3xl font-black text-anbit-yellow">150</p>
+                  <p className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>150</p>
                   <p className="text-xs md:text-sm text-anbit-muted mt-1">XP που κερδίσατε</p>
                 </div>
                 <div className="text-center">
-                  <p className="text-2xl md:text-3xl font-black text-anbit-yellow">100%</p>
+                  <p className={`text-2xl md:text-3xl font-black ${isDark ? 'text-white' : 'text-anbit-yellow'}`}>100%</p>
                   <p className="text-xs md:text-sm text-anbit-muted mt-1">Ανέπαφο</p>
                 </div>
               </div>

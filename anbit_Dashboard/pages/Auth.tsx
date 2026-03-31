@@ -10,6 +10,7 @@ const HERO_IMAGE_URL =
 
 const AuthPage: React.FC = () => {
   const navigate = useNavigate();
+  const [authTab, setAuthTab] = React.useState<'login' | 'register'>('login');
 
   return (
     <div className="omnes-auth relative flex min-h-screen flex-col bg-[#f5f3ef] text-[#0F172A] lg:flex-row">
@@ -127,9 +128,13 @@ const AuthPage: React.FC = () => {
           >
             <div className="mb-10 text-center">
               <h1 className="text-5xl font-extrabold tracking-tight text-white">Welcome Back,</h1>
-              <p className="mt-3 text-3xl font-medium tracking-tight text-white/55">Please login to your account</p>
+              <p className="mt-3 text-3xl font-medium tracking-tight text-white/55">
+                {authTab === 'login'
+                  ? 'Please login to your account'
+                  : 'Create your merchant account'}
+              </p>
             </div>
-            <AuthTabs />
+            <AuthTabs onTabChange={setAuthTab} />
           </motion.div>
         </div>
       </div>

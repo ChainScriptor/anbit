@@ -29,8 +29,16 @@ const registrationSchema = z.object({
 type RegistrationValues = z.infer<typeof registrationSchema>;
 
 const countries = ['Greece', 'Cyprus', 'Italy', 'Spain', 'Other'];
+const fieldLabelClass = 'block text-xs font-semibold text-white/85';
+const fieldInputClass =
+  'w-full rounded-lg border border-white/15 bg-white/10 px-3 py-2.5 text-sm text-white placeholder:text-white/45 outline-none transition focus:border-white/30 focus:bg-white/15 focus:ring-1 focus:ring-white/30';
+const fieldHintClass = 'text-[11px] font-semibold uppercase tracking-wide text-white/55';
 
-export const RegisterForm: React.FC = () => {
+interface RegisterFormProps {
+  onSwitchToLogin?: () => void;
+}
+
+export const RegisterForm: React.FC<RegisterFormProps> = ({ onSwitchToLogin }) => {
   const [isSubmitted, setIsSubmitted] = useState(false);
 
   const {
@@ -117,13 +125,13 @@ export const RegisterForm: React.FC = () => {
             <div className="space-y-1.5">
               <label
                 htmlFor="country"
-                className="block text-xs font-medium text-slate-700"
+                className={fieldLabelClass}
               >
                 Country
               </label>
               <select
                 id="country"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                className={fieldInputClass}
                 {...register('country')}
               >
                 <option value="">Select a country</option>
@@ -143,13 +151,13 @@ export const RegisterForm: React.FC = () => {
             <div className="space-y-1.5">
               <label
                 htmlFor="businessType"
-                className="block text-xs font-medium text-slate-700"
+                className={fieldLabelClass}
               >
                 Business type
               </label>
               <select
                 id="businessType"
-                className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                className={fieldInputClass}
                 {...register('businessType')}
               >
                 <option value="Restaurant">Restaurant</option>
@@ -170,7 +178,7 @@ export const RegisterForm: React.FC = () => {
           <div className="space-y-1.5">
             <label
               htmlFor="locations"
-              className="block text-xs font-medium text-slate-700"
+              className={fieldLabelClass}
             >
               Number of locations
             </label>
@@ -178,7 +186,7 @@ export const RegisterForm: React.FC = () => {
               id="locations"
               type="number"
               min={1}
-              className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+              className={fieldInputClass}
               {...register('locations')}
             />
             {errors.locations && (
@@ -189,21 +197,21 @@ export const RegisterForm: React.FC = () => {
           </div>
 
           {/* Business info */}
-          <div className="mt-2 border-t border-slate-100 pt-1">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <div className="mt-2 border-t border-white/10 pt-1">
+            <p className={`mb-2 ${fieldHintClass}`}>
               Business information
             </p>
             <div className="space-y-3">
               <div className="space-y-1.5">
                 <label
                   htmlFor="venueName"
-                  className="block text-xs font-medium text-slate-700"
+                  className={fieldLabelClass}
                 >
                   Venue name
                 </label>
                 <input
                   id="venueName"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                  className={fieldInputClass}
                   {...register('venueName')}
                 />
                 {errors.venueName && (
@@ -216,13 +224,13 @@ export const RegisterForm: React.FC = () => {
               <div className="space-y-1.5">
                 <label
                   htmlFor="streetAddress"
-                  className="block text-xs font-medium text-slate-700"
+                  className={fieldLabelClass}
                 >
                   Street address
                 </label>
                 <input
                   id="streetAddress"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                  className={fieldInputClass}
                   {...register('streetAddress')}
                 />
                 {errors.streetAddress && (
@@ -236,13 +244,13 @@ export const RegisterForm: React.FC = () => {
                 <div className="space-y-1.5">
                   <label
                     htmlFor="postalCode"
-                    className="block text-xs font-medium text-slate-700"
+                    className={fieldLabelClass}
                   >
                     Postal code
                   </label>
                   <input
                     id="postalCode"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                    className={fieldInputClass}
                     {...register('postalCode')}
                   />
                   {errors.postalCode && (
@@ -254,13 +262,13 @@ export const RegisterForm: React.FC = () => {
                 <div className="space-y-1.5 sm:col-span-2">
                   <label
                     htmlFor="city"
-                    className="block text-xs font-medium text-slate-700"
+                    className={fieldLabelClass}
                   >
                     City
                   </label>
                   <input
                     id="city"
-                    className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                    className={fieldInputClass}
                     {...register('city')}
                   />
                   {errors.city && (
@@ -274,21 +282,21 @@ export const RegisterForm: React.FC = () => {
           </div>
 
           {/* Owner info */}
-          <div className="border-t border-slate-100 pt-3">
-            <p className="mb-2 text-[11px] font-semibold uppercase tracking-wide text-slate-500">
+          <div className="border-t border-white/10 pt-3">
+            <p className={`mb-2 ${fieldHintClass}`}>
               Owner information
             </p>
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
               <div className="space-y-1.5">
                 <label
                   htmlFor="firstName"
-                  className="block text-xs font-medium text-slate-700"
+                  className={fieldLabelClass}
                 >
                   First name
                 </label>
                 <input
                   id="firstName"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                  className={fieldInputClass}
                   {...register('firstName')}
                 />
                 {errors.firstName && (
@@ -300,13 +308,13 @@ export const RegisterForm: React.FC = () => {
               <div className="space-y-1.5">
                 <label
                   htmlFor="lastName"
-                  className="block text-xs font-medium text-slate-700"
+                  className={fieldLabelClass}
                 >
                   Last name
                 </label>
                 <input
                   id="lastName"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                  className={fieldInputClass}
                   {...register('lastName')}
                 />
                 {errors.lastName && (
@@ -321,13 +329,13 @@ export const RegisterForm: React.FC = () => {
               <div className="space-y-1.5">
                 <label
                   htmlFor="phone"
-                  className="block text-xs font-medium text-slate-700"
+                  className={fieldLabelClass}
                 >
                   Phone number
                 </label>
                 <input
                   id="phone"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                  className={fieldInputClass}
                   {...register('phone')}
                 />
                 {errors.phone && (
@@ -339,14 +347,14 @@ export const RegisterForm: React.FC = () => {
               <div className="space-y-1.5">
                 <label
                   htmlFor="emailOwner"
-                  className="block text-xs font-medium text-slate-700"
+                  className={fieldLabelClass}
                 >
                   Email
                 </label>
                 <input
                   id="emailOwner"
                   type="email"
-                  className="w-full rounded-lg border border-slate-200 bg-slate-50/80 px-3 py-2.5 text-sm outline-none focus:bg-white focus:border-[#0a0a0a] focus:ring-2 focus:ring-[#0a0a0a]/10"
+                  className={fieldInputClass}
                   {...register('email')}
                 />
                 {errors.email && (
@@ -366,31 +374,31 @@ export const RegisterForm: React.FC = () => {
               render={({ field }) => (
                 <input
                   type="checkbox"
-                  className="mt-0.5 h-3.5 w-3.5 rounded border-slate-300 accent-[#0a0a0a] focus:ring-[#0a0a0a]"
+                  className="mt-0.5 h-3.5 w-3.5 rounded border-white/30 bg-white/10 accent-[#e63533] focus:ring-[#e63533]"
                   checked={field.value ?? false}
                   onChange={(e) => field.onChange(e.target.checked)}
                 />
               )}
             />
-            <span className="text-xs text-slate-600">
+            <span className="text-xs text-white/70">
               I want Anbit couriers to deliver my orders
             </span>
           </div>
 
           {/* Terms + button */}
-          <p className="mt-1 text-[11px] leading-relaxed text-slate-500">
+          <p className="mt-1 text-[11px] leading-relaxed text-white/60">
             By clicking <span className="font-semibold">Get Started</span> you
             agree to the{' '}
             <button
               type="button"
-              className="text-[#0a0a0a] underline-offset-2 hover:text-[#c32a28] hover:underline"
+              className="text-white underline-offset-2 hover:text-[#f97316] hover:underline"
             >
               Terms of Service
             </button>{' '}
             and{' '}
             <button
               type="button"
-              className="text-[#0a0a0a] underline-offset-2 hover:text-[#c32a28] hover:underline"
+              className="text-white underline-offset-2 hover:text-[#f97316] hover:underline"
             >
               Privacy Policy
             </button>
@@ -401,7 +409,7 @@ export const RegisterForm: React.FC = () => {
             type="submit"
             whileTap={{ scale: 0.97 }}
             disabled={isSubmitting}
-            className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-[#0a0a0a] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#0a0a0a]/30 transition hover:bg-[#c32a28] disabled:cursor-not-allowed disabled:opacity-70"
+            className="mt-2 inline-flex w-full items-center justify-center rounded-lg bg-[#e63533] px-4 py-2.5 text-sm font-semibold text-white shadow-sm shadow-[#e63533]/40 transition hover:bg-[#c32a28] disabled:cursor-not-allowed disabled:opacity-70"
           >
             {isSubmitting ? (
               <div className="flex items-center gap-2">
@@ -412,6 +420,17 @@ export const RegisterForm: React.FC = () => {
               'Get Started'
             )}
           </motion.button>
+
+          <div className="pt-1 text-center">
+            <span className="text-xs text-white/65">Already user? </span>
+            <button
+              type="button"
+              onClick={onSwitchToLogin}
+              className="text-xs font-semibold text-white underline underline-offset-2 hover:text-[#e63533]"
+            >
+              Login
+            </button>
+          </div>
         </motion.form>
       )}
     </AnimatePresence>

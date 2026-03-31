@@ -5,8 +5,15 @@ import { RegisterForm } from './RegisterForm';
 
 type Tab = 'login' | 'register';
 
-export const AuthTabs: React.FC = () => {
+interface AuthTabsProps {
+  onTabChange?: (tab: Tab) => void;
+}
+
+export const AuthTabs: React.FC<AuthTabsProps> = ({ onTabChange }) => {
   const [activeTab, setActiveTab] = React.useState<Tab>('login');
+  React.useEffect(() => {
+    onTabChange?.(activeTab);
+  }, [activeTab, onTabChange]);
 
   return (
     <div>
@@ -39,7 +46,7 @@ export const AuthTabs: React.FC = () => {
             exit={{ opacity: 0, y: -6 }}
             transition={{ duration: 0.2 }}
           >
-            <RegisterForm />
+            <RegisterForm onSwitchToLogin={() => setActiveTab('login')} />
           </motion.div>
         )}
       </AnimatePresence>

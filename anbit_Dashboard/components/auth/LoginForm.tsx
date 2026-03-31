@@ -139,7 +139,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         type="submit"
         whileTap={{ scale: 0.97 }}
         disabled={isSubmitting}
-        className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-xl bg-[#e63533] px-4 text-xl font-bold text-[#0a0a0a] transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-xl bg-[#e63533] px-4 text-xl font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSubmitting ? (
           <div className="flex items-center gap-2">
@@ -175,7 +175,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         <button
           type="button"
           onClick={onSwitchToRegister}
-          className="ml-1 font-semibold text-white hover:underline"
+          className="ml-1 font-semibold text-white transition-colors hover:text-[#e63533] hover:underline"
         >
           Create Account
         </button>

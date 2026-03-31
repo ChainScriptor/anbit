@@ -2,7 +2,6 @@ import React, { useMemo } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import {
   User,
-  Star,
   Zap,
   MapPin,
   Clock,
@@ -16,6 +15,9 @@ import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedSocialLinks, { type Social } from './ui/social-links';
 import AnbitWordmark from './AnbitWordmark';
+import ImgStack from './ui/image-stack';
+import { AwardBadge } from './ui/award-badge';
+import StoreMysteryBox from './StoreMysteryBox';
 
 interface LocationState {
   partner?: Partner;
@@ -36,10 +38,10 @@ const StoreProfilePage: React.FC = () => {
   }, [state?.partner, partnerId, partners]);
 
   const menu: Product[] = useMemo(() => partner?.menu ?? [], [partner]);
-  const storeXPForPartner = useMemo(
-    () => (user?.storeXP ? user.storeXP[partner.id] ?? 0 : 0),
-    [user?.storeXP, partner.id]
-  );
+  const storeXPForPartner = useMemo(() => {
+    if (!partner) return 0;
+    return user?.storeXP ? user.storeXP[partner.id] ?? 0 : 0;
+  }, [user?.storeXP, partner]);
 
   if (!partner) {
     return (
@@ -111,7 +113,7 @@ const StoreProfilePage: React.FC = () => {
         {/* Top profile section */}
         <section>
           <div className="relative overflow-hidden rounded-3xl border border-[color:var(--anbit-yellow)] shadow-lg">
-            <div className="flex gap-5 rounded-[22px] bg-[color:var(--anbit-card)] p-5 sm:p-6">
+            <div className="flex flex-col gap-4 rounded-[22px] bg-[color:var(--anbit-card)] p-4 sm:flex-row sm:gap-5 sm:p-6">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-[color:var(--anbit-input)] shadow-sm sm:h-24 sm:w-24">
                 <img
                   src={partner.image}
@@ -120,8 +122,8 @@ const StoreProfilePage: React.FC = () => {
                 />
               </div>
               <div className="flex-1 space-y-2">
-                <div className="flex flex-wrap items-center justify-between gap-2">
-                  <div>
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+                  <div className="min-w-0">
                     <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
                       {partner.name}
                     </h1>
@@ -129,7 +131,7 @@ const StoreProfilePage: React.FC = () => {
                       {partner.location ?? 'Premium coffee & food experience'}
                     </p>
                   </div>
-                  <div className="rounded-2xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm">
+                  <div className="w-fit rounded-2xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm">
                     <span className="text-amber-300">
                       ★ {partner.rating.toFixed(1)}
                     </span>
@@ -139,7 +141,7 @@ const StoreProfilePage: React.FC = () => {
                   </div>
                 </div>
 
-                <div className="grid grid-cols-3 gap-2 text-xs sm:text-sm">
+                <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
                   <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
                     <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
                       XP στο κατάστημα
@@ -159,11 +161,11 @@ const StoreProfilePage: React.FC = () => {
                   </div>
                   <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
                     <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                      Avg. Prep Time
+                      Featured Badge
                     </p>
-                    <p className="mt-1 text-sm font-semibold">
-                      {partner.deliveryTime ?? '8–12'}'
-                    </p>
+                    <div className="mt-2">
+                      <AwardBadge type="product-of-the-week" place={1} />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -182,45 +184,14 @@ const StoreProfilePage: React.FC = () => {
                     Product Catalog
                   </h2>
                   <p className="mt-1 text-xs text-[color:var(--anbit-muted)]">
-                    Ο κατάλογος του καταστήματος, όπως στο μενού.
+                    Swipe/drag stack για τις σελίδες του μενού.
                   </p>
                 </div>
               </div>
-              <div className="space-y-4">
-                {menu.map((product) => (
-                  <article
-                    key={product.id}
-                    className="flex items-start gap-4 border-b border-[color:var(--anbit-border)] pb-4 last:border-b-0"
-                  >
-                    <div className="w-24 h-24 rounded-xl overflow-hidden bg-[color:var(--anbit-input)] shrink-0">
-                      <img
-                        src={product.image}
-                        alt={product.name}
-                        className="w-full h-full object-cover"
-                      />
-                    </div>
-                    <div className="flex-1 min-w-0 flex flex-col gap-1">
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="text-base font-semibold text-[color:var(--anbit-text)] leading-snug">
-                          {product.name}
-                        </h3>
-                        <p className="text-base font-semibold text-[color:var(--anbit-text)] whitespace-nowrap">
-                          €{product.price.toFixed(2)}
-                        </p>
-                      </div>
-                      {product.description && (
-                        <p className="text-sm text-[color:var(--anbit-muted)] leading-relaxed">
-                          {product.description}
-                        </p>
-                      )}
-                    </div>
-                  </article>
-                ))}
-                {menu.length === 0 && (
-                  <p className="py-6 text-center text-xs text-[color:var(--anbit-muted)]">
-                    Δεν υπάρχουν ακόμα προϊόντα για αυτό το κατάστημα.
-                  </p>
-                )}
+              <div className="rounded-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] px-2 sm:px-4">
+                <div className="flex items-center justify-center">
+                  <ImgStack images={['/menu.jpg', '/menu1.jpg']} />
+                </div>
               </div>
             </section>
 
@@ -319,6 +290,8 @@ const StoreProfilePage: React.FC = () => {
                 </div>
               </div>
             </section>
+
+            <StoreMysteryBox initialXp={storeXPForPartner} />
 
             {/* Reservation system */}
             <section className="rounded-3xl bg-[color:var(--anbit-card)] p-0 shadow-sm border border-[color:var(--anbit-yellow)] overflow-hidden">

@@ -86,14 +86,14 @@ const App: React.FC = () => {
         setUserData((prev) =>
           prev
             ? {
-                ...prev,
-                totalXP,
-                storeXP,
-                currentLevel,
-                currentLevelName: `Level ${currentLevel}`,
-                nextLevelXP,
-                levelProgress: Math.max(0, Math.min(100, levelProgress)),
-              }
+              ...prev,
+              totalXP,
+              storeXP,
+              currentLevel,
+              currentLevelName: `Level ${currentLevel}`,
+              nextLevelXP,
+              levelProgress: Math.max(0, Math.min(100, levelProgress)),
+            }
             : prev,
         );
         setXpPlaceholderMessage(null);
@@ -118,11 +118,13 @@ const App: React.FC = () => {
       const detail = (e as CustomEvent<{ message?: string }>).detail;
       logout();
       setAuthMessage(detail?.message || 'Η συνεδρία σας έληξε. Παρακαλώ συνδεθείτε ξανά.');
-      navigate('/login', { replace: true });
+      if (location.pathname.startsWith('/profile')) {
+        navigate('/login', { replace: true });
+      }
     };
     window.addEventListener('anbit:auth:401', handler);
     return () => window.removeEventListener('anbit:auth:401', handler);
-  }, [logout, navigate]);
+  }, [logout, navigate, location.pathname]);
 
   const openLogin = useCallback((onSuccess?: () => void) => {
     setAuthMessage(null);
@@ -153,12 +155,12 @@ const App: React.FC = () => {
   const handleOpenStoreProfile = (partner: Partner) => {
     navigate(`/store-profile/${partner.id}`, { state: { partner } });
   };
-  const handleRedeemClick = (reward: Reward) => { 
+  const handleRedeemClick = (reward: Reward) => {
     // Check if user has enough points for THIS partner
     const storePoints = userData?.storeXP[reward.partnerId] || 0;
     if (storePoints >= reward.xpCost) {
-      setSelectedReward(reward); 
-      setIsRedemptionModalOpen(true); 
+      setSelectedReward(reward);
+      setIsRedemptionModalOpen(true);
     } else {
       alert("ΑΝΕΠΑΡΚΕΣ ΥΠΟΛΟΙΠΟ ΠΟΝΤΩΝ ΣΕ ΑΥΤΟ ΤΟ ΚΑΤΑΣΤΗΜΑ");
     }
@@ -166,21 +168,21 @@ const App: React.FC = () => {
 
   const handleOrderComplete = useCallback(async (xpEarned: number) => {
     if (!userData || !selectedPartner) return;
-    
+
     setActiveOrderPartner(selectedPartner.name);
 
     setTimeout(async () => {
       setUserData(prev => {
         if (!prev) return null;
-        
+
         const currentStoreXP = prev.storeXP[selectedPartner.id] || 0;
         const newStoreXP = {
           ...prev.storeXP,
           [selectedPartner.id]: currentStoreXP + xpEarned
         };
 
-        return { 
-          ...prev, 
+        return {
+          ...prev,
           storeXP: newStoreXP
         };
       });
@@ -308,8 +310,8 @@ const App: React.FC = () => {
         {!isLoaded || isAuthLoading ? (
           <motion.div key="loader" className="fixed inset-0 z-[100] bg-anbit-bg flex items-center justify-center" exit={{ opacity: 0 }}>
             <div className="flex flex-col items-center gap-4">
-               <div className="w-10 h-10 border-4 border-anbit-yellow border-t-transparent rounded-full animate-spin" />
-               <span className="font-medium text-xs tracking-wide text-anbit-yellow animate-pulse">Συγχρονισμός...</span>
+              <div className="w-10 h-10 border-4 border-anbit-yellow border-t-transparent rounded-full animate-spin" />
+              <span className="font-medium text-xs tracking-wide text-anbit-yellow animate-pulse">Συγχρονισμός...</span>
             </div>
           </motion.div>
         ) : (
@@ -398,8 +400,8 @@ const App: React.FC = () => {
                   )
                 } />
                 <Route path="/store-profile/:partnerId" element={<StoreProfilePage />} />
-                <Route path="/quests" element={userData ? <QuestsPage quests={dashboardFeed.quests} user={userData} /> : <Navigate to="/dashboard" replace />} />
-                <Route path="/profile" element={userData ? <ProfilePage user={userData} partners={dashboardFeed.partners} /> : <Navigate to="/dashboard" replace />} />
+                <Route path="/quests" element={<QuestsPage quests={dashboardFeed.quests} user={userData} />} />
+                <Route path="/profile" element={userData ? <ProfilePage user={userData} partners={dashboardFeed.partners} /> : <Navigate to="/login" replace />} />
                 <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/dashboard" replace />} />
                 <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/dashboard" replace />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />
