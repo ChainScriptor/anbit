@@ -1,7 +1,7 @@
 import React from "react";
 
 const HOVER_AREAS = 30;
-const IMAGE_SRC = "/xp.jpg";
+const IMAGE_SRC = "/anbit.gif";
 
 type NavStyle = React.CSSProperties & { "--max-a"?: number };
 

@@ -54,7 +54,7 @@ const LanguageSelector: React.FC = () => {
                 i18n.changeLanguage(lang.code);
                 setIsOpen(false);
               }}
-              className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-anbit-text hover:bg-white/[0.05] transition-colors"
+              className="w-full flex items-center gap-3 px-3 py-2.5 text-left text-sm text-anbit-text hover:bg-anbit-border/40 transition-colors"
             >
               <span className="text-xl leading-none" aria-hidden>
                 {lang.flag}

@@ -4,3 +4,59 @@
   font-weight: normal;
   font-style: normal;
 }
+
+.anbit-phone-input {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  height: 56px;
+  width: 100%;
+  background: #000000;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  color: #ffffff;
+  padding: 0 12px;
+}
+
+.anbit-phone-input:focus-within {
+  border-color: #c2002a;
+}
+
+.anbit-phone-input .PhoneInputCountry {
+  margin-right: 0;
+}
+
+.anbit-phone-input .PhoneInputCountryIcon {
+  width: 22px;
+  height: 16px;
+  border: 0;
+  box-shadow: none;
+}
+
+.anbit-phone-input .PhoneInputCountrySelect {
+  background: #121212;
+  color: #ffffff;
+  border: 0;
+  outline: none;
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
+.anbit-phone-input .PhoneInputCountrySelect option {
+  background: #121212;
+  color: #ffffff;
+}
+
+.anbit-phone-input__field {
+  height: 100%;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #ffffff;
+  font-size: 16px;
+  outline: none;
+}
+
+.anbit-phone-input__field::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}

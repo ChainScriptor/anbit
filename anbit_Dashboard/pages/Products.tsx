@@ -22,6 +22,28 @@ const PLACEHOLDER_PRODUCT_IMAGE =
   'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400';
 const MAX_PRODUCT_IMAGE_BYTES = 10 * 1024 * 1024;
 
+async function convertAvifToWebp(file: File): Promise<File> {
+  if (file.type !== 'image/avif') return file;
+  const bitmap = await createImageBitmap(file);
+  const canvas = document.createElement('canvas');
+  canvas.width = bitmap.width;
+  canvas.height = bitmap.height;
+  const ctx = canvas.getContext('2d');
+  if (!ctx) {
+    throw new Error('Δεν ήταν δυνατή η επεξεργασία εικόνας AVIF.');
+  }
+  ctx.drawImage(bitmap, 0, 0);
+  bitmap.close();
+  const blob = await new Promise<Blob | null>((resolve) => {
+    canvas.toBlob((result) => resolve(result), 'image/webp', 0.92);
+  });
+  if (!blob) {
+    throw new Error('Αποτυχία μετατροπής AVIF σε WebP.');
+  }
+  const baseName = file.name.replace(/\.[^.]+$/, '');
+  return new File([blob], `${baseName}.webp`, { type: 'image/webp' });
+}
+
 function formatProductImageApiError(e: unknown): string {
   if (isAxiosError(e)) {
     const status = e.response?.status;
@@ -344,17 +366,26 @@ const Products: React.FC = () => {
   };
 
   const handleModalImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
+    const rawFile = e.target.files?.[0];
+    if (!rawFile) return;
     setModalImageError(null);
 
-    if (!file.type.startsWith('image/')) {
+    if (!rawFile.type.startsWith('image/')) {
       setModalImageError('Επίλεξε έγκυρο αρχείο εικόνας.');
       e.target.value = '';
       return;
     }
-    if (file.size > MAX_PRODUCT_IMAGE_BYTES) {
+    if (rawFile.size > MAX_PRODUCT_IMAGE_BYTES) {
       setModalImageError('Το αρχείο είναι πολύ μεγάλο. Μέγιστο ~10MB.');
+      e.target.value = '';
+      return;
+    }
+
+    let file = rawFile;
+    try {
+      file = await convertAvifToWebp(rawFile);
+    } catch (err) {
+      setModalImageError(err instanceof Error ? err.message : 'Αποτυχία μετατροπής AVIF.');
       e.target.value = '';
       return;
     }
@@ -876,7 +907,7 @@ const Products: React.FC = () => {
                     <input
                       ref={fileInputRef}
                       type="file"
-                      accept="image/*"
+                      accept="image/*,.avif,image/avif"
                       className="hidden"
                       disabled={imageFieldBusy}
                       onChange={(ev) => void handleModalImageSelected(ev)}

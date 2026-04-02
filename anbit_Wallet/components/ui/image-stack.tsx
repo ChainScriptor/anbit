@@ -1,6 +1,7 @@
 'use client';
 
 import { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { motion, type PanInfo } from 'framer-motion';
 
 interface Card {
@@ -11,9 +12,10 @@ interface Card {
 
 interface ImgStackProps {
   images: string[];
+  onPreviewOpenChange?: (open: boolean) => void;
 }
 
-export default function ImgStack({ images }: ImgStackProps) {
+export default function ImgStack({ images, onPreviewOpenChange }: ImgStackProps) {
   const [cards, setCards] = useState<Card[]>(
     images.map((src, index) => ({
       id: index,
@@ -70,10 +72,16 @@ export default function ImgStack({ images }: ImgStackProps) {
     setTimeout(() => setIsAnimating(false), 300);
   };
 
-  const closePreview = () => setActiveImage(null);
+  const closePreview = () => {
+    setActiveImage(null);
+    onPreviewOpenChange?.(false);
+  };
   const openTopCardPreview = () => {
     const topCard = cards[0];
-    if (topCard) setActiveImage(topCard.src);
+    if (topCard) {
+      setActiveImage(topCard.src);
+      onPreviewOpenChange?.(true);
+    }
   };
 
   return (
@@ -132,32 +140,34 @@ export default function ImgStack({ images }: ImgStackProps) {
         </button>
       </div>
 
-      {activeImage && (
-        <div
-          className="fixed inset-0 z-[120] flex items-center justify-center bg-black/80 p-4 backdrop-blur-sm"
-          onClick={closePreview}
-          role="dialog"
-          aria-modal="true"
-        >
+      {activeImage &&
+        createPortal(
           <div
-            className="relative max-h-[92vh] w-full max-w-5xl rounded-2xl border border-white/20 bg-black/20 p-2 shadow-2xl"
-            onClick={(e) => e.stopPropagation()}
+            className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85 p-4"
+            onClick={closePreview}
+            role="dialog"
+            aria-modal="true"
           >
-            <button
-              type="button"
-              onClick={closePreview}
-              className="absolute right-3 top-3 z-10 rounded-lg bg-black/70 px-3 py-1 text-xs font-semibold text-white hover:bg-black"
+            <div
+              className="relative max-h-[92vh] w-full max-w-5xl shadow-2xl bg-transparent p-0"
+              onClick={(e) => e.stopPropagation()}
             >
-              Close
-            </button>
-            <img
-              src={activeImage}
-              alt="Menu preview"
-              className="max-h-[86vh] w-full rounded-xl object-contain"
-            />
-          </div>
-        </div>
-      )}
+              <button
+                type="button"
+                onClick={closePreview}
+                className="absolute right-3 top-3 z-10 rounded-lg bg-black/70 px-3 py-1 text-xs font-semibold text-white hover:bg-black"
+              >
+                Close
+              </button>
+              <img
+                src={activeImage}
+                alt="Menu preview"
+                className="max-h-[86vh] w-full object-contain"
+              />
+            </div>
+          </div>,
+          document.body,
+        )}
     </div>
   );
 }

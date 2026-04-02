@@ -393,7 +393,7 @@ const Inventory: React.FC = () => {
                             </div>
                             <div className="text-center">
                               <p className="text-xs font-black text-white/60 uppercase">Κλικ για Μεταφορτωση</p>
-                              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">PNG, JPG ή WebP</p>
+                              <p className="text-[8px] font-bold text-white/20 uppercase mt-1">PNG, JPG, WebP ή AVIF</p>
                             </div>
                           </>
                         )}
@@ -402,7 +402,7 @@ const Inventory: React.FC = () => {
                         type="file" 
                         ref={fileInputRef} 
                         onChange={handleImageUpload} 
-                        accept="image/*" 
+                        accept="image/*,.avif,image/avif" 
                         className="hidden" 
                       />
                     </div>

@@ -254,14 +254,14 @@ const MerchantBanners: React.FC = () => {
             {isUploading ? 'Uploading...' : 'Upload banner εικόνες'}
             <input
               type="file"
-              accept="image/*"
+              accept="image/*,.avif,image/avif"
               multiple
               className="hidden"
               disabled={isUploading}
               onChange={(e) => void handleUpload(e.target.files)}
             />
           </label>
-          <p className="mt-2 text-[11px] text-slate-500">PNG/JPG/WEBP · Μπορείς να επιλέξεις πολλαπλές εικόνες.</p>
+          <p className="mt-2 text-[11px] text-slate-500">PNG/JPG/WEBP/AVIF · Μπορείς να επιλέξεις πολλαπλές εικόνες.</p>
         </div>
 
         {message && <p className="mt-4 rounded-xl bg-emerald-50 px-3 py-2 text-xs font-medium text-emerald-700">{message}</p>}

@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useLocation, useParams, useNavigate } from 'react-router-dom';
 import {
   User,
@@ -30,6 +30,7 @@ const StoreProfilePage: React.FC = () => {
   const { partners } = useDashboardData(false);
   const { user } = useAuth();
   const { theme } = useTheme();
+  const [isMenuPreviewOpen, setIsMenuPreviewOpen] = useState(false);
 
   const partner: Partner | undefined = useMemo(() => {
     if (state?.partner) return state.partner;
@@ -190,7 +191,10 @@ const StoreProfilePage: React.FC = () => {
               </div>
               <div className="rounded-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] px-2 sm:px-4">
                 <div className="flex items-center justify-center">
-                  <ImgStack images={['/menu.jpg', '/menu1.jpg']} />
+                  <ImgStack
+                    images={['/menu.jpg', '/menu1.jpg']}
+                    onPreviewOpenChange={setIsMenuPreviewOpen}
+                  />
                 </div>
               </div>
             </section>
@@ -291,7 +295,7 @@ const StoreProfilePage: React.FC = () => {
               </div>
             </section>
 
-            <StoreMysteryBox initialXp={storeXPForPartner} />
+            {!isMenuPreviewOpen && <StoreMysteryBox initialXp={storeXPForPartner} />}
 
             {/* Reservation system */}
             <section className="rounded-3xl bg-[color:var(--anbit-card)] p-0 shadow-sm border border-[color:var(--anbit-yellow)] overflow-hidden">

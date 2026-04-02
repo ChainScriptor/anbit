@@ -4,6 +4,8 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import { useOrder } from '../context/OrderContext';
 
+const LOGIN_RETURN_TO_KEY = 'anbit_login_return_to';
+
 const ScanPage: React.FC = () => {
   const { shortCode } = useParams<{ shortCode: string }>();
   const navigate = useNavigate();
@@ -27,8 +29,16 @@ const ScanPage: React.FC = () => {
           tableNumber: details.tableId,
         });
 
-        // Αντί να πηγαίνουμε στο /network, προωθούμε στο clean URL του καταστήματος
-        navigate(`/store/${shortCode}`, { replace: true });
+        const storePath = `/store/${shortCode}`;
+
+        // Για QR flow: πρώτα login, μετά redirect στο ordering PWA store page.
+        if (!isAuthenticated) {
+          sessionStorage.setItem(LOGIN_RETURN_TO_KEY, storePath);
+          navigate(`/login?returnTo=${encodeURIComponent(storePath)}`, { replace: true });
+          return;
+        }
+
+        navigate(storePath, { replace: true });
       } catch (e) {
         console.error('Failed to resolve QR code', e);
         setError('Το QR δεν βρέθηκε ή έληξε.');

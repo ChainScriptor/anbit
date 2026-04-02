@@ -10,6 +10,7 @@ import { useLanguage } from '../context/LanguageContext';
 
 const STORE_LANG_KEY = 'anbit-store-lang-chosen';
 const STORE_QR_PARTNER_CACHE_PREFIX = 'anbit-store-partner-cache:';
+const MERCHANT_PRODUCTS_POLL_INTERVAL_MS = 30_000;
 
 const LANGUAGES = [
   { code: 'el' as const, name: 'Ελληνικά', flag: '🇬🇷' },
@@ -56,6 +57,7 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
   const [isResolving, setIsResolving] = useState(false);
   const resolvingRef = useRef(false);
   const resolvedShortCodeRef = useRef<string | null>(null);
+  const [pollMerchantId, setPollMerchantId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!shortCode) {
@@ -87,24 +89,40 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
         let found =
           partners.find((p) => p.id?.toLowerCase() === normalizedMerchantId) ?? null;
 
-        // 2) Αν δεν υπάρχει, φέρε products από API (θέλουμε menu να δουλεύει και χωρίς login)
-        if (!found) {
-          const merchantProducts = await api.getProducts({
+        // 2) Πάντα φέρνουμε το merchant menu από API για να εμφανίζονται
+        // άμεσα νέες κατηγορίες/προϊόντα από το merchant dashboard.
+        const merchantProducts = [];
+        const pageSize = 100;
+        let offset = 0;
+        while (true) {
+          const page = await api.getProducts({
             merchantId: details.merchantId,
+            limit: pageSize,
+            offset,
           });
+          merchantProducts.push(...page);
+          if (page.length < pageSize) break;
+          offset += pageSize;
+        }
 
-          const menu: Product[] = merchantProducts.map((p) => ({
-            id: p.id,
-            name: p.name,
-            description: p.description,
-            price: p.price,
-            xpReward: p.xp,
-            image:
-              p.imageUrl ||
-              'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
-            category: p.category ?? 'Menu',
-          }));
+        const menu: Product[] = merchantProducts.map((p) => ({
+          id: p.id,
+          name: p.name,
+          description: p.description,
+          price: p.price,
+          xpReward: p.xp,
+          image:
+            p.imageUrl ||
+            'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
+          category: p.category ?? 'Menu',
+        }));
 
+        if (found) {
+          found = {
+            ...found,
+            menu,
+          };
+        } else {
           found = {
             id: details.merchantId,
             name: `Store ${details.merchantId.slice(0, 6)}`,
@@ -127,6 +145,7 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
         }
 
         setPartner(found);
+        setPollMerchantId(details.merchantId);
         if (shortCode && typeof window !== 'undefined') {
           sessionStorage.setItem(`${STORE_QR_PARTNER_CACHE_PREFIX}${shortCode}`, JSON.stringify(found));
         }
@@ -150,6 +169,57 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
       cancelled = true;
     };
   }, [shortCode, setSession, isAuthenticated]);
+
+  // Poll merchant products so new categories/products appear without requiring a page refresh.
+  useEffect(() => {
+    if (!pollMerchantId) return;
+    let cancelled = false;
+
+    const fetchMenu = async () => {
+      // Do not update state after unmount.
+      if (cancelled) return;
+      const merchantProducts: any[] = [];
+      const pageSize = 100;
+      let offset = 0;
+
+      while (true) {
+        const page = await api.getProducts({
+          merchantId: pollMerchantId,
+          limit: pageSize,
+          offset,
+        });
+        merchantProducts.push(...page);
+        if (page.length < pageSize) break;
+        offset += pageSize;
+      }
+
+      if (cancelled) return;
+
+      const menu: Product[] = merchantProducts.map((p) => ({
+        id: p.id,
+        name: p.name,
+        description: p.description,
+        price: p.price,
+        xpReward: p.xp,
+        image:
+          p.imageUrl ||
+          'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
+        category: p.category ?? 'Menu',
+      }));
+
+      setPartner((prev) => (prev ? { ...prev, menu } : prev));
+    };
+
+    void fetchMenu();
+    const intervalId = window.setInterval(() => {
+      void fetchMenu();
+    }, MERCHANT_PRODUCTS_POLL_INTERVAL_MS);
+
+    return () => {
+      cancelled = true;
+      window.clearInterval(intervalId);
+    };
+  }, [pollMerchantId]);
 
   const handleStartOrdering = () => {
     setLanguage(selectedLang);

@@ -35,6 +35,7 @@ interface NetworkPageProps {
   onOrderComplete: (xpEarned: number) => void;
   onOpenStoreMenu: (partner: Partner) => void;
   onOpenStoreProfile: (partner: Partner) => void;
+  unlockedMerchantId?: string | null;
 }
 
 type SortOption = 'default' | 'name_asc' | 'name_desc' | 'rating_desc' | 'rating_asc' | 'delivery_asc' | 'min_order_asc';
@@ -49,7 +50,15 @@ const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'min_order_asc', label: 'Ελάχ. παραγγελία (από μικρότερο)' },
 ];
 
-const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpenQR, onOrderComplete, onOpenStoreMenu, onOpenStoreProfile }) => {
+const NetworkPage: React.FC<NetworkPageProps> = ({
+  partners,
+  storeXP = {},
+  onOpenQR,
+  onOrderComplete,
+  onOpenStoreMenu,
+  onOpenStoreProfile,
+  unlockedMerchantId = null,
+}) => {
   const { t } = useLanguage();
   const [filter, setFilter] = useState('All');
   const [sortBy, setSortBy] = useState<SortOption>('default');
@@ -216,12 +225,18 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
           {t('partnerStores')}
         </h2>
         <div ref={scrollRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5">
-          {sortedPartners.map((partner) => (
-            <motion.div
-              key={partner.id}
-              variants={itemVariants}
-              className="rounded-xl overflow-hidden border border-anbit-border bg-anbit-card shadow-md flex flex-col"
-            >
+          {sortedPartners.map((partner) => {
+            const isUnlocked =
+              !!unlockedMerchantId &&
+              unlockedMerchantId.toLowerCase() === partner.id.toLowerCase();
+            return (
+              <motion.div
+                key={partner.id}
+                variants={itemVariants}
+                className={`rounded-xl overflow-hidden border border-anbit-border bg-anbit-card shadow-md flex flex-col ${
+                  isUnlocked ? '' : 'opacity-80'
+                }`}
+              >
               {/* Εικόνα με badges */}
               <div className="relative aspect-[4/3] overflow-hidden">
                 <img src={partner.image} alt={partner.name} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />
@@ -274,9 +289,15 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
                 <div className="grid grid-cols-2 gap-2 mt-auto">
                   <button
                     onClick={() => onOpenStoreMenu(partner)}
-                    className="py-2.5 rounded-lg font-greek-bold text-sm tracking-wide bg-anbit-card border border-anbit-border text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content transition-all"
+                    disabled={!isUnlocked}
+                    className={`py-2.5 rounded-lg font-greek-bold text-sm tracking-wide border transition-all ${
+                      isUnlocked
+                        ? 'bg-anbit-card border-anbit-border text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content'
+                        : 'bg-anbit-border/50 border-anbit-border text-anbit-muted cursor-not-allowed'
+                    }`}
+                    title={isUnlocked ? t('orderBtn') : 'Κλειδωμένο: χρειάζεται scan QR/NFC για αυτό το κατάστημα'}
                   >
-                    {t('orderBtn')}
+                    {isUnlocked ? t('orderBtn') : `${t('orderBtn')} (Locked)`}
                   </button>
                   <button
                     onClick={() => onOpenStoreProfile(partner)}
@@ -287,7 +308,8 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
                 </div>
               </div>
             </motion.div>
-          ))}
+            );
+          })}
         </div>
       </section>
 

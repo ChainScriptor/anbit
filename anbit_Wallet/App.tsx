@@ -138,6 +138,10 @@ const App: React.FC = () => {
     setAuthModalMode('register');
     setAuthModalOpen(true);
   }, []);
+  const openLoginPage = useCallback((returnTo?: string) => {
+    const target = returnTo ?? location.pathname;
+    navigate(`/login?returnTo=${encodeURIComponent(target)}`);
+  }, [location.pathname, navigate]);
   const closeAuthModal = useCallback(() => {
     setAuthSuccessCallback(null);
     setAuthModalOpen(false);
@@ -334,14 +338,14 @@ const App: React.FC = () => {
                 isAuthenticated={!!userData}
                 onOpenQR={userData ? () => setIsQRModalOpen(true) : undefined}
                 totalXP={userData?.totalXP ?? 0}
-                onOpenLogin={!userData ? openLogin : undefined}
+                onOpenLogin={!userData ? openLoginPage : undefined}
                 onOpenRegister={!userData ? openRegister : undefined}
               />
             )}
             <main className={hideChrome ? 'flex-1 min-h-screen w-full p-0' : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}>
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
-                <Route path="/login" element={userData ? <Navigate to="/dashboard" replace /> : <CustomerLoginPage />} />
+                <Route path="/login" element={<CustomerLoginPage />} />
                 <Route path="/dashboard" element={dashboardContent} />
                 <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
                 <Route
@@ -350,7 +354,7 @@ const App: React.FC = () => {
                     <PwaHomeScreen
                       totalXP={userData?.totalXP ?? 2450}
                       isAuthenticated={!!userData}
-                      onOpenLogin={openLogin}
+                      onOpenLogin={() => openLoginPage('/profile')}
                     />
                   }
                 />
@@ -358,16 +362,20 @@ const App: React.FC = () => {
                 <Route
                   path="/store/:shortCode"
                   element={
-                    <StoreFromQrPage
-                      isAuthenticated={!!userData}
-                      onOpenLogin={openLogin}
-                      onOpenRegister={openRegister}
-                      onOrderComplete={(xpEarned) => {
-                        if (userData && selectedPartner) {
-                          handleOrderComplete(xpEarned);
-                        }
-                      }}
-                    />
+                    userData ? (
+                      <StoreFromQrPage
+                        isAuthenticated={!!userData}
+                        onOpenLogin={openLogin}
+                        onOpenRegister={openRegister}
+                        onOrderComplete={(xpEarned) => {
+                          if (userData && selectedPartner) {
+                            handleOrderComplete(xpEarned);
+                          }
+                        }}
+                      />
+                    ) : (
+                      <Navigate to={`/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />
+                    )
                   }
                 />
                 <Route path="/network" element={
@@ -391,6 +399,7 @@ const App: React.FC = () => {
                       storeXP={userData?.storeXP ?? {}}
                       onOpenQR={userData ? () => setIsQRModalOpen(true) : openLogin}
                       onOrderComplete={userData ? handleOrderComplete : openLogin}
+                      unlockedMerchantId={session?.merchantId ?? null}
                       onOpenStoreMenu={(partner) => {
                         setSelectedPartner(partner);
                         setStoreMenuPartner(partner);
