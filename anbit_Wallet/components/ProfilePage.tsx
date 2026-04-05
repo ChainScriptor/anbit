@@ -93,11 +93,11 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
 
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
         <section>
-          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--anbit-yellow)] shadow-lg">
+          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--anbit-xp-surface-border)] shadow-lg">
             <div className="flex flex-col gap-4 rounded-[22px] bg-[color:var(--anbit-card)] p-4 sm:flex-row sm:gap-5 sm:p-6">
               <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-[color:var(--anbit-input)] shadow-sm sm:h-24 sm:w-24">
                 <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
-                <div className="absolute -bottom-1 -right-1 rounded-lg bg-[color:var(--anbit-yellow)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--anbit-yellow-content)] shadow-sm">
+                <div className="absolute -bottom-1 -right-1 rounded-lg bg-[color:var(--anbit-xp-bar)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--anbit-bg)] shadow-sm">
                   LVL {user.currentLevel}
                 </div>
               </div>
@@ -121,8 +121,8 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                       Συνολικά XP
                     </p>
                     <p className="mt-1 flex items-center gap-1 text-sm font-semibold tabular-nums">
-                      <Zap className="h-4 w-4 text-[color:var(--anbit-yellow)]" />
-                      <span>{user.totalXP.toLocaleString()} XP</span>
+                      <Zap className="h-4 w-4 text-[color:var(--anbit-xp-accent)]" />
+                      <span className="text-[color:var(--anbit-xp-accent)]">{user.totalXP.toLocaleString()} XP</span>
                     </p>
                   </div>
                   <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
@@ -131,7 +131,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                     </p>
                     <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[color:var(--anbit-border)]">
                       <div
-                        className="h-full rounded-full bg-[color:var(--anbit-yellow)]"
+                        className="h-full rounded-full bg-[color:var(--anbit-xp-bar)]"
                         style={{ width: `${levelProgress}%` }}
                       />
                     </div>
@@ -141,8 +141,8 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                       Καταστήματα με XP
                     </p>
                     <p className="mt-1 flex items-center gap-1 text-sm font-semibold">
-                      <Star className="h-4 w-4 text-[color:var(--anbit-yellow)]" />
-                      <span>{storesWithXpCount} ενεργά</span>
+                      <Star className="h-4 w-4 text-[color:var(--anbit-xp-accent)]" />
+                      <span className="text-[color:var(--anbit-xp-accent)]">{storesWithXpCount} ενεργά</span>
                     </p>
                   </div>
                 </div>

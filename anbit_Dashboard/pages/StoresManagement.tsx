@@ -407,7 +407,10 @@ const StoresManagement: React.FC = () => {
                 <div className="min-w-0">
                   <p className="truncate font-medium">{p.name}</p>
                   <p className="text-[11px] text-slate-500 truncate">
-                    {p.category} • €{Number(p.price).toFixed(2)} • XP {p.xp}
+                    {p.category} •{' '}
+                    <span className="anbit-tabular-nums">
+                      €{Number(p.price).toFixed(2)} • XP {p.xp}
+                    </span>
                   </p>
                 </div>
               </div>

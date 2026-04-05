@@ -16,11 +16,6 @@ const STORAGE_KEY = 'anbit_merchant_banners_v1';
 const OFFERS_STORAGE_KEY = 'anbit_merchant_offers_v1';
 const MAX_FILE_SIZE_BYTES = 2 * 1024 * 1024;
 const ACCENT = '#0a0a0a';
-const OMNES_HEADING_STYLE: React.CSSProperties = {
-  fontFamily: 'OmnesBoldItalic, sans-serif',
-  fontStyle: 'italic',
-  fontWeight: 700,
-};
 
 type MerchantOffer = {
   id: string;
@@ -219,9 +214,7 @@ const MerchantBanners: React.FC = () => {
   return (
     <div className="space-y-6">
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h1 className="text-xl font-black tracking-tight text-slate-900" style={OMNES_HEADING_STYLE}>
-          Store Banners
-        </h1>
+        <h1 className="font-anbit-display text-xl font-black tracking-tight text-slate-900">Store Banners</h1>
         <p className="mt-1 text-sm text-slate-500">
           Ανέβασε banners για το κατάστημά σου. Θα εμφανίζονται στο PWA όταν ανοίγει το store μέσω QR.
         </p>
@@ -232,9 +225,7 @@ const MerchantBanners: React.FC = () => {
 
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="mb-4 flex items-center justify-between gap-3">
-          <h2 className="text-base font-black tracking-tight text-slate-900" style={OMNES_HEADING_STYLE}>
-            Banner Upload
-          </h2>
+          <h2 className="font-anbit-display text-base font-black tracking-tight text-slate-900">Banner Upload</h2>
           <span className="text-[11px] font-semibold text-slate-500">Max 2MB / image</span>
         </div>
         <label className="mb-2 block text-xs font-semibold uppercase tracking-wide text-slate-500">Τίτλος banner (προαιρετικό)</label>
@@ -300,9 +291,7 @@ const MerchantBanners: React.FC = () => {
       <div className="rounded-3xl border border-slate-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between gap-2">
           <div>
-            <h2 className="text-lg font-black tracking-tight text-slate-900" style={OMNES_HEADING_STYLE}>
-              Merchant Offers
-            </h2>
+            <h2 className="font-anbit-display text-lg font-black tracking-tight text-slate-900">Merchant Offers</h2>
             <p className="mt-1 text-sm text-slate-500">
               Δημιούργησε προσφορές για το κατάστημά σου.
             </p>

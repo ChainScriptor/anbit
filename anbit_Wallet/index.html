@@ -1,575 +1,689 @@
-
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-    <title>Anbit | The Big Dashboard</title>
-    
-    <!-- PWA Primary Meta Tags -->
-    <meta name="theme-color" content="#0a0a0a" id="theme-color-meta" />
-    <meta name="mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-    <meta name="apple-mobile-web-app-title" content="Anbit" />
-    <link rel="manifest" href="manifest.json" />
-    <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png" />
 
-    <script src="https://cdn.tailwindcss.com"></script>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Varela+Round&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Display:ital,wght@0,500;0,600;0,700;0,800;1,500&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Oswald:wght@400;500;600;700&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Great+Vibes&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@800;900&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,700;1,800&display=swap" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet">
-    <script>
-      tailwind.config = {
-        theme: {
-          extend: {
-            colors: {
-              'anbit-bg': 'var(--anbit-bg)',
-              'anbit-card': 'var(--anbit-card)',
-              'anbit-border': 'var(--anbit-border)',
-              'anbit-yellow': 'var(--anbit-yellow)',
-              'anbit-yellow-content': 'var(--anbit-yellow-content)',
-              'anbit-muted': 'var(--anbit-muted)',
-              'anbit-text': 'var(--anbit-text)',
-              'brand-red': '#0a0a0a',
-              'brand-black': '#333333',
-            },
-            fontFamily: {
-              sans: ['Inter', 'sans-serif'],
-              heading: ['Oswald', 'sans-serif'],
-              urban: ['Roboto', 'sans-serif'],
-              greek: ['Noto Sans Display', 'Inter', 'sans-serif'],
-              logo: ['Great Vibes', 'cursive'],
-              logoBold: ['Poppins', 'sans-serif'],
-              anbit: ['AnbitFont', 'Inter', 'sans-serif'],
-            },
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
+  <title>Anbit | The Big Dashboard</title>
+
+  <!-- PWA Primary Meta Tags -->
+  <meta name="theme-color" content="#0a0a0a" id="theme-color-meta" />
+  <meta name="mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="apple-mobile-web-app-title" content="Anbit" />
+  <link rel="manifest" href="manifest.json" />
+  <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
+    rel="stylesheet">
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            'anbit-bg': 'var(--anbit-bg)',
+            'anbit-card': 'var(--anbit-card)',
+            'anbit-border': 'var(--anbit-border)',
+            'anbit-yellow': 'var(--anbit-yellow)',
+            'anbit-yellow-content': 'var(--anbit-yellow-content)',
+            'anbit-muted': 'var(--anbit-muted)',
+            'anbit-text': 'var(--anbit-text)',
+            'anbit-xp-accent': 'var(--anbit-xp-accent)',
+            'anbit-xp-bar': 'var(--anbit-xp-bar)',
+            'brand-red': '#0a0a0a',
+            'brand-black': '#333333',
+          },
+          fontFamily: {
+            sans: ['Inter', 'system-ui', 'sans-serif'],
+            anbit: ['Omnes', 'Inter', 'sans-serif'],
           },
         },
-      }
-    </script>
-    <style>
-      :root {
-        --sat: env(safe-area-inset-top);
-        --sar: env(safe-area-inset-right);
-        --sab: env(safe-area-inset-bottom);
-        --sal: env(safe-area-inset-left);
-        --font-body: 'Inter', sans-serif;
-        --font-header: 'Varela Round', sans-serif;
-        --brand-red: #0a0a0a;
-        --xp-gold: #CA8A04;
-        --store-soft-bg: #F8F9FA;
+      },
+    }
+  </script>
+  <style>
+    :root {
+      --sat: env(safe-area-inset-top);
+      --sar: env(safe-area-inset-right);
+      --sab: env(safe-area-inset-bottom);
+      --sal: env(safe-area-inset-left);
+      --font-primary: 'Omnes', 'Inter', system-ui, sans-serif;
+      --font-inter: 'Inter', system-ui, sans-serif;
+      --font-body: var(--font-primary);
+      --brand-red: #0a0a0a;
+      --xp-gold: #CA8A04;
+      --store-soft-bg: #F8F9FA;
+    }
+
+    /* Dark theme (default) – brand red accent #E63533 (ίδιο με light) */
+    :root,
+    [data-theme="dark"] {
+      --anbit-bg: #0a0a0a;
+      --anbit-card: #121214;
+      --anbit-border: #27272a;
+      --anbit-yellow: #0a0a0a;
+      --anbit-yellow-content: #ffffff;
+      --anbit-muted: #71717a;
+      --anbit-text: #ffffff;
+      --anbit-nav-bg: #000000;
+      --anbit-input: rgba(255, 255, 255, 0.04);
+      /* XP / πόντοι: το --anbit-yellow είναι #0a0a0a (κουμπιά) — ξεχωριστό accent για αριθμούς XP */
+      --anbit-xp-accent: #ffffff;
+      --anbit-xp-bar: #f0f0f0;
+      --anbit-xp-surface: rgba(255, 255, 255, 0.08);
+      --anbit-xp-surface-border: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Light theme – Pax Burgers style: pure white, brand red, urban typography */
+    [data-theme="light"] {
+      --anbit-bg: #FFFFFF;
+      --anbit-card: #FFFFFF;
+      --anbit-border: rgba(0, 0, 0, 0.08);
+      --anbit-yellow: #0a0a0a;
+      --anbit-yellow-content: #ffffff;
+      --anbit-muted: #666666;
+      --anbit-text: #333333;
+      --anbit-nav-bg: rgba(255, 255, 255, 0.95);
+      --anbit-input: #f5f5f5;
+      --anbit-xp-accent: #0a0a0a;
+      --anbit-xp-bar: #0a0a0a;
+      --anbit-xp-surface: rgba(10, 10, 10, 0.06);
+      --anbit-xp-surface-border: rgba(10, 10, 10, 0.12);
+    }
+
+    body {
+      background-color: var(--anbit-bg);
+      color: var(--anbit-text);
+      font-family: var(--font-body);
+      font-size: 14px;
+      -webkit-tap-highlight-color: transparent;
+      overscroll-behavior-y: contain;
+      user-select: none;
+      -webkit-user-select: none;
+      padding-top: var(--sat);
+      padding-bottom: var(--sab);
+    }
+
+    [data-theme="light"] .dashboard-card {
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+      border-radius: 8px;
+    }
+
+    [data-theme="light"] .dashboard-card:hover {
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="light"] .glass-nav {
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
+    }
+
+    .section-title {
+      font-family: var(--font-primary);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-size: 1.125rem;
+    }
+
+    [data-theme="light"] .section-title {
+      color: #000000 !important;
+    }
+
+    .section-title-lg {
+      font-family: var(--font-primary);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      font-size: 1.5rem;
+    }
+
+    [data-theme="light"] .section-title-lg {
+      color: #000000 !important;
+    }
+
+    /* Fixed navbar: solid red background on scroll only in light mode (Pax-style) */
+    [data-theme="light"] .glass-nav.navbar-scrolled {
+      background: #0a0a0a;
+      border-bottom-color: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-text,
+    [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-muted {
+      color: #fff !important;
+    }
+
+    /* Mobile burger dropdown: override scroll navbar text colors so it stays readable. */
+    [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-text,
+    [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-muted {
+      color: inherit !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu {
+      color: var(--anbit-text) !important;
+    }
+
+    /* Mobile burger dropdown: keep LanguageSelector button solid/readable (avoid white-on-white). */
+    .mobile-burger-menu .language-selector-wrap button {
+      background: var(--anbit-card) !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-yellow:not(.fill-anbit-yellow) {
+      color: var(--anbit-yellow) !important;
+    }
+
+    /* Language selector: άσπρο στο scroll όπως το κουμπί theme (φεγγάρι) */
+    [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button {
+      color: #fff !important;
+      background: rgba(255, 255, 255, 0.05) !important;
+      border-color: rgba(255, 255, 255, 0.25) !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button:hover {
+      color: rgba(255, 255, 255, 0.9) !important;
+      background: rgba(255, 255, 255, 0.08) !important;
+    }
+
+    /* Hover card στο nav: πάντα ορατό κείμενο (δεν κληρονομεί το άσπρο του navbar) */
+    [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card {
+      background: #ffffff;
+      border-color: rgba(0, 0, 0, 0.08);
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card .nav-hover-card-text {
+      color: #333333 !important;
+    }
+
+    /* Popover ειδοποιήσεων: λευκό card — τα παραπάνω !important (#fff) για .text-anbit-* θα έκρυβαν το κείμενο */
+    [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel {
+      color: var(--anbit-text) !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel .text-anbit-text {
+      color: var(--anbit-text) !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel .text-anbit-muted {
+      color: var(--anbit-muted) !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel button {
+      color: var(--anbit-text) !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel button.text-anbit-muted,
+    [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel .text-anbit-muted {
+      color: var(--anbit-muted) !important;
+    }
+
+    [data-theme="dark"] .glass-nav .nav-hover-card {
+      background: var(--anbit-card);
+      border-color: var(--anbit-border);
+    }
+
+    [data-theme="dark"] .glass-nav .nav-hover-card .nav-hover-card-text {
+      color: var(--anbit-text);
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled button:not([class*="rounded-lg overflow-hidden"]) {
+      color: #fff;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled nav {
+      border-color: rgba(255, 255, 255, 0.25);
+      background: rgba(255, 255, 255, 0.08);
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled nav button.bg-anbit-border {
+      background: rgba(255, 255, 255, 0.2);
+      color: #fff;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-yellow:not(.fill-anbit-yellow) {
+      color: #fff !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .fill-anbit-yellow {
+      fill: #fff;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled [class*="border-anbit"] {
+      border-color: rgba(255, 255, 255, 0.25);
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled h1,
+    [data-theme="light"] .glass-nav.navbar-scrolled .font-black {
+      color: #fff !important;
+    }
+
+    /* Dark mode: on scroll keep same dark nav background (no red) */
+    [data-theme="dark"] .glass-nav.navbar-scrolled {
+      background: var(--anbit-nav-bg);
+      border-bottom-color: var(--anbit-border);
+    }
+
+    /* Logo Anbit – χρώμα ανά theme */
+    .logo-anbit {
+      font-family: var(--font-primary);
+      font-weight: 800;
+      font-style: italic;
+      font-synthesis: none;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      transition: color 0.2s ease;
+    }
+
+    [data-theme="dark"] .logo-anbit {
+      color: #ffffff;
+    }
+
+    [data-theme="dark"] .logo-anbit:hover {
+      color: rgba(255, 255, 255, 0.82);
+    }
+
+    [data-theme="light"] .logo-anbit {
+      color: #333333;
+    }
+
+    [data-theme="light"] .logo-anbit:hover {
+      color: var(--anbit-yellow);
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit {
+      color: #ffffff;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit:hover {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .anbit-wordmark {
+      font-family: var(--font-primary) !important;
+      font-weight: 800 !important;
+      font-style: italic !important;
+      font-synthesis: none;
+    }
+
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+
+    /* Auth page – Lysium-style: floating panel + immersive right */
+    .auth-page-bg {
+      background: var(--anbit-bg);
+    }
+
+    [data-theme="dark"] .auth-page-bg {
+      background: linear-gradient(160deg, #0a0a0a 0%, #0c0c0e 40%, #0a0a0c 100%);
+    }
+
+    [data-theme="light"] .auth-page-bg {
+      background: linear-gradient(160deg, #f8f8f8 0%, #f0f0f0 50%, #e8e8e8 100%);
+    }
+
+    .auth-panel-floating {
+      background: var(--anbit-card);
+      border: 1px solid var(--anbit-border);
+      box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03);
+    }
+
+    [data-theme="light"] .auth-panel-floating {
+      box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
+    }
+
+    .auth-form-panel {
+      background: var(--anbit-card);
+    }
+
+    [data-theme="dark"] .auth-form-panel {
+      background: linear-gradient(180deg, #141416 0%, #121214 100%);
+    }
+
+    [data-theme="light"] .auth-form-panel {
+      background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
+    }
+
+    .auth-input {
+      background-color: var(--anbit-input) !important;
+    }
+
+    .auth-input::placeholder {
+      color: var(--anbit-muted);
+    }
+
+    .auth-input:focus {
+      box-shadow: 0 0 0 2px var(--anbit-yellow);
+    }
+
+    [data-theme="dark"] .auth-logo-wrap {
+      background: var(--anbit-yellow);
+      box-shadow: 0 0 24px rgba(202, 138, 4, 0.4);
+    }
+
+    [data-theme="light"] .auth-logo-wrap {
+      background: var(--anbit-yellow);
+      box-shadow: 0 0 20px rgba(230, 53, 51, 0.35);
+    }
+
+    .auth-logo-text {
+      font-family: var(--font-primary);
+      font-weight: 800;
+      font-style: italic;
+      font-synthesis: none;
+      letter-spacing: -0.03em;
+      line-height: 1;
+      text-shadow: 0 0 20px rgba(202, 138, 4, 0.2);
+    }
+
+    [data-theme="light"] .auth-logo-text {
+      color: var(--anbit-text);
+    }
+
+    .auth-btn-primary {
+      background: linear-gradient(180deg, var(--anbit-yellow) 0%, color-mix(in srgb, var(--anbit-yellow) 85%, black) 100%);
+      color: var(--anbit-yellow-content);
+      box-shadow: 0 4px 14px rgba(202, 138, 4, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .auth-btn-primary:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: 0 6px 20px rgba(202, 138, 4, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    [data-theme="light"] .auth-btn-primary {
+      box-shadow: 0 4px 14px rgba(230, 53, 51, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+    }
+
+    [data-theme="light"] .auth-btn-primary:hover:not(:disabled) {
+      box-shadow: 0 6px 20px rgba(230, 53, 51, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    }
+
+    .auth-btn-secondary {
+      background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
+      color: #fff;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      box-shadow: 0 2px 10px rgba(88, 101, 242, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .auth-btn-secondary:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 4px 16px rgba(88, 101, 242, 0.4);
+    }
+
+    .auth-toggle-dot {
+      background: var(--anbit-yellow-content);
+    }
+
+    [data-theme="light"] .auth-toggle-dot {
+      background: #fff;
+    }
+
+    .auth-shard {
+      position: absolute;
+      width: 80px;
+      height: 80px;
+      border-radius: 8px;
+      background: linear-gradient(135deg, var(--anbit-yellow) 0%, transparent 70%);
+      opacity: 0.12;
+      filter: blur(20px);
+      pointer-events: none;
+    }
+
+    .auth-shard-1 {
+      top: 15%;
+      left: 8%;
+      transform: rotate(-15deg);
+    }
+
+    .auth-shard-2 {
+      top: 60%;
+      right: 5%;
+      transform: rotate(25deg);
+      width: 60px;
+      height: 60px;
+    }
+
+    .auth-shard-3 {
+      bottom: 20%;
+      left: 15%;
+      transform: rotate(10deg);
+      width: 50px;
+      height: 50px;
+    }
+
+    [data-theme="light"] .auth-shard {
+      opacity: 0.08;
+    }
+
+    .auth-hero-panel {
+      background: #0a0a0c;
+    }
+
+    .auth-hero-gradient {
+      background: linear-gradient(160deg, rgba(9, 9, 11, 0.95) 0%, rgba(202, 138, 4, 0.08) 50%, rgba(9, 9, 11, 0.98) 100%);
+    }
+
+    [data-theme="light"] .auth-hero-gradient {
+      background: linear-gradient(160deg, #1a1a1e 0%, rgba(230, 53, 51, 0.06) 50%, #141418 100%);
+    }
+
+    .auth-hero-number {
+      color: #fff;
+      text-shadow: 0 0 40px rgba(202, 138, 4, 0.25);
+    }
+
+    [data-theme="light"] .auth-hero-number {
+      text-shadow: 0 0 30px rgba(230, 53, 51, 0.2);
+    }
+
+    .auth-hero-label {
+      color: var(--anbit-yellow);
+    }
+
+    [data-theme="light"] .auth-hero-label {
+      color: rgba(255, 255, 255, 0.9);
+    }
+
+    .auth-modal-input {
+      background-color: var(--anbit-input) !important;
+    }
+
+    .dashboard-card {
+      background: var(--anbit-card);
+      border: 1px solid var(--anbit-border);
+      border-radius: 16px;
+      transition: all 0.3s ease;
+    }
+
+    .dashboard-card:hover {
+      border-color: var(--anbit-yellow);
+      transform: translateY(-2px);
+    }
+
+    /* Store-only Wolt style */
+    .store-wolt {
+      font-family: var(--font-body);
+      background: var(--store-soft-bg);
+      color: #1b1c1c;
+    }
+
+    .store-wolt h1,
+    .store-wolt h2,
+    .store-wolt h3,
+    .store-wolt .product-title,
+    .store-wolt .primary-button,
+    .store-wolt .category-label,
+    .store-wolt .xp-badge {
+      font-family: var(--font-primary);
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .store-wolt .rounded-premium {
+      border-radius: 20px;
+    }
+
+    .store-wolt .rounded-premium-sm {
+      border-radius: 16px;
+    }
+
+    .glass-nav {
+      background: var(--anbit-nav-bg);
+      backdrop-filter: blur(12px);
+      -webkit-backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--anbit-border);
+    }
+
+    /* City select modal – κόκκινο pulse (marker / my_location) */
+    @keyframes city-select-pulse-red {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(230, 53, 51, 0.55);
       }
 
-      /* Dark theme (default) – brand red accent #E63533 (ίδιο με light) */
-      :root,
-      [data-theme="dark"] {
-        --anbit-bg: #0a0a0a;
-        --anbit-card: #121214;
-        --anbit-border: #27272a;
-        --anbit-yellow: #0a0a0a;
-        --anbit-yellow-content: #ffffff;
-        --anbit-muted: #71717a;
-        --anbit-text: #ffffff;
-        --anbit-nav-bg: #000000;
-        --anbit-input: rgba(255, 255, 255, 0.04);
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 14px rgba(230, 53, 51, 0);
       }
 
-      /* Light theme – Pax Burgers style: pure white, brand red, urban typography */
-      [data-theme="light"] {
-        --anbit-bg: #FFFFFF;
-        --anbit-card: #FFFFFF;
-        --anbit-border: rgba(0, 0, 0, 0.08);
-        --anbit-yellow: #0a0a0a;
-        --anbit-yellow-content: #ffffff;
-        --anbit-muted: #666666;
-        --anbit-text: #333333;
-        --anbit-nav-bg: rgba(255, 255, 255, 0.95);
-        --anbit-input: #f5f5f5;
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(230, 53, 51, 0);
+      }
+    }
+
+    .city-select-pulse-red {
+      animation: city-select-pulse-red 2s ease-out infinite;
+    }
+
+    /* Order waiting — concentric pulse (brand black on white) */
+    @keyframes order-sent-pulse {
+      0% {
+        transform: scale(0.8);
+        opacity: 0.45;
       }
 
-      body {
-        background-color: var(--anbit-bg);
-        color: var(--anbit-text);
-        font-family: var(--font-body);
-        font-size: 14px;
-        -webkit-tap-highlight-color: transparent;
-        overscroll-behavior-y: contain;
-        user-select: none;
-        -webkit-user-select: none;
-        padding-top: var(--sat);
-        padding-bottom: var(--sab);
+      100% {
+        transform: scale(2.5);
+        opacity: 0;
+      }
+    }
+
+    .order-sent-pulse-ring {
+      animation: order-sent-pulse 2s infinite ease-out;
+    }
+
+    .dark-city-map-vignette {
+      background: radial-gradient(circle at center, transparent 0%, #000000 100%);
+    }
+
+    /* Fix for iOS PWA address bar overlap */
+    @supports (padding: env(safe-area-inset-top)) {
+      header {
+        padding-top: calc(0.5rem + env(safe-area-inset-top)) !important;
+      }
+    }
+
+    input,
+    textarea {
+      user-select: text !important;
+      -webkit-user-select: text !important;
+    }
+
+    /* Greek UI: Inter only (Omnes unicode-range skips Greek glyphs) */
+    .font-greek {
+      font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+      font-weight: 600;
+      letter-spacing: -0.02em;
+    }
+
+    .font-greek-bold {
+      font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    /* FrostedHoverNav */
+    .frosted-hover-nav {
+      position: relative;
+      overflow: hidden;
+      border-radius: 16px;
+      border: 1px solid var(--anbit-border);
+      width: 100%;
+      aspect-ratio: 4/3;
+      max-height: 360px;
+      min-height: 280px;
+      transition: filter 0.35s ease;
+    }
+
+    .frosted-hover-nav:has(.frosted-hover-area:hover) {
+      filter: url(#frosted-filter);
+    }
+
+    .frosted-hover-nav img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      object-position: center;
+      pointer-events: none;
+    }
+
+    .frosted-hover-area {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      grid-template-columns: repeat(var(--max-a, 30), 1fr);
+      grid-template-rows: repeat(var(--max-a, 30), 1fr);
+      pointer-events: auto;
+    }
+
+    .frosted-hover-area i {
+      display: block;
+      min-width: 0;
+      min-height: 0;
+    }
+
+    /* Simple float animation for cafe hero annotations */
+    @keyframes float {
+
+      0%,
+      100% {
+        transform: translateY(0px);
       }
 
-      /* Light mode: Urban / Pax Burgers typography & component styling */
-      [data-theme="light"] h1,
-      [data-theme="light"] h2,
-      [data-theme="light"] h3,
-      [data-theme="light"] .font-heading {
-        font-family: 'Oswald', sans-serif;
-        font-weight: 700;
+      50% {
+        transform: translateY(-10px);
       }
-      [data-theme="light"] .dashboard-card {
-        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
-        border-radius: 8px;
-      }
-      [data-theme="light"] .dashboard-card:hover {
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-      }
-      [data-theme="light"] .glass-nav {
-        box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
-      }
+    }
 
-      /* Section titles: μαύρα, Ubuntu, bold, μικρά με τόνους – reference Χαλάνδρι */
-      .section-title {
-        font-family: 'Ubuntu', sans-serif;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-        font-size: 1.125rem;
-      }
-      [data-theme="light"] .section-title {
-        color: #000000 !important;
-      }
-      .section-title-lg {
-        font-family: 'Ubuntu', sans-serif;
-        font-weight: 700;
-        letter-spacing: -0.025em;
-        font-size: 1.5rem;
-      }
-      [data-theme="light"] .section-title-lg {
-        color: #000000 !important;
-      }
+    .animate-float {
+      animation: float 3s ease-in-out infinite;
+    }
 
-      /* Fixed navbar: solid red background on scroll only in light mode (Pax-style) */
-      [data-theme="light"] .glass-nav.navbar-scrolled {
-        background: #0a0a0a;
-        border-bottom-color: rgba(255, 255, 255, 0.2);
-        color: #fff;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-text,
-      [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-muted {
-        color: #fff !important;
-      }
-      /* Mobile burger dropdown: override scroll navbar text colors so it stays readable. */
-      [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-text,
-      [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-muted {
-        color: inherit !important;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu {
-        color: var(--anbit-text) !important;
-      }
-      /* Mobile burger dropdown: keep LanguageSelector button solid/readable (avoid white-on-white). */
-      .mobile-burger-menu .language-selector-wrap button {
-        background: var(--anbit-card) !important;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-yellow:not(.fill-anbit-yellow) {
-        color: var(--anbit-yellow) !important;
-      }
-      /* Language selector: άσπρο στο scroll όπως το κουμπί theme (φεγγάρι) */
-      [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button {
-        color: #fff !important;
-        background: rgba(255, 255, 255, 0.05) !important;
-        border-color: rgba(255, 255, 255, 0.25) !important;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button:hover {
-        color: rgba(255, 255, 255, 0.9) !important;
-        background: rgba(255, 255, 255, 0.08) !important;
-      }
-      /* Hover card στο nav: πάντα ορατό κείμενο (δεν κληρονομεί το άσπρο του navbar) */
-      [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card {
-        background: #ffffff;
-        border-color: rgba(0, 0, 0, 0.08);
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card .nav-hover-card-text {
-        color: #333333 !important;
-      }
-      [data-theme="dark"] .glass-nav .nav-hover-card {
-        background: var(--anbit-card);
-        border-color: var(--anbit-border);
-      }
-      [data-theme="dark"] .glass-nav .nav-hover-card .nav-hover-card-text {
-        color: var(--anbit-text);
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled button:not([class*="rounded-lg overflow-hidden"]) {
-        color: #fff;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled nav {
-        border-color: rgba(255, 255, 255, 0.25);
-        background: rgba(255, 255, 255, 0.08);
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled nav button.bg-anbit-border {
-        background: rgba(255, 255, 255, 0.2);
-        color: #fff;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-yellow:not(.fill-anbit-yellow) {
-        color: #fff !important;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .fill-anbit-yellow {
-        fill: #fff;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled [class*="border-anbit"] {
-        border-color: rgba(255, 255, 255, 0.25);
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled h1,
-      [data-theme="light"] .glass-nav.navbar-scrolled .font-black {
-        color: #fff !important;
-      }
-      /* Dark mode: on scroll keep same dark nav background (no red) */
-      [data-theme="dark"] .glass-nav.navbar-scrolled {
-        background: var(--anbit-nav-bg);
-        border-bottom-color: var(--anbit-border);
-      }
-
-      /* Logo Anbit – χρώμα ανά theme */
-      .logo-anbit {
-        font-family: 'AnbitFont', 'Inter', sans-serif;
-        font-weight: normal;
-        font-style: normal;
-        font-synthesis: none;
-        letter-spacing: -0.02em;
-        line-height: 1;
-        transition: color 0.2s ease;
-      }
-      [data-theme="dark"] .logo-anbit {
-        color: #ffffff;
-      }
-      [data-theme="dark"] .logo-anbit:hover {
-        color: rgba(255, 255, 255, 0.82);
-      }
-      [data-theme="light"] .logo-anbit {
-        color: #333333;
-      }
-      [data-theme="light"] .logo-anbit:hover {
-        color: var(--anbit-yellow);
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit {
-        color: #ffffff;
-      }
-      [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit:hover {
-        color: rgba(255, 255, 255, 0.9);
-      }
-
-      /* Λογότυπο Anbit: πάντα Omnes (AnbitFont) — υπερισχύει [data-theme] h1/h2 (Oswald κ.λπ.) */
-      .anbit-wordmark {
-        font-family: 'AnbitFont', 'Inter', sans-serif !important;
-        font-weight: normal !important;
-        font-style: normal !important;
-        font-synthesis: none;
-      }
-
-      .no-scrollbar {
-        -ms-overflow-style: none;
-        scrollbar-width: none;
-      }
-      .no-scrollbar::-webkit-scrollbar {
-        display: none;
-      }
-
-      /* Auth page – Lysium-style: floating panel + immersive right */
-      .auth-page-bg {
-        background: var(--anbit-bg);
-      }
-      [data-theme="dark"] .auth-page-bg {
-        background: linear-gradient(160deg, #0a0a0a 0%, #0c0c0e 40%, #0a0a0c 100%);
-      }
-      [data-theme="light"] .auth-page-bg {
-        background: linear-gradient(160deg, #f8f8f8 0%, #f0f0f0 50%, #e8e8e8 100%);
-      }
-      .auth-panel-floating {
-        background: var(--anbit-card);
-        border: 1px solid var(--anbit-border);
-        box-shadow: 0 25px 80px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.03);
-      }
-      [data-theme="light"] .auth-panel-floating {
-        box-shadow: 0 25px 60px rgba(0, 0, 0, 0.12), 0 0 0 1px rgba(0, 0, 0, 0.04);
-      }
-      .auth-form-panel {
-        background: var(--anbit-card);
-      }
-      [data-theme="dark"] .auth-form-panel {
-        background: linear-gradient(180deg, #141416 0%, #121214 100%);
-      }
-      [data-theme="light"] .auth-form-panel {
-        background: linear-gradient(180deg, #ffffff 0%, #fefefe 100%);
-      }
-      .auth-input {
-        background-color: var(--anbit-input) !important;
-      }
-      .auth-input::placeholder {
-        color: var(--anbit-muted);
-      }
-      .auth-input:focus {
-        box-shadow: 0 0 0 2px var(--anbit-yellow);
-      }
-      [data-theme="dark"] .auth-logo-wrap {
-        background: var(--anbit-yellow);
-        box-shadow: 0 0 24px rgba(202, 138, 4, 0.4);
-      }
-      [data-theme="light"] .auth-logo-wrap {
-        background: var(--anbit-yellow);
-        box-shadow: 0 0 20px rgba(230, 53, 51, 0.35);
-      }
-      .auth-logo-text {
-        font-family: 'AnbitFont', 'Inter', sans-serif;
-        font-weight: normal;
-        font-style: normal;
-        font-synthesis: none;
-        letter-spacing: -0.02em;
-        line-height: 1;
-        text-shadow: 0 0 20px rgba(202, 138, 4, 0.2);
-      }
-      [data-theme="light"] .auth-logo-text {
-        color: var(--anbit-text);
-      }
-      .auth-btn-primary {
-        background: linear-gradient(180deg, var(--anbit-yellow) 0%, color-mix(in srgb, var(--anbit-yellow) 85%, black) 100%);
-        color: var(--anbit-yellow-content);
-        box-shadow: 0 4px 14px rgba(202, 138, 4, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.15);
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-      .auth-btn-primary:hover:not(:disabled) {
-        transform: translateY(-1px);
-        box-shadow: 0 6px 20px rgba(202, 138, 4, 0.4), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      }
-      [data-theme="light"] .auth-btn-primary {
-        box-shadow: 0 4px 14px rgba(230, 53, 51, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
-      }
-      [data-theme="light"] .auth-btn-primary:hover:not(:disabled) {
-        box-shadow: 0 6px 20px rgba(230, 53, 51, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
-      }
-      .auth-btn-secondary {
-        background: linear-gradient(135deg, #5865f2 0%, #4752c4 100%);
-        color: #fff;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        box-shadow: 0 2px 10px rgba(88, 101, 242, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.1);
-        transition: transform 0.2s, box-shadow 0.2s;
-      }
-      .auth-btn-secondary:hover {
-        transform: translateY(-1px);
-        box-shadow: 0 4px 16px rgba(88, 101, 242, 0.4);
-      }
-      .auth-toggle-dot {
-        background: var(--anbit-yellow-content);
-      }
-      [data-theme="light"] .auth-toggle-dot {
-        background: #fff;
-      }
-      .auth-shard {
-        position: absolute;
-        width: 80px;
-        height: 80px;
-        border-radius: 8px;
-        background: linear-gradient(135deg, var(--anbit-yellow) 0%, transparent 70%);
-        opacity: 0.12;
-        filter: blur(20px);
-        pointer-events: none;
-      }
-      .auth-shard-1 { top: 15%; left: 8%; transform: rotate(-15deg); }
-      .auth-shard-2 { top: 60%; right: 5%; transform: rotate(25deg); width: 60px; height: 60px; }
-      .auth-shard-3 { bottom: 20%; left: 15%; transform: rotate(10deg); width: 50px; height: 50px; }
-      [data-theme="light"] .auth-shard {
-        opacity: 0.08;
-      }
-      .auth-hero-panel {
-        background: #0a0a0c;
-      }
-      .auth-hero-gradient {
-        background: linear-gradient(160deg, rgba(9, 9, 11, 0.95) 0%, rgba(202, 138, 4, 0.08) 50%, rgba(9, 9, 11, 0.98) 100%);
-      }
-      [data-theme="light"] .auth-hero-gradient {
-        background: linear-gradient(160deg, #1a1a1e 0%, rgba(230, 53, 51, 0.06) 50%, #141418 100%);
-      }
-      .auth-hero-number {
-        color: #fff;
-        text-shadow: 0 0 40px rgba(202, 138, 4, 0.25);
-      }
-      [data-theme="light"] .auth-hero-number {
-        text-shadow: 0 0 30px rgba(230, 53, 51, 0.2);
-      }
-      .auth-hero-label {
-        color: var(--anbit-yellow);
-      }
-      [data-theme="light"] .auth-hero-label {
-        color: rgba(255, 255, 255, 0.9);
-      }
-      .auth-modal-input {
-        background-color: var(--anbit-input) !important;
-      }
-
-      .dashboard-card {
-        background: var(--anbit-card);
-        border: 1px solid var(--anbit-border);
-        border-radius: 16px;
-        transition: all 0.3s ease;
-      }
-
-      .dashboard-card:hover {
-        border-color: var(--anbit-yellow);
-        transform: translateY(-2px);
-      }
-
-      /* Store-only Wolt style */
-      .store-wolt {
-        font-family: var(--font-body);
-        background: var(--store-soft-bg);
-        color: #1b1c1c;
-      }
-      .store-wolt h1,
-      .store-wolt h2,
-      .store-wolt h3,
-      .store-wolt .product-title,
-      .store-wolt .primary-button,
-      .store-wolt .category-label,
-      .store-wolt .xp-badge {
-        font-family: var(--font-header);
-        font-weight: 700;
-        letter-spacing: -0.02em;
-      }
-      .store-wolt .rounded-premium {
-        border-radius: 20px;
-      }
-      .store-wolt .rounded-premium-sm {
-        border-radius: 16px;
-      }
-
-      .glass-nav {
-        background: var(--anbit-nav-bg);
-        backdrop-filter: blur(12px);
-        -webkit-backdrop-filter: blur(12px);
-        border-bottom: 1px solid var(--anbit-border);
-      }
-
-      /* City select modal – κόκκινο pulse (marker / my_location) */
-      @keyframes city-select-pulse-red {
-        0% {
-          transform: scale(0.95);
-          box-shadow: 0 0 0 0 rgba(230, 53, 51, 0.55);
-        }
-        70% {
-          transform: scale(1);
-          box-shadow: 0 0 0 14px rgba(230, 53, 51, 0);
-        }
-        100% {
-          transform: scale(0.95);
-          box-shadow: 0 0 0 0 rgba(230, 53, 51, 0);
-        }
-      }
-      .city-select-pulse-red {
-        animation: city-select-pulse-red 2s ease-out infinite;
-      }
-
-      /* Order waiting — concentric pulse (brand black on white) */
-      @keyframes order-sent-pulse {
-        0% {
-          transform: scale(0.8);
-          opacity: 0.45;
-        }
-        100% {
-          transform: scale(2.5);
-          opacity: 0;
-        }
-      }
-      .order-sent-pulse-ring {
-        animation: order-sent-pulse 2s infinite ease-out;
-      }
-      .dark-city-map-vignette {
-        background: radial-gradient(circle at center, transparent 0%, #000000 100%);
-      }
-
-      /* Fix for iOS PWA address bar overlap */
-      @supports (padding: env(safe-area-inset-top)) {
-        header {
-          padding-top: calc(0.5rem + env(safe-area-inset-top)) !important;
-        }
-      }
-
-      input, textarea {
-        user-select: text !important;
-        -webkit-user-select: text !important;
-      }
-
-      h2, h3, h1 { letter-spacing: -0.02em; }
-
-      /* Ελληνικό κείμενο – πιο έντονα, ευανάγνωστα (καταστήματα, κατηγορίες) */
-      .font-greek {
-        font-family: 'Noto Sans Display', 'Inter', sans-serif;
-        font-weight: 600;
-        letter-spacing: -0.02em;
-      }
-      .font-greek-bold {
-        font-family: 'Noto Sans Display', 'Inter', sans-serif;
-        font-weight: 700;
-        letter-spacing: -0.02em;
-      }
-
-      /* FrostedHoverNav */
-      .frosted-hover-nav {
-        position: relative;
-        overflow: hidden;
-        border-radius: 16px;
-        border: 1px solid var(--anbit-border);
-        width: 100%;
-        aspect-ratio: 4/3;
-        max-height: 360px;
-        min-height: 280px;
-        transition: filter 0.35s ease;
-      }
-      .frosted-hover-nav:has(.frosted-hover-area:hover) {
-        filter: url(#frosted-filter);
-      }
-      .frosted-hover-nav img {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        object-position: center;
-        pointer-events: none;
-      }
-      .frosted-hover-area {
-        position: absolute;
-        inset: 0;
-        display: grid;
-        grid-template-columns: repeat(var(--max-a, 30), 1fr);
-        grid-template-rows: repeat(var(--max-a, 30), 1fr);
-        pointer-events: auto;
-      }
-      .frosted-hover-area i {
-        display: block;
-        min-width: 0;
-        min-height: 0;
-      }
-
-      /* Simple float animation for cafe hero annotations */
-      @keyframes float {
-        0%, 100% {
-          transform: translateY(0px);
-        }
-        50% {
-          transform: translateY(-10px);
-        }
-      }
-      .animate-float {
-        animation: float 3s ease-in-out infinite;
-      }
-      .animate-float-delayed {
-        animation: float 3s ease-in-out infinite;
-        animation-delay: 1.5s;
-      }
-    </style>
-    <script>
-      (function() {
+    .animate-float-delayed {
+      animation: float 3s ease-in-out infinite;
+      animation-delay: 1.5s;
+    }
+  </style>
+  <script>
+      (function () {
         var stored = localStorage.getItem('anbit-theme');
         var theme = (stored === 'light' || stored === 'dark') ? stored : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
         document.documentElement.setAttribute('data-theme', theme);
         var meta = document.getElementById('theme-color-meta');
         if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#0a0a0a');
       })();
-    </script>
-    <script type="importmap">
+  </script>
+  <script type="importmap">
     {
       "imports": {
         "react/": "https://esm.sh/react@^19.2.4/",
@@ -582,29 +696,31 @@
     </script>
   <link rel="stylesheet" href="/index.css">
 </head>
-  <body>
-    <div id="root"></div>
-    <script>
-      // Service Worker Registration (skip localhost/dev to avoid stale white screens)
-      const isLocalhost =
-        location.hostname === 'localhost' ||
-        location.hostname === '127.0.0.1' ||
-        location.hostname === '[::1]';
-      if ('serviceWorker' in navigator && !isLocalhost) {
-        window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js').then(registration => {
-            console.log('SW registered: ', registration);
-          }).catch(registrationError => {
-            console.log('SW registration failed: ', registrationError);
-          });
-        });
-      }
 
-      // Detect PWA mode
-      if (window.matchMedia('(display-mode: standalone)').matches) {
-        console.log('Running in PWA mode');
-      }
-    </script>
+<body>
+  <div id="root"></div>
+  <script>
+    // Service Worker Registration (skip localhost/dev to avoid stale white screens)
+    const isLocalhost =
+      location.hostname === 'localhost' ||
+      location.hostname === '127.0.0.1' ||
+      location.hostname === '[::1]';
+    if ('serviceWorker' in navigator && !isLocalhost) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('/sw.js').then(registration => {
+          console.log('SW registered: ', registration);
+        }).catch(registrationError => {
+          console.log('SW registration failed: ', registrationError);
+        });
+      });
+    }
+
+    // Detect PWA mode
+    if (window.matchMedia('(display-mode: standalone)').matches) {
+      console.log('Running in PWA mode');
+    }
+  </script>
   <script type="module" src="/index.tsx"></script>
 </body>
+
 </html>

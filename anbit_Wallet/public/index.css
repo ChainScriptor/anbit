@@ -1,10 +1,3 @@
-@font-face {
-  font-family: 'AnbitFont';
-  src: url('/fonts/OmnesBoldItalic.ttf') format('truetype');
-  font-weight: normal;
-  font-style: normal;
-}
-
 .anbit-phone-input {
   display: flex;
   align-items: center;

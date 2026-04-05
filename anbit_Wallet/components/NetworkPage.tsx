@@ -4,6 +4,7 @@ import { MapPin, Star, Truck, Zap, ChevronLeft, ChevronRight, Info, SlidersHoriz
 import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 
 const CATEGORY_IMAGES: Record<string, string> = {
   All: 'https://images.unsplash.com/photo-1504674900247-0877df9cc84e?auto=format&fit=crop&q=80&w=400',
@@ -60,6 +61,10 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
   unlockedMerchantId = null,
 }) => {
   const { t } = useLanguage();
+  const { theme } = useTheme();
+  const pointsAccentClass = theme === 'dark' ? 'text-white' : 'text-[color:var(--xp-gold,#CA8A04)]';
+  const pointsRowSurfaceClass =
+    theme === 'dark' ? 'bg-white/[0.06] border border-white/15' : 'bg-black/[0.04] border border-black/[0.08]';
   const [filter, setFilter] = useState('All');
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
@@ -280,10 +285,12 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                   </span>
                 </div>
                 {/* XP στο κατάστημα */}
-                <div className="flex items-center gap-1.5 py-1.5 px-2.5 rounded-md bg-anbit-yellow/10 border border-anbit-yellow/20 mb-2">
-                  <Zap className="w-3.5 h-3.5 text-anbit-yellow shrink-0" />
+                <div className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-md mb-2 ${pointsRowSurfaceClass}`}>
+                  <Zap className={`w-3.5 h-3.5 shrink-0 ${pointsAccentClass}`} />
                   <span className="text-xs font-bold text-anbit-text truncate">{t('pointsAtStore')}</span>
-                  <span className="text-sm font-black text-anbit-yellow ml-auto">{(storeXP[partner.id] ?? 0).toLocaleString()}</span>
+                  <span className={`text-sm font-black ml-auto anbit-tabular-nums ${pointsAccentClass}`}>
+                    {(storeXP[partner.id] ?? 0).toLocaleString()}
+                  </span>
                 </div>
                 {/* Κουμπιά Παραγγελία / Προφίλ καταστήματος */}
                 <div className="grid grid-cols-2 gap-2 mt-auto">

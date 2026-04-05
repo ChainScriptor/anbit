@@ -18,9 +18,11 @@ export interface Offer {
 
 interface OfferCardProps {
   offer: Offer;
+  mutedTextClassName?: string;
 }
 
-const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({ offer }, ref) => (
+const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(
+  ({ offer, mutedTextClassName = "text-anbit-muted" }, ref) => (
   <motion.a
     ref={ref}
     href={offer.href}
@@ -36,12 +38,12 @@ const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({ offer }
     />
     <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-anbit-card p-5 flex flex-col justify-between border-t border-anbit-border">
       <div className="space-y-2">
-        <div className="flex items-center text-xs text-anbit-muted">
+        <div className={cn("flex items-center text-xs", mutedTextClassName)}>
           <Tag className="w-4 h-4 mr-2 text-anbit-yellow" />
           <span>{offer.tag}</span>
         </div>
         <h3 className="text-lg sm:text-xl font-bold text-anbit-text leading-tight">{offer.title}</h3>
-        <p className="text-sm text-anbit-muted line-clamp-2">{offer.description}</p>
+        <p className={cn("text-sm line-clamp-2", mutedTextClassName)}>{offer.description}</p>
       </div>
       <div className="flex items-center justify-between pt-4 border-t border-anbit-border">
         <div className="flex items-center gap-3 min-w-0">
@@ -49,7 +51,7 @@ const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({ offer }
           <div className="min-w-0">
             <p className="text-xs font-semibold text-anbit-text truncate">{offer.brandName}</p>
             {offer.promoCode && (
-              <p className="text-xs text-anbit-muted truncate">{offer.promoCode}</p>
+              <p className={cn("text-xs truncate", mutedTextClassName)}>{offer.promoCode}</p>
             )}
           </div>
         </div>
@@ -59,15 +61,18 @@ const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(({ offer }
       </div>
     </div>
   </motion.a>
-));
+  )
+);
 OfferCard.displayName = "OfferCard";
 
 export interface OfferCarouselProps extends React.HTMLAttributes<HTMLDivElement> {
   offers: Offer[];
+  /** Small secondary text (default: text-anbit-muted / #71717a) */
+  mutedTextClassName?: string;
 }
 
 const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
-  ({ offers, className, ...props }, ref) => {
+  ({ offers, className, mutedTextClassName = "text-anbit-muted", ...props }, ref) => {
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
     const scroll = (direction: "left" | "right") => {
@@ -96,7 +101,7 @@ const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
           className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory scroll-smooth"
         >
           {offers.map((offer) => (
-            <OfferCard key={offer.id} offer={offer} />
+            <OfferCard key={offer.id} offer={offer} mutedTextClassName={mutedTextClassName} />
           ))}
         </div>
         <button

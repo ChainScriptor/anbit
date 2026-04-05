@@ -545,19 +545,14 @@ const Products: React.FC = () => {
       <div className="space-y-6 rounded-3xl bg-[#f8f9fa] p-6 md:p-8">
         <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
           <div>
-            <h1
-              className="text-3xl font-bold tracking-tight text-slate-900"
-              style={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
-            >
-              Menu Management
-            </h1>
+            <h1 className="font-anbit-display text-3xl font-bold tracking-tight text-slate-900">Menu Management</h1>
             <p className="mt-1 text-sm font-medium text-slate-500">
               Curate your restaurant offerings and stock levels
             </p>
           </div>
           <Button
-            className="h-12 rounded-2xl px-6 text-sm font-bold text-white shadow-none"
-            style={{ backgroundColor: ACCENT, fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
+            className="h-12 rounded-2xl px-6 text-sm font-semibold text-white shadow-none"
+            style={{ backgroundColor: ACCENT }}
             onClick={handlePrimaryAction}
           >
             <Plus className="mr-2 h-5 w-5" />
@@ -650,8 +645,12 @@ const Products: React.FC = () => {
                         </div>
                         <div className="min-w-0 flex-1">
                           <h4 className="truncate text-base font-bold text-slate-900">{product.name}</h4>
-                          <p className="mt-0.5 text-sm font-bold text-[#0a0a0a]">€{product.price.toFixed(2)}</p>
-                          <p className="text-xs font-semibold text-amber-700">+{product.pointsReward ?? 0} XP</p>
+                          <p className="anbit-tabular-nums mt-0.5 text-sm font-bold text-[#0a0a0a]">
+                            €{product.price.toFixed(2)}
+                          </p>
+                          <p className="anbit-tabular-nums text-xs font-semibold text-amber-700">
+                            +{product.pointsReward ?? 0} XP
+                          </p>
                           <div className="mt-2 flex items-center gap-2">
                             <span
                               className={cn(

@@ -54,7 +54,7 @@ const CustomerLoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      await login(username, password);
+      await login(username, password, { skipGlobalLoader: true });
       completeAuth();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed.');
@@ -86,7 +86,7 @@ const CustomerLoginPage: React.FC = () => {
     setLoading(true);
     setError('');
     try {
-      await login(username, password);
+      await login(username, password, { skipGlobalLoader: true });
       completeAuth();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Login failed.');

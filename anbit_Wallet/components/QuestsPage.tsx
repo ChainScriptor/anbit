@@ -18,6 +18,9 @@ import {
 import { OfferCarousel } from './ui/offer-carousel';
 import { GREEK_OFFERS } from '../data/greekOffers';
 
+/** Quests page: secondary copy, was anbit-muted (#71717a) — lighter for readability */
+const questMuted = 'text-[#b0b0b0]';
+
 type FilterValue = '' | 'highest-xp' | 'expiring-soon';
 
 const QuestsPage: React.FC<{ quests: Quest[]; user?: UserData | null }> = ({ quests, user }) => {
@@ -90,14 +93,14 @@ const QuestsPage: React.FC<{ quests: Quest[]; user?: UserData | null }> = ({ que
       {/* Προσφορές της ημέρας - carousel */}
       <section className="space-y-4">
         <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('dealsOfTheDay')}</h2>
-        <OfferCarousel offers={GREEK_OFFERS} />
+        <OfferCarousel offers={GREEK_OFFERS} mutedTextClassName={questMuted} />
       </section>
 
       <div className="space-y-2">
         <h1 className="section-title-lg text-anbit-text tracking-tight">
           {t('storeOffers')}
         </h1>
-        <p className="text-sm text-anbit-muted">
+        <p className={`text-sm ${questMuted}`}>
           {t('storeOffersSubtitle')}
         </p>
       </div>
@@ -107,27 +110,27 @@ const QuestsPage: React.FC<{ quests: Quest[]; user?: UserData | null }> = ({ que
         <div className="p-6 text-anbit-text">
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
             <div className="flex items-center gap-3">
-              <div className="p-2 rounded-full bg-anbit-yellow/20">
-                <Trophy className="h-5 w-5 text-anbit-yellow" />
+              <div className="p-2 rounded-full bg-[color:var(--anbit-xp-surface)]">
+                <Trophy className="h-5 w-5 text-anbit-xp-accent" />
               </div>
               <div>
-                <p className="text-xs font-bold text-anbit-muted tracking-wide">{t('yourLevel')}</p>
+                <p className={`text-xs font-bold tracking-wide ${questMuted}`}>{t('yourLevel')}</p>
                 <p className="text-2xl font-black italic text-anbit-text">Level {level}</p>
               </div>
             </div>
             <div className="text-right">
-              <p className="text-xs font-bold text-anbit-muted tracking-wide">{t('totalXP')}</p>
+              <p className={`text-xs font-bold tracking-wide ${questMuted}`}>{t('totalXP')}</p>
               <p className="text-2xl font-black italic text-anbit-text">{currentXP.toLocaleString()}</p>
             </div>
           </div>
           <div className="space-y-2">
             <div className="flex justify-between text-sm">
-              <span className="text-anbit-muted">{t('progressToLevel')} {level + 1}</span>
+              <span className={questMuted}>{t('progressToLevel')} {level + 1}</span>
               <span className="font-bold text-anbit-text">{currentXP} / {targetXP}</span>
             </div>
             <div className="h-2 w-full rounded-full bg-white/10 overflow-hidden">
               <motion.div
-                className="h-full rounded-full bg-anbit-yellow"
+                className="h-full rounded-full bg-anbit-xp-bar"
                 initial={{ width: 0 }}
                 animate={{ width: `${Math.min(100, progressPct)}%` }}
                 transition={{ duration: 1, ease: 'easeOut' }}
@@ -139,7 +142,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; user?: UserData | null }> = ({ que
 
       {/* Filter - simple select, anbit styling */}
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-sm font-medium text-anbit-muted">{t('filterBy')}</span>
+        <span className={`text-sm font-medium ${questMuted}`}>{t('filterBy')}</span>
         <select
           value={filter}
           onChange={(e) => setFilter(e.target.value as FilterValue)}
@@ -252,10 +255,10 @@ function OfferCard({
           </div>
           <div className="min-w-0">
             <p className="font-bold text-anbit-text text-sm truncate">{storeName}</p>
-            <p className="text-xs text-anbit-muted">{t('categoryOffer')}</p>
+            <p className={`text-xs ${questMuted}`}>{t('categoryOffer')}</p>
           </div>
         </div>
-        <span className="inline-flex items-center gap-1 rounded-md bg-anbit-yellow/20 text-anbit-yellow px-2 py-1 text-xs font-bold">
+        <span className="inline-flex items-center gap-1 rounded-md border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)] text-anbit-xp-accent px-2 py-1 text-xs font-bold">
           <Star className="h-3 w-3" />
           +{quest.reward} XP
         </span>
@@ -263,17 +266,17 @@ function OfferCard({
 
       <div>
         <h3 className="font-bold text-lg text-anbit-text mb-1">{quest.title}</h3>
-        <p className="text-sm text-anbit-muted line-clamp-2">{quest.description}</p>
+        <p className={`text-sm line-clamp-2 ${questMuted}`}>{quest.description}</p>
       </div>
 
       {quest.multiplier != null && quest.multiplier > 1 && (
-        <div className="flex items-center gap-2 p-2 rounded-lg bg-anbit-yellow/10 border border-anbit-yellow/20">
-          <Zap className="h-4 w-4 text-anbit-yellow" />
-          <span className="text-sm font-medium text-anbit-yellow">{quest.multiplier}x {t('xpMultiplierWeekend')}</span>
+        <div className="flex items-center gap-2 p-2 rounded-lg border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)]">
+          <Zap className="h-4 w-4 text-anbit-xp-accent" />
+          <span className="text-sm font-medium text-anbit-xp-accent">{quest.multiplier}x {t('xpMultiplierWeekend')}</span>
         </div>
       )}
 
-      <div className="flex items-center gap-2 text-sm text-anbit-muted">
+      <div className={`flex items-center gap-2 text-sm ${questMuted}`}>
         <Clock className="h-4 w-4 shrink-0" />
         <span>{t('expiresInDays')} {daysNum} {t('daysLeft')}</span>
       </div>

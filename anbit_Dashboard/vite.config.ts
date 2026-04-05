@@ -9,6 +9,9 @@ export default defineConfig(({ mode }) => {
         port: 3001,
         host: '0.0.0.0',
         cors: true,
+        fs: {
+          allow: [path.resolve(__dirname, '..')],
+        },
         proxy: {
           '/api': {
             target: 'http://localhost:5057',

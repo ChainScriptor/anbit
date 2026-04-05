@@ -1,0 +1,77 @@
+/**
+ * Anbit global typography — Inter (Greek + fallback) + Omnes Bold Italic (Basic Latin / numbers / English).
+ * Omnes applies only to U+0000-007F so Greek glyphs use Inter from the stack.
+ */
+@import url("https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&display=swap");
+
+@font-face {
+  font-family: "Omnes";
+  src: url("/fonts/OmnesBoldItalic.ttf") format("truetype");
+  font-weight: 800;
+  font-style: italic;
+  font-display: swap;
+  unicode-range: U+0000-007F;
+}
+
+:root {
+  /* Latin/Basic Latin + digits → Omnes (unicode-range); Greek → Inter fallback */
+  --font-primary: "Omnes", "Inter", system-ui, sans-serif;
+  --font-inter: "Inter", system-ui, sans-serif;
+}
+
+html {
+  font-family: var(--font-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+  font-optical-sizing: auto;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  font-family: var(--font-primary);
+  letter-spacing: -0.02em;
+  line-height: 1.5;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  font-weight: 800;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+
+.material-symbols-outlined {
+  font-family: "Material Symbols Outlined" !important;
+  font-style: normal !important;
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+/* Dashboard / admin: optional optical tuning for explicit Latin display lines */
+.font-anbit-brand {
+  font-family: var(--font-primary) !important;
+  font-style: italic !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.05;
+  font-size: 0.9em;
+}
+
+.font-anbit-display {
+  font-family: var(--font-primary) !important;
+  font-style: italic !important;
+  font-weight: 800 !important;
+  letter-spacing: -0.03em !important;
+  line-height: 1.16;
+  font-size: 0.93em;
+}
+
+/* Tabular alignment; digits stay on Latin subset → Omnes where supported */
+.anbit-tabular-nums {
+  font-family: var(--font-primary) !important;
+  font-variant-numeric: tabular-nums;
+  font-style: normal !important;
+}

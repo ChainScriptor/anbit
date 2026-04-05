@@ -18,11 +18,6 @@ import { cn } from '@/lib/utils';
 import TransactionHistoryModal from '@/components/TransactionHistoryModal';
 
 const ACCENT = '#0a0a0a';
-const OMNES_HEADING_STYLE: React.CSSProperties = {
-  fontFamily: 'OmnesBoldItalic, sans-serif',
-  fontStyle: 'italic',
-  fontWeight: 700,
-};
 
 const Customers: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -102,7 +97,9 @@ const Customers: React.FC = () => {
                         isActive ? 'text-white' : 'text-slate-500',
                       )}
                     >
-                      €{customer.totalSpent.toFixed(0)} · {customer.loyaltyPoints} pts
+                      <span className="anbit-tabular-nums">
+                        €{customer.totalSpent.toFixed(0)} · {customer.loyaltyPoints} pts
+                      </span>
                     </p>
                   </div>
                 </button>
@@ -123,10 +120,10 @@ const Customers: React.FC = () => {
           >
             <div className="relative z-10 flex flex-col md:flex-row md:items-center md:justify-between">
               <div>
-                <h1 className="text-2xl font-bold text-slate-900 md:text-3xl" style={OMNES_HEADING_STYLE}>
+                <h1 className="font-anbit-display text-2xl font-bold text-slate-900 md:text-3xl">
                   Manage Your Customers
                 </h1>
-                <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base" style={OMNES_HEADING_STYLE}>
+                <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base">
                   View spending, loyalty points, visits and preferences for each customer.
                 </p>
               </div>
@@ -171,7 +168,7 @@ const Customers: React.FC = () => {
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                           Συνολική δαπάνη
                         </p>
-                        <p className="text-2xl font-bold text-slate-900">
+                        <p className="anbit-tabular-nums text-2xl font-bold text-slate-900">
                           €{selectedCustomer.totalSpent.toFixed(2)}
                         </p>
                       </div>
@@ -179,7 +176,7 @@ const Customers: React.FC = () => {
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                           Πόντοι Loyalty
                         </p>
-                        <p className="text-2xl font-bold text-slate-900">
+                        <p className="anbit-tabular-nums text-2xl font-bold text-slate-900">
                           {selectedCustomer.loyaltyPoints}
                         </p>
                       </div>
@@ -187,7 +184,7 @@ const Customers: React.FC = () => {
                         <p className="text-xs font-medium uppercase tracking-wide text-slate-500">
                           Επισκέψεις
                         </p>
-                        <p className="text-2xl font-bold text-slate-900">
+                        <p className="anbit-tabular-nums text-2xl font-bold text-slate-900">
                           {selectedCustomer.totalOrders}
                         </p>
                       </div>

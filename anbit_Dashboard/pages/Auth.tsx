@@ -13,21 +13,7 @@ const AuthPage: React.FC = () => {
   const [authTab, setAuthTab] = React.useState<'login' | 'register'>('login');
 
   return (
-    <div className="omnes-auth relative flex min-h-screen flex-col bg-[#f5f3ef] text-[#0F172A] lg:flex-row">
-      <style>{`
-        @font-face {
-          font-family: 'OmnesBoldItalic';
-          src: url('/fonts/OmnesBoldItalic.ttf') format('truetype');
-          font-weight: 700;
-          font-style: italic;
-          font-display: swap;
-        }
-        .omnes-auth * {
-          font-family: OmnesBoldItalic, sans-serif !important;
-          font-weight: 700 !important;
-          font-style: italic !important;
-        }
-      `}</style>
+    <div className="relative flex min-h-screen flex-col bg-[#f5f3ef] text-[#0F172A] lg:flex-row">
       {/* Left side – previous full-image background */}
       <div className="relative z-10 flex min-h-[44vh] flex-1 items-center justify-center overflow-hidden lg:min-h-screen">
         <motion.div
@@ -53,15 +39,14 @@ const AuthPage: React.FC = () => {
               <span className="inline-flex items-center justify-center rounded-full bg-black/60 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.16em] text-white/95">
                 For merchants & local businesses
               </span>
-              <h1 className="mt-5 text-4xl font-extrabold leading-tight drop-shadow-lg sm:text-5xl">
+              <h1 className="font-anbit-display mt-5 text-4xl font-extrabold leading-tight drop-shadow-lg sm:text-5xl">
                 Grow your business with{' '}
                 <span className="inline-flex w-[260px] translate-y-5 align-middle sm:w-[320px]">
                   <HandWrittenTitle
                     title="Anbit"
                     subtitle=""
                     className="py-0"
-                    titleClassName="text-[#0a0a0a] [text-shadow:0_1px_0_rgba(255,255,255,0.95),0_-1px_0_rgba(255,255,255,0.95),1px_0_0_rgba(255,255,255,0.95),-1px_0_0_rgba(255,255,255,0.95)] !text-4xl sm:!text-5xl"
-                    titleStyle={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
+                    titleClassName="font-anbit-brand text-[#0a0a0a] [text-shadow:0_1px_0_rgba(255,255,255,0.95),0_-1px_0_rgba(255,255,255,0.95),1px_0_0_rgba(255,255,255,0.95),-1px_0_0_rgba(255,255,255,0.95)] !text-4xl sm:!text-5xl"
                   />
                 </span>
               </h1>
@@ -107,7 +92,9 @@ const AuthPage: React.FC = () => {
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
               <PawPrint className="h-4.5 w-4.5 text-[#0a0a0a]" strokeWidth={2.4} />
             </div>
-            <span className="font-semibold tracking-tight text-white">Anbit Merchant</span>
+            <span className="font-semibold tracking-tight text-white">
+              <span className="font-anbit-brand text-base">Anbit</span> Merchant
+            </span>
           </div>
           <button
             type="button"

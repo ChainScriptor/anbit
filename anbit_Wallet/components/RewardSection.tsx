@@ -18,7 +18,7 @@ const RewardSection: React.FC<RewardSectionProps> = ({ rewards, onViewAll }) => 
         <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('marketplace')}</h2>
         <button
           onClick={onViewAll}
-          className="text-xs font-semibold text-anbit-yellow tracking-wide flex items-center gap-2 hover:opacity-80 transition-opacity"
+          className="text-xs font-semibold text-anbit-xp-accent tracking-wide flex items-center gap-2 hover:opacity-80 transition-opacity"
         >
           {t('vault')} <ArrowRight className="w-4 h-4" />
         </button>
@@ -40,7 +40,7 @@ const RewardSection: React.FC<RewardSectionProps> = ({ rewards, onViewAll }) => 
             <div className="p-5 lg:p-6 space-y-4">
               <div className="space-y-1">
                 <h3 className="text-base lg:text-lg font-black text-anbit-text leading-tight tracking-tight truncate">{reward.title}</h3>
-                <span className="text-xs lg:text-sm font-black text-anbit-yellow">{reward.xpCost} ΠΟΝΤΟΙ</span>
+                <span className="text-xs lg:text-sm font-black text-anbit-xp-accent">{reward.xpCost} ΠΟΝΤΟΙ</span>
               </div>
               <button disabled={reward.status === 'locked'} className={`w-full py-2.5 lg:py-3 rounded-xl font-semibold text-[9px] lg:text-[10px] tracking-wide transition-all ${reward.status === 'available' ? 'bg-anbit-yellow text-anbit-yellow-content hover:opacity-90' : 'bg-white/5 text-anbit-muted'
                 }`}>

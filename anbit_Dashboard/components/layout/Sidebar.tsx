@@ -77,16 +77,7 @@ const Sidebar: React.FC = () => {
         )}
       >
         {!collapsed && (
-          <span
-            className="font-logo text-3xl font-extrabold tracking-tight text-white shrink-0"
-            style={{
-              color: '#FFFFFF',
-              letterSpacing: '-0.03em',
-              fontFamily: isMerchant ? 'OmnesBoldItalic, sans-serif' : undefined,
-              fontStyle: isMerchant ? 'italic' : undefined,
-              fontWeight: isMerchant ? 700 : undefined,
-            }}
-          >
+          <span className="font-anbit-brand text-3xl font-extrabold text-white shrink-0" style={{ color: '#FFFFFF' }}>
             Anbit
           </span>
         )}

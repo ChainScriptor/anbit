@@ -66,7 +66,7 @@ const AdminCustomers: React.FC = () => {
             <p className="inline-flex items-center rounded-full bg-white/70 px-3 py-1 text-xs font-semibold text-sky-700 mb-2">
               Platform Administrator
             </p>
-            <h1 className="text-2xl font-bold text-slate-900 md:text-3xl">
+            <h1 className="font-anbit-display text-2xl font-bold text-slate-900 md:text-3xl">
               Users & XP Intelligence
             </h1>
             <p className="mt-1 max-w-xl text-sm text-slate-600 md:text-base">
@@ -126,9 +126,11 @@ const AdminCustomers: React.FC = () => {
                         <div className="font-medium text-slate-900">{c.name}</div>
                         <div className="text-xs text-slate-500">{c.email}</div>
                       </td>
-                      <td className="px-4 py-2.5 font-semibold text-slate-900">{c.loyaltyPoints.toLocaleString()}</td>
-                      <td className="px-4 py-2.5 text-slate-700">{c.totalOrders}</td>
-                      <td className="px-4 py-2.5 text-slate-700">€{c.totalSpent.toFixed(2)}</td>
+                      <td className="anbit-tabular-nums px-4 py-2.5 font-semibold text-slate-900">
+                        {c.loyaltyPoints.toLocaleString()}
+                      </td>
+                      <td className="anbit-tabular-nums px-4 py-2.5 text-slate-700">{c.totalOrders}</td>
+                      <td className="anbit-tabular-nums px-4 py-2.5 text-slate-700">€{c.totalSpent.toFixed(2)}</td>
                     </tr>
                   );
                 })}
@@ -152,7 +154,7 @@ function KpiCard({ icon, label, value }: { icon: React.ReactNode; label: string;
         {icon}
         {label}
       </div>
-      <p className="mt-2 text-2xl font-bold text-slate-900">{value}</p>
+      <p className="anbit-tabular-nums mt-2 text-2xl font-bold text-slate-900">{value}</p>
     </div>
   );
 }
@@ -220,7 +222,12 @@ function CustomerDetails({ customer }: { customer: Customer }) {
         {latestTx ? (
           <div className="rounded-xl border border-slate-200 p-3 text-sm">
             <p className="font-medium text-slate-900">{latestTx.date} {latestTx.time}</p>
-            <p className="text-slate-600">Σύνολο: €{latestTx.totalSpent.toFixed(2)} · XP: +{latestTx.pointsEarned}</p>
+            <p className="text-slate-600">
+              Σύνολο:{' '}
+              <span className="anbit-tabular-nums">
+                €{latestTx.totalSpent.toFixed(2)} · XP: +{latestTx.pointsEarned}
+              </span>
+            </p>
           </div>
         ) : (
           <p className="text-sm text-slate-500">Δεν υπάρχουν αγορές.</p>
@@ -237,7 +244,7 @@ function MiniStat({ icon, label, value }: { icon: React.ReactNode; label: string
         {icon}
         <span>{label}</span>
       </div>
-      <p className="mt-1 text-sm font-semibold text-slate-900">{value}</p>
+      <p className="anbit-tabular-nums mt-1 text-sm font-semibold text-slate-900">{value}</p>
     </div>
   );
 }

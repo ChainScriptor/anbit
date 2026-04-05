@@ -129,7 +129,7 @@ const SettingsPage: React.FC<{ user: UserData }> = ({ user }) => {
         <div className="xl:col-span-5 space-y-6 lg:space-y-8">
           <div className="dashboard-card p-6 lg:p-8 space-y-6">
             <div className="flex items-center gap-3">
-              <Zap className="w-5 h-5 text-anbit-yellow" />
+              <Zap className="w-5 h-5 text-anbit-xp-accent" />
               <h3 className="text-lg lg:text-xl font-bold text-anbit-text italic tracking-tighter">{t('tacticalAlerts')}</h3>
             </div>
 
@@ -142,7 +142,7 @@ const SettingsPage: React.FC<{ user: UserData }> = ({ user }) => {
                 <div key={idx} className="flex items-center justify-between group p-3 bg-white/[0.01] rounded-xl border border-white/5">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-white/[0.03] rounded-lg border border-white/5">
-                      <item.icon className="w-4 h-4 text-anbit-muted group-hover:text-anbit-yellow transition-colors" />
+                      <item.icon className="w-4 h-4 text-anbit-muted group-hover:text-anbit-xp-accent transition-colors" />
                     </div>
                     <span className="text-xs font-semibold text-anbit-text italic">{item.label}</span>
                   </div>

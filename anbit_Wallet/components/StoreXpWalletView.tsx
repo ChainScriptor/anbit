@@ -199,18 +199,17 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
           {user ? (
             <div className="relative inline-flex items-end justify-center gap-1">
               <span
-                className="text-7xl font-black italic leading-none tracking-tighter sm:text-8xl"
+                className="anbit-tabular-nums text-7xl font-black italic leading-none tracking-tighter sm:text-8xl"
                 style={{
                   color: GOLD,
                   textShadow: '0 0 24px rgba(255, 255, 255, 0.35)',
-                  fontFamily: "'Plus Jakarta Sans', Inter, sans-serif",
                 }}
               >
                 {displayXp.toLocaleString()}
               </span>
               <span
                 className="mb-2 text-2xl font-bold italic sm:text-3xl"
-                style={{ color: GOLD, fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
+                style={{ color: GOLD }}
               >
                 XP
               </span>
@@ -230,12 +229,7 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
         <section className="rounded-2xl border border-white/10 bg-[#0a0a0a] p-6 backdrop-blur-sm">
           <div className="mb-4 flex items-end justify-between gap-4">
             <div>
-              <h2
-                className="text-2xl font-bold italic text-white"
-                style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
-              >
-                {t('xpWalletLevel', { n: level })}
-              </h2>
+              <h2 className="text-2xl font-bold italic text-white">{t('xpWalletLevel', { n: level })}</h2>
               <p className="text-sm text-white/50">{levelName}</p>
             </div>
             <div className="text-right">
@@ -250,10 +244,10 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
           <div className="relative h-4 w-full overflow-hidden rounded-full bg-white/10 shadow-inner">
             <div
               className="absolute left-0 top-0 h-full rounded-full transition-all duration-700"
-                style={{
+              style={{
                 width: `${progressPct}%`,
                 backgroundColor: TIER_GOLD,
-                  boxShadow: '0 0 12px rgba(255, 255, 255, 0.45)',
+                boxShadow: '0 0 12px rgba(255, 255, 255, 0.45)',
               }}
             >
               <div className="h-1/2 w-full rounded-full bg-white/25" />
@@ -263,12 +257,7 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
 
         <section className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3
-              className="text-lg font-bold italic text-[#0a0a0a]"
-              style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
-            >
-              {t('xpWalletHistory')}
-            </h3>
+            <h3 className="text-lg font-bold italic text-[#0a0a0a]">{t('xpWalletHistory')}</h3>
             <button type="button" className="text-xs font-bold uppercase tracking-widest text-[#0a0a0a]/45">
               {t('xpWalletViewAll')}
             </button>
@@ -289,10 +278,7 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
                     <p className="text-xs text-white/45">{row.subtitle}</p>
                   </div>
                 </div>
-                <span
-                  className="shrink-0 text-lg font-black italic tracking-tight"
-                  style={{ color: TIER_GOLD, fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
-                >
+                <span className="anbit-tabular-nums shrink-0 text-lg font-black italic tracking-tight" style={{ color: TIER_GOLD }}>
                   +{row.xp} XP
                 </span>
               </div>
@@ -301,12 +287,7 @@ const StoreXpWalletView: React.FC<StoreXpWalletViewProps> = ({
         </section>
 
         <section className="space-y-6">
-          <h3
-            className="text-lg font-bold italic text-[#0a0a0a]"
-            style={{ fontFamily: "'Plus Jakarta Sans', Inter, sans-serif" }}
-          >
-            {t('xpWalletBadges')}
-          </h3>
+          <h3 className="text-lg font-bold italic text-[#0a0a0a]">{t('xpWalletBadges')}</h3>
           <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
             <div className="relative flex aspect-square flex-col items-center justify-center rounded-xl border border-white/10 bg-[#0a0a0a] p-4 text-center transition-transform hover:scale-[1.02]">
               <div

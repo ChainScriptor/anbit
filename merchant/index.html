@@ -1,13 +1,16 @@
 <!DOCTYPE html>
 <html lang="el" class="dark">
+
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Anbit Merchants | Elite Hospitality Precision</title>
   <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
   <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600&family=Poppins:wght@800;900&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="./css/app.css" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap"
+    rel="stylesheet" />
   <script id="tailwind-config">
     tailwind.config = {
       darkMode: "class",
@@ -65,9 +68,10 @@
             "anbit-red": "#E63533",
           },
           fontFamily: {
-            headline: ["Plus Jakarta Sans", "sans-serif"],
-            body: ["Inter", "sans-serif"],
-            label: ["Inter", "sans-serif"],
+            sans: ["Omnes", "Inter", "sans-serif"],
+            headline: ["Omnes", "Inter", "sans-serif"],
+            body: ["Omnes", "Inter", "sans-serif"],
+            label: ["Omnes", "Inter", "sans-serif"],
           },
           borderRadius: {
             DEFAULT: "1rem",
@@ -81,47 +85,24 @@
     };
   </script>
   <style>
-    @font-face {
-      font-family: "OmnesBoldItalic";
-      src: url("./public/fonts/OmnesBoldItalic.ttf") format("truetype");
-      font-weight: 700;
-      font-style: italic;
-      font-display: swap;
-    }
-
-    body {
-      font-family: "Inter", sans-serif;
-      background-color: #0a0a0a;
-      color: #f5f5f5;
-    }
-    h1,
-    h2,
-    h3 {
-      font-family: "Plus Jakarta Sans", sans-serif;
-      color: #ffffff;
-    }
-    .material-symbols-outlined {
-      font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
-    }
     .no-scrollbar::-webkit-scrollbar {
       display: none;
     }
+
     .no-scrollbar {
       -ms-overflow-style: none;
       scrollbar-width: none;
     }
+
     .nav-dropdown:hover .dropdown-content {
       display: block;
     }
 
-    /* Logo Anbit – ίδιο με anbit_Wallet (Header.tsx + index.html .logo-anbit) */
+    /* Logo Anbit — font stack in ./css/app.css (.logo-anbit) */
     .logo-anbit {
-      font-family: "OmnesBoldItalic", sans-serif;
-      font-weight: 700;
-      font-style: italic;
-      letter-spacing: -0.03em;
       transition: color 0.2s ease;
     }
+
     a.logo-anbit:hover {
       color: rgba(255, 255, 255, 0.9);
     }
@@ -129,10 +110,12 @@
     .container-scroll-container {
       perspective: 1000px;
     }
+
     .container-scroll-card {
       transform: rotateX(20deg) scale(0.9);
       transition: transform 0.5s cubic-bezier(0.17, 0.67, 0.83, 0.67);
     }
+
     .container-scroll-container:hover .container-scroll-card {
       transform: rotateX(0deg) scale(1);
     }
@@ -143,9 +126,11 @@
       backdrop-filter: blur(4px);
       -webkit-backdrop-filter: blur(4px);
     }
+
     .dark-input-field {
       background-color: #383838;
     }
+
     /* Να μην «βάφονται» άσπρα από @tailwindcss/forms / browser defaults */
     #merchant-register-form input[type="text"],
     #merchant-register-form input[type="tel"],
@@ -155,9 +140,11 @@
       color: #ffffff !important;
       border-color: transparent !important;
     }
+
     #merchant-register-form input::placeholder {
       color: rgba(255, 255, 255, 0.4);
     }
+
     #merchant-register-form input:-webkit-autofill,
     #merchant-register-form input:-webkit-autofill:hover,
     #merchant-register-form input:-webkit-autofill:focus {
@@ -166,13 +153,16 @@
       caret-color: #ffffff;
       transition: background-color 99999s ease-out 0s;
     }
+
     #merchant-register-form select option {
       background-color: #383838;
       color: #ffffff;
     }
+
     body.merchant-modal-open {
       overflow: hidden;
     }
+
     .sr-only {
       position: absolute;
       width: 1px;
@@ -186,64 +176,72 @@
     }
   </style>
 </head>
+
 <body class="antialiased selection:bg-primary selection:text-white">
   <!-- TopNavBar -->
   <nav class="sticky top-0 z-50 w-full bg-black border-b border-white/10">
     <div class="flex justify-between items-center max-w-7xl mx-auto px-4 sm:px-8 py-4 gap-4">
       <a href="#" class="logo-anbit text-3xl sm:text-4xl lg:text-5xl text-white shrink-0 leading-none">Anbit</a>
       <div class="hidden md:flex items-center space-x-6 flex-1 justify-center">
-        <a class="font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all" href="#">Home</a>
+        <a class="font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all"
+          href="#">Home</a>
         <div class="relative group nav-dropdown">
-          <button type="button" class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all py-2">
+          <button type="button"
+            class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all py-2">
             Προϊόντα
             <span class="material-symbols-outlined text-[18px]">expand_more</span>
           </button>
-          <div class="dropdown-content hidden absolute top-full left-0 mt-0 w-[min(500px,calc(100vw-2rem))] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-2xl p-6 z-50">
+          <div
+            class="dropdown-content hidden absolute top-full left-0 mt-0 w-[min(500px,calc(100vw-2rem))] bg-[#1A1A1A] border border-white/10 rounded-xl shadow-2xl p-6 z-50">
             <div class="grid grid-cols-2 gap-y-4 gap-x-8">
               <a class="flex items-center gap-3 group/item" href="#">
-                <span class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">storefront</span>
+                <span
+                  class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">storefront</span>
                 <span class="text-sm font-semibold text-white/90 group-hover/item:text-white">Marketplace</span>
               </a>
               <a class="flex items-center gap-3 group/item" href="#">
-                <span class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">send</span>
+                <span
+                  class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">send</span>
                 <span class="text-sm font-semibold text-white/90 group-hover/item:text-white">Storefront</span>
               </a>
               <a class="flex items-center gap-3 group/item" href="#">
-                <span class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">pedal_bike</span>
-                <span class="text-sm font-semibold text-white/90 group-hover/item:text-white">Παράδοση κατ' απαίτηση</span>
+                <span
+                  class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">pedal_bike</span>
+                <span class="text-sm font-semibold text-white/90 group-hover/item:text-white">Παράδοση κατ'
+                  απαίτηση</span>
               </a>
               <div></div>
               <a class="flex items-center gap-3 group/item" href="#">
-                <span class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">directions_car</span>
-                <span class="text-sm font-semibold text-white/90 group-hover/item:text-white">Διανομή από το κατάστημα</span>
+                <span
+                  class="material-symbols-outlined text-white/70 group-hover/item:text-primary transition-colors">directions_car</span>
+                <span class="text-sm font-semibold text-white/90 group-hover/item:text-white">Διανομή από το
+                  κατάστημα</span>
               </a>
             </div>
           </div>
         </div>
-        <a class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all" href="#">
+        <a class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all"
+          href="#">
           Λύσεις
           <span class="material-symbols-outlined text-[18px]">expand_more</span>
         </a>
-        <a class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all" href="#">
+        <a class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all"
+          href="#">
           Τύποι επιχειρήσεων
           <span class="material-symbols-outlined text-[18px]">expand_more</span>
         </a>
-        <a class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all" href="#">
+        <a class="flex items-center gap-1 font-headline text-sm font-semibold tracking-tight text-white hover:text-primary transition-all"
+          href="#">
           Πληροφόρηση
           <span class="material-symbols-outlined text-[18px]">expand_more</span>
         </a>
       </div>
       <div class="flex items-center gap-3 sm:space-x-6 shrink-0">
-        <a
-          id="anbit-dashboard-login"
+        <a id="anbit-dashboard-login"
           class="hidden sm:inline font-headline text-sm font-semibold text-white hover:text-white/70 transition-all"
-          href="http://localhost:3001/#/auth"
-          >Log in</a>
-        <button
-          type="button"
-          data-open-partner-modal
-          class="bg-primary text-white px-4 sm:px-6 py-2.5 rounded-full font-bold hover:brightness-110 transition-all text-sm"
-        >
+          href="http://localhost:3001/#/auth">Log in</a>
+        <button type="button" data-open-partner-modal
+          class="bg-primary text-white px-4 sm:px-6 py-2.5 rounded-full font-bold hover:brightness-110 transition-all text-sm">
           Γίνετε Συνεργάτης
         </button>
       </div>
@@ -256,40 +254,29 @@
       <div class="relative z-10 max-w-7xl mx-auto px-4 sm:px-8 w-full py-16 lg:py-24">
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-14 xl:gap-16 items-center">
           <div class="order-2 lg:order-1 text-white max-w-xl lg:max-w-none">
-            <h1 class="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold tracking-tighter leading-[1.05] mb-6">
+            <h1
+              class="text-4xl sm:text-5xl md:text-6xl xl:text-7xl font-extrabold tracking-tighter leading-[1.05] mb-6">
               Περισσότεροι πελάτες, λιγότερη προσπάθεια. Αναβαθμίστε το κατάστημά σας σήμερα.
             </h1>
-            <p class="text-lg sm:text-xl md:text-2xl text-on-surface-variant font-medium mb-10 max-w-2xl">
+            <p class="anbit-slogan text-lg sm:text-xl md:text-2xl text-on-surface-variant mb-10 max-w-2xl">
               Η νούμερο 1 πλατφόρμα για In-store παραγγελιοληψία και Gamified Loyalty.
             </p>
             <div class="flex flex-col sm:flex-row gap-4">
-              <button
-                type="button"
-                data-open-partner-modal
-                class="bg-primary text-white text-lg font-bold px-10 py-5 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-red-900/20"
-              >
+              <button type="button" data-open-partner-modal
+                class="bg-primary text-white text-lg font-bold px-10 py-5 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-xl shadow-red-900/20">
                 Γίνετε Συνεργάτης
               </button>
-              <button
-                type="button"
-                class="bg-white/10 backdrop-blur-md text-white border border-white/20 text-lg font-bold px-10 py-5 rounded-2xl hover:bg-white/20 transition-all"
-              >
+              <button type="button"
+                class="bg-white/10 backdrop-blur-md text-white border border-white/20 text-lg font-bold px-10 py-5 rounded-2xl hover:bg-white/20 transition-all">
                 Δείτε το Demo
               </button>
             </div>
           </div>
           <div class="order-1 lg:order-2 w-full flex justify-center lg:justify-end">
             <div
-              class="relative w-full max-w-[560px] lg:max-w-none aspect-[4/3] lg:aspect-auto lg:min-h-[min(70vh,520px)] lg:h-[min(72vh,600px)] rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#111] ring-1 ring-white/5"
-            >
-              <img
-                src="./public/vid.gif"
-                alt="Anbit — εμπειρία φιλοξενίας και παραγγελιών"
-                class="absolute inset-0 w-full h-full object-cover"
-                width="960"
-                height="720"
-                decoding="async"
-              />
+              class="relative w-full max-w-[560px] lg:max-w-none aspect-[4/3] lg:aspect-auto lg:min-h-[min(70vh,520px)] lg:h-[min(72vh,600px)] rounded-2xl md:rounded-3xl overflow-hidden border border-white/10 shadow-2xl bg-[#111] ring-1 ring-white/5">
+              <img src="./public/vid.gif" alt="Anbit — εμπειρία φιλοξενίας και παραγγελιών"
+                class="absolute inset-0 w-full h-full object-cover" width="960" height="720" decoding="async" />
             </div>
           </div>
         </div>
@@ -302,28 +289,27 @@
         <h2 class="text-3xl font-bold text-white tracking-tight">Η γνώμη των συνεργατών μας</h2>
       </div>
       <div class="px-4 sm:px-8 flex overflow-x-auto no-scrollbar gap-6 pb-8 snap-x snap-mandatory max-w-7xl mx-auto">
-        <div class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
-          <img
-            alt="Σεφ στην κουζίνα"
+        <div
+          class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
+          <img alt="Σεφ στην κουζίνα"
             class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=900"
-          />
+            src="https://images.unsplash.com/photo-1577219491135-ce391730fb2c?auto=format&fit=crop&q=80&w=900" />
           <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
           <div class="absolute bottom-0 left-0 p-8">
             <p class="text-lg md:text-xl font-bold text-white leading-snug font-headline mb-3">
-              "Δεν είμαι tech expert, αλλά το Anbit είναι τόσο απλό που η ομάδα μου το έμαθε σε μία μέρα. Πραγματική ευκολία."
+              "Δεν είμαι tech expert, αλλά το Anbit είναι τόσο απλό που η ομάδα μου το έμαθε σε μία μέρα. Πραγματική
+              ευκολία."
             </p>
             <p class="text-sm md:text-[0.95rem] text-white/75 font-medium leading-snug">
               Νίκος Π., Ιδιοκτήτης Εστιατορίου
             </p>
           </div>
         </div>
-        <div class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
-          <img
-            alt="Παρουσίαση πιάτου"
+        <div
+          class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
+          <img alt="Παρουσίαση πιάτου"
             class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=900"
-          />
+            src="https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=900" />
           <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
           <div class="absolute bottom-0 left-0 p-8">
             <p class="text-lg md:text-xl font-bold text-white leading-snug font-headline mb-3">
@@ -334,12 +320,11 @@
             </p>
           </div>
         </div>
-        <div class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
-          <img
-            alt="Εσωτερικό καταστήματος"
+        <div
+          class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
+          <img alt="Εσωτερικό καταστήματος"
             class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=900"
-          />
+            src="https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=900" />
           <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
           <div class="absolute bottom-0 left-0 p-8">
             <p class="text-lg md:text-xl font-bold text-white leading-snug font-headline mb-3">
@@ -350,16 +335,16 @@
             </p>
           </div>
         </div>
-        <div class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
-          <img
-            alt="Cafe-bar"
+        <div
+          class="flex-shrink-0 w-[min(320px,85vw)] md:w-[450px] aspect-[3/4] rounded-2xl relative overflow-hidden snap-start group border border-white/10">
+          <img alt="Cafe-bar"
             class="absolute inset-0 w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
-            src="https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&q=80&w=900"
-          />
+            src="https://images.unsplash.com/photo-1559925393-8be0ec4767c8?auto=format&fit=crop&q=80&w=900" />
           <div class="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent"></div>
           <div class="absolute bottom-0 left-0 p-8">
             <p class="text-lg md:text-xl font-bold text-white leading-snug font-headline mb-3">
-              "Πλέον δεν ανησυχώ για τις παραγγελίες. Η πλατφόρμα είναι τόσο φιλική που όλα γίνονται αυτόματα και χωρίς λάθη."
+              "Πλέον δεν ανησυχώ για τις παραγγελίες. Η πλατφόρμα είναι τόσο φιλική που όλα γίνονται αυτόματα και χωρίς
+              λάθη."
             </p>
             <p class="text-sm md:text-[0.95rem] text-white/75 font-medium leading-snug">
               Ελένη Σ., Manager Cafe-Bar
@@ -435,12 +420,14 @@
     <section class="py-32 max-w-7xl mx-auto px-4 sm:px-8 bg-background">
       <div class="grid md:grid-cols-3 gap-12">
         <div class="group">
-          <div class="w-16 h-16 bg-[#1A1A1A] rounded flex items-center justify-center mb-8 group-hover:bg-primary/20 transition-colors border border-white/5">
+          <div
+            class="w-16 h-16 bg-[#1A1A1A] rounded flex items-center justify-center mb-8 group-hover:bg-primary/20 transition-colors border border-white/5">
             <span class="material-symbols-outlined text-3xl text-primary">restaurant_menu</span>
           </div>
           <h3 class="text-2xl font-bold mb-4">Digital Menu</h3>
           <p class="text-on-surface-variant leading-relaxed">
-            Τέρμα οι χάρτινοι κατάλογοι. Πλήρης έλεγχος των προϊόντων σας σε πραγματικό χρόνο. Αλλάξτε τιμές και διαθεσιμότητα σε δευτερόλεπτα.
+            Τέρμα οι χάρτινοι κατάλογοι. Πλήρης έλεγχος των προϊόντων σας σε πραγματικό χρόνο. Αλλάξτε τιμές και
+            διαθεσιμότητα σε δευτερόλεπτα.
           </p>
         </div>
         <div class="group p-8 bg-[#151515] rounded-lg border border-xp-gold/10">
@@ -449,7 +436,8 @@
           </div>
           <h3 class="text-2xl font-bold mb-4">XP Loyalty System</h3>
           <p class="text-on-surface-variant leading-relaxed">
-            Κρατήστε τους πελάτες σας με το μοναδικό σύστημα πόντων XP. Μετατρέψτε το γεύμα σε παιχνίδι και δημιουργήστε φανατικούς οπαδούς.
+            Κρατήστε τους πελάτες σας με το μοναδικό σύστημα πόντων XP. Μετατρέψτε το γεύμα σε παιχνίδι και δημιουργήστε
+            φανατικούς οπαδούς.
           </p>
           <a href="#" class="mt-6 inline-flex items-center gap-2 text-xp-gold font-bold text-sm hover:opacity-90">
             <span>ΔΕΙΤΕ ΠΩΣ ΔΟΥΛΕΥΕΙ</span>
@@ -457,12 +445,14 @@
           </a>
         </div>
         <div class="group">
-          <div class="w-16 h-16 bg-[#1A1A1A] rounded flex items-center justify-center mb-8 group-hover:bg-primary/20 transition-colors border border-white/5">
+          <div
+            class="w-16 h-16 bg-[#1A1A1A] rounded flex items-center justify-center mb-8 group-hover:bg-primary/20 transition-colors border border-white/5">
             <span class="material-symbols-outlined text-3xl text-primary">monitoring</span>
           </div>
           <h3 class="text-2xl font-bold mb-4">Insights &amp; Analytics</h3>
           <p class="text-on-surface-variant leading-relaxed">
-            Δείτε ποιοι είναι οι καλύτεροι πελάτες σας και αυξήστε τις πωλήσεις σας με δεδομένα. Κατανοήστε τις ώρες αιχμής και τα δημοφιλή προϊόντα.
+            Δείτε ποιοι είναι οι καλύτεροι πελάτες σας και αυξήστε τις πωλήσεις σας με δεδομένα. Κατανοήστε τις ώρες
+            αιχμής και τα δημοφιλή προϊόντα.
           </p>
         </div>
       </div>
@@ -472,17 +462,16 @@
     <section class="bg-background py-20 overflow-hidden">
       <div class="max-w-7xl mx-auto px-4 sm:px-8 flex flex-col items-center">
         <div class="text-center mb-20 max-w-4xl">
-          <h2 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-4">Απογειώστε την επιχείρησή σας</h2>
-          <span class="text-2xl md:text-5xl font-bold text-primary block mt-4">με το Anbit Dashboard</span>
+          <h2 class="text-4xl md:text-6xl font-extrabold text-white tracking-tight mb-4">Απογειώστε την επιχείρησή σας
+          </h2>
+          <span class="anbit-slogan text-2xl md:text-5xl text-primary block mt-4">με το Anbit Dashboard</span>
         </div>
         <div class="container-scroll-container w-full max-w-5xl mx-auto">
-          <div class="container-scroll-card bg-[#222222] p-2 md:p-4 rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl relative">
+          <div
+            class="container-scroll-card bg-[#222222] p-2 md:p-4 rounded-[2rem] md:rounded-[3rem] border border-white/10 shadow-2xl relative">
             <div class="bg-[#111] rounded-2xl md:rounded-[2rem] overflow-hidden border border-white/5">
-              <img
-                src="./public/merchant.png"
-                alt="Anbit Merchant Dashboard Preview"
-                class="w-full h-auto object-cover"
-              />
+              <img src="./public/merchant.png" alt="Anbit Merchant Dashboard Preview"
+                class="w-full h-auto object-cover" />
             </div>
           </div>
         </div>
@@ -498,47 +487,41 @@
         <div class="grid md:grid-cols-3 gap-6">
           <div class="bg-[#051C2C] rounded-[2rem] p-8 flex flex-col items-center text-center">
             <div class="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-8">
-              <img
-                alt="Κατάστημα και ψηφιακή παρουσίαση"
-                class="w-full h-full object-cover"
-                src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800"
-              />
+              <img alt="Κατάστημα και ψηφιακή παρουσίαση" class="w-full h-full object-cover"
+                src="https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=800" />
             </div>
             <h3 class="text-2xl md:text-3xl font-extrabold text-white mb-4 tracking-tight leading-snug">
               Η Ψηφιακή σας Βιτρίνα
             </h3>
             <p class="text-base text-white/85 leading-relaxed max-w-md mx-auto font-medium">
-              Δημιουργήστε ένα εντυπωσιακό ψηφιακό προφίλ για το κατάστημά σας σε λίγα λεπτά. Ανεβάστε τα προϊόντα σας και δώστε στους πελάτες σας τη δυνατότητα να σας γνωρίσουν πριν καν περάσουν την πόρτα σας.
+              Δημιουργήστε ένα εντυπωσιακό ψηφιακό προφίλ για το κατάστημά σας σε λίγα λεπτά. Ανεβάστε τα προϊόντα σας
+              και δώστε στους πελάτες σας τη δυνατότητα να σας γνωρίσουν πριν καν περάσουν την πόρτα σας.
             </p>
           </div>
           <div class="bg-[#1E0B1C] rounded-[2rem] p-8 flex flex-col items-center text-center">
             <div class="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-8">
-              <img
-                alt="Λειτουργίες καταστήματος και ομάδα"
-                class="w-full h-full object-cover"
-                src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=800"
-              />
+              <img alt="Λειτουργίες καταστήματος και ομάδα" class="w-full h-full object-cover"
+                src="https://images.unsplash.com/photo-1556910103-1c02745aae4d?auto=format&fit=crop&q=80&w=800" />
             </div>
             <h3 class="text-2xl md:text-3xl font-extrabold text-white mb-4 tracking-tight leading-snug">
               Αυτοματοποίηση &amp; Έλεγχος
             </h3>
             <p class="text-base text-white/85 leading-relaxed max-w-md mx-auto font-medium">
-              Ξεχάστε το χάος και τα λάθη. Διαχειριστείτε το προσωπικό, το μενού και τις ροές εργασίας από ένα κεντρικό dashboard, εξασφαλίζοντας ότι όλα λειτουργούν ρολόι στην κουζίνα και στο ταμείο.
+              Ξεχάστε το χάος και τα λάθη. Διαχειριστείτε το προσωπικό, το μενού και τις ροές εργασίας από ένα κεντρικό
+              dashboard, εξασφαλίζοντας ότι όλα λειτουργούν ρολόι στην κουζίνα και στο ταμείο.
             </p>
           </div>
           <div class="bg-[#1A1A0A] rounded-[2rem] p-8 flex flex-col items-center text-center">
             <div class="w-full aspect-[4/3] rounded-2xl overflow-hidden mb-8">
-              <img
-                alt="Ανάπτυξη επιχείρησης και δεδομένα"
-                class="w-full h-full object-cover"
-                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800"
-              />
+              <img alt="Ανάπτυξη επιχείρησης και δεδομένα" class="w-full h-full object-cover"
+                src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&q=80&w=800" />
             </div>
             <h3 class="text-2xl md:text-3xl font-extrabold text-white mb-4 tracking-tight leading-snug">
               Στρατηγική Ανάπτυξη
             </h3>
             <p class="text-base text-white/85 leading-relaxed max-w-md mx-auto font-medium">
-              Μετατρέψτε τα δεδομένα σε κέρδος. Δείτε ποια προϊόντα 'πετάνε', γνωρίστε τις προτιμήσεις των πελατών σας και πάρτε αποφάσεις που θα απογειώσουν τον τζίρο σας, χωρίς να μαντεύετε.
+              Μετατρέψτε τα δεδομένα σε κέρδος. Δείτε ποια προϊόντα 'πετάνε', γνωρίστε τις προτιμήσεις των πελατών σας
+              και πάρτε αποφάσεις που θα απογειώσουν τον τζίρο σας, χωρίς να μαντεύετε.
             </p>
           </div>
         </div>
@@ -548,9 +531,11 @@
     <!-- Lead form -->
     <section class="py-32">
       <div class="max-w-5xl mx-auto px-4 sm:px-8">
-        <div class="grid lg:grid-cols-2 gap-16 bg-[#111] p-8 sm:p-12 rounded-lg shadow-2xl border border-white/5 items-center">
+        <div
+          class="grid lg:grid-cols-2 gap-16 bg-[#111] p-8 sm:p-12 rounded-lg shadow-2xl border border-white/5 items-center">
           <div>
-            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-6 text-white">Είστε έτοιμοι να αναβαθμίσετε;</h2>
+            <h2 class="text-3xl sm:text-4xl font-extrabold tracking-tight mb-6 text-white">Είστε έτοιμοι να
+              αναβαθμίσετε;</h2>
             <p class="text-on-surface-variant text-lg mb-8">
               Συμπληρώστε τη φόρμα και ένας εκπρόσωπός μας θα επικοινωνήσει μαζί σας εντός 24 ωρών.
             </p>
@@ -568,47 +553,35 @@
           <form class="space-y-6" action="#" method="post">
             <div class="grid md:grid-cols-2 gap-4">
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Όνομα Υπευθύνου</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Όνομα
+                  Υπευθύνου</label>
                 <input
                   class="w-full bg-[#1A1A1A] border-none text-white rounded p-4 focus:ring-2 focus:ring-primary/40 focus:bg-[#222] transition-all outline-none"
-                  placeholder="Ιωάννης Παπαδόπουλος"
-                  type="text"
-                  name="contact_name"
-                  autocomplete="name"
-                />
+                  placeholder="Ιωάννης Παπαδόπουλος" type="text" name="contact_name" autocomplete="name" />
               </div>
               <div>
-                <label class="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Όνομα Καταστήματος</label>
+                <label class="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Όνομα
+                  Καταστήματος</label>
                 <input
                   class="w-full bg-[#1A1A1A] border-none text-white rounded p-4 focus:ring-2 focus:ring-primary/40 focus:bg-[#222] transition-all outline-none"
-                  placeholder="The Bistro"
-                  type="text"
-                  name="business_name"
-                  autocomplete="organization"
-                />
+                  placeholder="The Bistro" type="text" name="business_name" autocomplete="organization" />
               </div>
             </div>
             <div>
-              <label class="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Τηλέφωνο Επικοινωνίας</label>
+              <label class="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Τηλέφωνο
+                Επικοινωνίας</label>
               <input
                 class="w-full bg-[#1A1A1A] border-none text-white rounded p-4 focus:ring-2 focus:ring-primary/40 focus:bg-[#222] transition-all outline-none"
-                placeholder="+30 690 0000 000"
-                type="tel"
-                name="phone"
-                autocomplete="tel"
-              />
+                placeholder="+30 690 0000 000" type="tel" name="phone" autocomplete="tel" />
             </div>
             <div>
               <label class="block text-xs font-bold uppercase tracking-wider text-white/50 mb-2">Πόλη</label>
               <input
                 class="w-full bg-[#1A1A1A] border-none text-white rounded p-4 focus:ring-2 focus:ring-primary/40 focus:bg-[#222] transition-all outline-none"
-                placeholder="Αθήνα"
-                type="text"
-                name="city"
-                autocomplete="address-level2"
-              />
+                placeholder="Αθήνα" type="text" name="city" autocomplete="address-level2" />
             </div>
-            <button type="submit" class="w-full bg-primary text-white font-bold py-5 rounded-2xl hover:shadow-lg shadow-red-900/30 transition-all active:scale-[0.98]">
+            <button type="submit"
+              class="w-full bg-primary text-white font-bold py-5 rounded-2xl hover:shadow-lg shadow-red-900/30 transition-all active:scale-[0.98]">
               Αίτηση Συνεργασίας
             </button>
           </form>
@@ -622,39 +595,58 @@
         <h2 class="text-3xl font-bold mb-12 text-center text-white">Συχνές Ερωτήσεις</h2>
         <div class="space-y-4" data-faq-root>
           <div class="bg-[#1A1A1A] rounded border border-white/5 overflow-hidden" data-faq-item>
-            <button type="button" class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white" aria-expanded="false">
+            <button type="button"
+              class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white"
+              aria-expanded="false">
               <span>Πόσο χρόνο διαρκεί η αρχική ρύθμιση;</span>
-              <span class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
+              <span
+                class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
             </button>
-            <div class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
+            <div
+              class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
               Συνήθως 1–3 εργάσιμες ημέρες, ανάλογα με το μέγεθος του καταλόγου και τις ενσωματώσεις που χρειάζεστε.
             </div>
           </div>
           <div class="bg-[#1A1A1A] rounded border border-white/5 overflow-hidden" data-faq-item>
-            <button type="button" class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white" aria-expanded="false">
+            <button type="button"
+              class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white"
+              aria-expanded="false">
               <span>Απαιτείται ειδικός εξοπλισμός;</span>
-              <span class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
+              <span
+                class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
             </button>
-            <div class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
-              Όχι απαραίτητα — μπορείτε να ξεκινήσετε με tablet ή υπολογιστή. Για κουζίνα/μπαρ προτείνουμε σταθερή σύνδεση και συσκευή που παραμένει ανοιχτή στο dashboard.
+            <div
+              class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
+              Όχι απαραίτητα — μπορείτε να ξεκινήσετε με tablet ή υπολογιστή. Για κουζίνα/μπαρ προτείνουμε σταθερή
+              σύνδεση και συσκευή που παραμένει ανοιχτή στο dashboard.
             </div>
           </div>
           <div class="bg-[#1A1A1A] rounded border border-white/5 overflow-hidden" data-faq-item>
-            <button type="button" class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white" aria-expanded="false">
+            <button type="button"
+              class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white"
+              aria-expanded="false">
               <span>Πώς λειτουργεί το σύστημα XP για τον πελάτη;</span>
-              <span class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
+              <span
+                class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
             </button>
-            <div class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
-              Οι πελάτες κερδίζουν XP από παραγγελίες και ενέργειες loyalty. Μπορείτε να ορίσετε επιβραβεύσεις (π.χ. έκπτωση, δώρο) όταν φτάσουν συγκεκριμένα επίπεδα.
+            <div
+              class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
+              Οι πελάτες κερδίζουν XP από παραγγελίες και ενέργειες loyalty. Μπορείτε να ορίσετε επιβραβεύσεις (π.χ.
+              έκπτωση, δώρο) όταν φτάσουν συγκεκριμένα επίπεδα.
             </div>
           </div>
           <div class="bg-[#1A1A1A] rounded border border-white/5 overflow-hidden" data-faq-item>
-            <button type="button" class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white" aria-expanded="false">
+            <button type="button"
+              class="faq-toggle w-full text-left p-6 font-bold flex justify-between items-center gap-4 group text-white"
+              aria-expanded="false">
               <span>Υπάρχουν κρυφές χρεώσεις ή προμήθειες;</span>
-              <span class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
+              <span
+                class="material-symbols-outlined text-white/50 group-hover:text-primary transition-colors shrink-0 faq-icon">add</span>
             </button>
-            <div class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
-              Η τιμολόγηση είναι διαφανής και συμφωνείται εκ των προτέρων. Δεν υπάρχουν «κρυφά» πακέτα — ό,τι ισχύει για εσάς το βλέπετε στη σύμβαση συνεργασίας.
+            <div
+              class="faq-panel hidden px-6 pb-6 text-on-surface-variant text-sm leading-relaxed border-t border-white/5 pt-4">
+              Η τιμολόγηση είναι διαφανής και συμφωνείται εκ των προτέρων. Δεν υπάρχουν «κρυφά» πακέτα — ό,τι ισχύει για
+              εσάς το βλέπετε στη σύμβαση συνεργασίας.
             </div>
           </div>
         </div>
@@ -670,18 +662,12 @@
           <div class="logo-anbit text-3xl sm:text-4xl lg:text-5xl text-white mb-8 leading-none">Anbit</div>
           <div class="space-y-3">
             <a class="block w-36" href="#" aria-label="Λήψη από App Store">
-              <img
-                alt="Download on App Store"
-                class="w-full h-auto"
-                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg"
-              />
+              <img alt="Download on App Store" class="w-full h-auto"
+                src="https://upload.wikimedia.org/wikipedia/commons/3/3c/Download_on_the_App_Store_Badge.svg" />
             </a>
             <a class="block w-40" href="#" aria-label="Λήψη από Google Play">
-              <img
-                alt="Get it on Google Play"
-                class="w-full h-auto"
-                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg"
-              />
+              <img alt="Get it on Google Play" class="w-full h-auto"
+                src="https://upload.wikimedia.org/wikipedia/commons/7/78/Google_Play_Store_badge_EN.svg" />
             </a>
           </div>
         </div>
@@ -772,23 +758,12 @@
   </footer>
 
   <!-- Modal: δήλωση συνεργάτη -->
-  <div
-    id="merchant-register-modal"
-    class="modal-overlay fixed inset-0 z-[60] hidden items-center justify-center p-4"
-    role="dialog"
-    aria-modal="true"
-    aria-labelledby="merchant-register-title"
-  >
-    <div
-      id="merchant-register-dialog"
-      class="bg-[#212121] w-full max-w-[480px] max-h-[min(90vh,calc(100vh-2rem))] rounded-[2rem] shadow-2xl relative overflow-y-auto flex flex-col font-headline"
-    >
-      <button
-        type="button"
-        data-close-partner-modal
-        aria-label="Κλείσιμο"
-        class="absolute top-6 right-6 z-10 text-white/60 hover:text-white transition-colors p-1 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-      >
+  <div id="merchant-register-modal" class="modal-overlay fixed inset-0 z-[60] hidden items-center justify-center p-4"
+    role="dialog" aria-modal="true" aria-labelledby="merchant-register-title">
+    <div id="merchant-register-dialog"
+      class="bg-[#212121] w-full max-w-[480px] max-h-[min(90vh,calc(100vh-2rem))] rounded-[2rem] shadow-2xl relative overflow-y-auto flex flex-col font-headline">
+      <button type="button" data-close-partner-modal aria-label="Κλείσιμο"
+        class="absolute top-6 right-6 z-10 text-white/60 hover:text-white transition-colors p-1 rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-primary">
         <span class="material-symbols-outlined text-[24px]">close</span>
       </button>
       <div class="p-10 pt-12">
@@ -801,24 +776,15 @@
           <div class="grid grid-cols-2 gap-3">
             <input
               class="w-full h-14 dark-input-field border-none rounded-2xl text-white placeholder-white/40 focus:ring-2 focus:ring-primary/50 text-sm font-medium px-4 outline-none"
-              placeholder="Κύριο όνομα"
-              type="text"
-              name="first_name"
-              autocomplete="given-name"
-            />
+              placeholder="Κύριο όνομα" type="text" name="first_name" autocomplete="given-name" />
             <input
               class="w-full h-14 dark-input-field border-none rounded-2xl text-white placeholder-white/40 focus:ring-2 focus:ring-primary/50 text-sm font-medium px-4 outline-none"
-              placeholder="Επώνυμο"
-              type="text"
-              name="last_name"
-              autocomplete="family-name"
-            />
+              placeholder="Επώνυμο" type="text" name="last_name" autocomplete="family-name" />
           </div>
           <div class="flex gap-3">
             <div
               class="w-[7.5rem] shrink-0 flex items-center justify-between dark-input-field rounded-2xl px-3 h-14 text-white cursor-default select-none"
-              aria-hidden="true"
-            >
+              aria-hidden="true">
               <div class="flex flex-col min-w-0">
                 <span class="text-[10px] text-white/50 leading-none">Χώρα</span>
                 <span class="text-sm font-bold truncate">GR +30</span>
@@ -827,47 +793,34 @@
             </div>
             <input
               class="flex-1 min-w-0 h-14 dark-input-field border-none rounded-2xl text-white placeholder-white/40 focus:ring-2 focus:ring-primary/50 text-sm font-medium px-4 outline-none"
-              placeholder="Αριθμός κινητού τηλεφώνου"
-              type="tel"
-              name="phone"
-              autocomplete="tel"
-            />
+              placeholder="Αριθμός κινητού τηλεφώνου" type="tel" name="phone" autocomplete="tel" />
           </div>
           <input
             class="w-full h-14 dark-input-field border-none rounded-2xl text-white placeholder-white/40 focus:ring-2 focus:ring-primary/50 text-sm font-medium px-4 outline-none"
-            placeholder="Επαγγελματικό email"
-            type="email"
-            name="email"
-            autocomplete="email"
-          />
+            placeholder="Επαγγελματικό email" type="email" name="email" autocomplete="email" />
           <div class="relative h-14">
             <label class="sr-only" for="merchant-country">Χώρα</label>
-            <span class="pointer-events-none absolute left-4 top-2 z-[1] text-[10px] text-white/50 leading-none">Χώρα</span>
-            <select
-              id="merchant-country"
-              name="country"
-              class="absolute inset-0 w-full h-14 dark-input-field border-none rounded-2xl text-white text-sm font-bold pl-4 pr-10 pt-4 focus:ring-2 focus:ring-primary/50 outline-none appearance-none cursor-pointer"
-            >
+            <span
+              class="pointer-events-none absolute left-4 top-2 z-[1] text-[10px] text-white/50 leading-none">Χώρα</span>
+            <select id="merchant-country" name="country"
+              class="absolute inset-0 w-full h-14 dark-input-field border-none rounded-2xl text-white text-sm font-bold pl-4 pr-10 pt-4 focus:ring-2 focus:ring-primary/50 outline-none appearance-none cursor-pointer">
               <option value="GR" selected>Ελλάδα</option>
               <option value="CY">Κύπρος</option>
               <option value="OTHER">Άλλη</option>
             </select>
-            <span class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-white/70 z-[1]">expand_more</span>
+            <span
+              class="material-symbols-outlined pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 text-[20px] text-white/70 z-[1]">expand_more</span>
           </div>
           <div class="relative flex items-center gap-3 w-full h-14 dark-input-field rounded-2xl px-4">
             <span class="material-symbols-outlined text-[20px] text-white/70 shrink-0">location_on</span>
             <input
               class="flex-1 min-w-0 bg-transparent border-none text-white placeholder-white/40 focus:ring-0 text-sm font-medium py-0 outline-none"
-              placeholder="Εισαγάγετε το όνομα ή την τοποθεσία του καταστήματος"
-              type="text"
-              name="store_location"
-              autocomplete="organization"
-            />
+              placeholder="Εισαγάγετε το όνομα ή την τοποθεσία του καταστήματος" type="text" name="store_location"
+              autocomplete="organization" />
           </div>
           <button
             class="w-full h-14 bg-anbit-red text-white font-bold rounded-2xl text-base hover:brightness-110 active:scale-[0.98] transition-all mt-4"
-            type="submit"
-          >
+            type="submit">
             Εγγραφή
           </button>
           <div class="pt-2">
@@ -966,4 +919,5 @@
     })();
   </script>
 </body>
+
 </html>

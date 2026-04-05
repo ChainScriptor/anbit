@@ -39,7 +39,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
             <p className="text-sm font-medium uppercase tracking-wide text-slate-400">
               Revenue
             </p>
-            <p className="mt-1 text-3xl font-semibold text-slate-900 md:text-4xl">
+            <p className="anbit-tabular-nums mt-1 text-3xl font-semibold text-slate-900 md:text-4xl">
               {formatCurrency(totalRevenue)}
             </p>
             <p className="mt-2 flex items-center justify-end gap-1 text-sm font-medium text-emerald-500">
@@ -55,7 +55,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
                 <CardTitle className="text-sm text-slate-400">
                   Total Orders
                 </CardTitle>
-                <p className="mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">
+                <p className="anbit-tabular-nums mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">
                   {totalOrders.toLocaleString('en-US')}
                 </p>
                 <p className="mt-2 text-sm text-slate-400">All time</p>
@@ -70,7 +70,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
                 <CardTitle className="text-sm text-slate-400">
                   Avg. Orders Value
                 </CardTitle>
-                <p className="mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">
+                <p className="anbit-tabular-nums mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">
                   {formatCurrency(averageOrderValue)}
                 </p>
                 <p className="mt-2 text-sm text-slate-400">All time</p>
@@ -85,7 +85,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
                 <CardTitle className="text-sm text-slate-400">
                   Orders Fulfillment Rate
                 </CardTitle>
-                <p className="mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">
+                <p className="anbit-tabular-nums mt-2 text-2xl font-semibold text-slate-900 md:text-3xl">
                   {fulfillmentRate.toFixed(1)}%
                 </p>
                 <p className="mt-2 text-sm text-slate-400">All time</p>
@@ -107,7 +107,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
           <div className="mt-2 flex items-end justify-between">
             <div>
               <p className="text-sm text-slate-400">All time</p>
-              <p className="mt-1 text-2xl font-semibold text-slate-900 md:text-3xl">
+              <p className="anbit-tabular-nums mt-1 text-2xl font-semibold text-slate-900 md:text-3xl">
                 {formatCurrency(totalRevenue)}
               </p>
             </div>

@@ -13,7 +13,7 @@ import AnbitWordmark, { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
 const BRAND_RED = '#e63533';
 const XP_GOLD = '#ca8a04';
 
-/** Όλο το κείμενο: Omnes Bold Italic (AnbitFont / public/fonts/OmnesBoldItalic.ttf) */
+/** Typography: global --font-primary (Omnes Latin + Inter Greek). */
 const ORDER_BODY_FONT =
   'font-anbit font-normal not-italic normal-case tracking-tight [font-synthesis:none] leading-normal';
 

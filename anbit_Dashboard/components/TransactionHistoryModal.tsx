@@ -146,15 +146,19 @@ const TransactionHistoryModal: React.FC<TransactionHistoryModalProps> = ({ isOpe
                     <div className="space-y-3">
                       <div className="flex justify-between items-center">
                         <span className="text-[9px] font-bold text-white/20 uppercase">Συνολικες Αγορες</span>
-                        <span className="text-sm font-black italic text-white">{customer.totalOrders}</span>
+                        <span className="anbit-tabular-nums text-sm font-bold text-white">{customer.totalOrders}</span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[9px] font-bold text-white/20 uppercase">Μεση Δαπανη</span>
-                        <span className="text-sm font-black italic text-anbit-green">€{(customer.totalSpent / (customer.totalOrders || 1)).toFixed(2)}</span>
+                        <span className="anbit-tabular-nums text-sm font-bold text-anbit-green">
+                          €{(customer.totalSpent / (customer.totalOrders || 1)).toFixed(2)}
+                        </span>
                       </div>
                       <div className="flex justify-between items-center">
                         <span className="text-[9px] font-bold text-white/20 uppercase">Loyalty Points</span>
-                        <span className="text-sm font-black italic text-anbit-yellow">{customer.loyaltyPoints}</span>
+                        <span className="anbit-tabular-nums text-sm font-bold text-anbit-yellow">
+                          {customer.loyaltyPoints}
+                        </span>
                       </div>
                     </div>
                   </div>

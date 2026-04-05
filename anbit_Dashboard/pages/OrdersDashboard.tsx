@@ -286,12 +286,7 @@ const OrdersDashboard: React.FC = () => {
       <section className="px-8 py-5">
         <div className="flex items-center justify-between">
           <div>
-            <h2
-              className="text-2xl font-bold tracking-tight text-slate-900"
-              style={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
-            >
-              Live Order Feed
-            </h2>
+            <h2 className="font-anbit-display text-2xl font-bold tracking-tight text-slate-900">Live Order Feed</h2>
           </div>
           <div className="flex items-center gap-3">
             <GooeySearchBar
@@ -323,12 +318,7 @@ const OrdersDashboard: React.FC = () => {
           <div className="mb-4 flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <span className="rounded bg-[#E63533] px-2 py-0.5 text-[10px] font-bold text-white">NEW</span>
-              <h3
-                className="text-xs font-bold uppercase tracking-widest text-slate-500"
-                style={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
-              >
-                Incoming
-              </h3>
+              <h3 className="font-anbit-display text-xs font-bold uppercase tracking-widest text-slate-500">Incoming</h3>
             </div>
             <span className="text-xs font-bold text-slate-400">{board.newOrders.length} Orders</span>
           </div>
@@ -381,7 +371,7 @@ const OrdersDashboard: React.FC = () => {
                           {order.tableNumber ? <Utensils className="h-4 w-4" /> : <Bike className="h-4 w-4" />}
                           <span>{order.tableNumber ? `Τραπέζι ${order.tableNumber}` : 'Delivery'}</span>
                         </div>
-                        <p className="mt-1 font-semibold text-slate-800">
+                        <p className="anbit-tabular-nums mt-1 font-semibold text-slate-800">
                           €{Number(order.totalPrice ?? 0).toFixed(2)} · {order.items?.length ?? 0} items · +{order.totalXp ?? 0} XP
                         </p>
                       </div>
@@ -463,12 +453,7 @@ const OrdersDashboard: React.FC = () => {
           <div className="mb-4 flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <span className="rounded bg-blue-600 px-2 py-0.5 text-[10px] font-bold text-white">LIVE</span>
-              <h3
-                className="text-xs font-bold uppercase tracking-widest text-slate-500"
-                style={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
-              >
-                In Progress
-              </h3>
+              <h3 className="font-anbit-display text-xs font-bold uppercase tracking-widest text-slate-500">In Progress</h3>
             </div>
             <span className="text-xs font-bold text-slate-400">{board.inProgressOrders.length} Order</span>
           </div>
@@ -493,7 +478,7 @@ const OrdersDashboard: React.FC = () => {
                       <div className="flex items-center gap-3">
                         <div className="text-right">
                           <p className="text-[10px] font-bold uppercase text-slate-400">Sent At</p>
-                          <p className="text-sm font-bold text-slate-800">{formatSentTime(order.createdAt)}</p>
+                          <p className="anbit-tabular-nums text-sm font-bold text-slate-800">{formatSentTime(order.createdAt)}</p>
                         </div>
                         <ChevronDown className={`h-4 w-4 text-slate-400 transition-transform ${isExpanded ? 'rotate-180' : ''}`} />
                       </div>
@@ -514,7 +499,7 @@ const OrdersDashboard: React.FC = () => {
                           {order.tableNumber ? <Utensils className="h-4 w-4" /> : <Bike className="h-4 w-4" />}
                           <span>{order.tableNumber ? `Τραπέζι ${order.tableNumber}` : 'Delivery'}</span>
                         </div>
-                        <p className="mt-1 font-semibold text-slate-800">
+                        <p className="anbit-tabular-nums mt-1 font-semibold text-slate-800">
                           €{Number(order.totalPrice ?? 0).toFixed(2)} · {order.items?.length ?? 0} items · +{order.totalXp ?? 0} XP
                         </p>
                       </div>
@@ -566,12 +551,7 @@ const OrdersDashboard: React.FC = () => {
           <div className="mb-4 flex items-center justify-between px-1">
             <div className="flex items-center gap-2">
               <span className="rounded bg-emerald-500 px-2 py-0.5 text-[10px] font-bold text-white">DONE</span>
-              <h3
-                className="text-xs font-bold uppercase tracking-widest text-slate-500"
-                style={{ fontFamily: 'OmnesBoldItalic, sans-serif', fontStyle: 'italic', fontWeight: 700 }}
-              >
-                Ready
-              </h3>
+              <h3 className="font-anbit-display text-xs font-bold uppercase tracking-widest text-slate-500">Ready</h3>
             </div>
             <span className="text-xs font-bold text-slate-400">{board.readyOrders.length}</span>
           </div>
@@ -607,7 +587,7 @@ const OrdersDashboard: React.FC = () => {
                     {isExpanded && (
                       <div className="space-y-3 border-t border-slate-100 px-4 pb-4">
                         <div className="pt-3 text-sm text-slate-600">
-                          <p className="font-semibold text-slate-800">
+                          <p className="anbit-tabular-nums font-semibold text-slate-800">
                             €{Number(order.totalPrice ?? 0).toFixed(2)} · +{order.totalXp ?? 0} XP
                           </p>
                         </div>

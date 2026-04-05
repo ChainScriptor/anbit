@@ -45,16 +45,16 @@ const XPProgressCircle: React.FC<{ user: UserData; placeholderMessage?: string }
             <span className="text-[6px] lg:text-[8px] font-semibold text-anbit-muted tracking-wide block">Βαθμίδα</span>
             <span className="text-base lg:text-xl font-bold text-anbit-text italic tracking-tighter leading-none">{levelLabel}</span>
           </div>
-          <span className="text-[8px] font-semibold text-anbit-yellow tracking-wide">{progress}%</span>
+          <span className="text-[8px] font-semibold text-anbit-xp-accent tracking-wide">{progress}%</span>
         </div>
         <div className="h-1.5 bg-white/5 rounded-full overflow-hidden border border-white/5">
-          <div className="h-full bg-anbit-yellow transition-all duration-500" style={{ width: `${progress}%` }} />
+          <div className="h-full bg-anbit-xp-bar transition-all duration-500" style={{ width: `${progress}%` }} />
         </div>
         <p className="text-[8px] text-center text-anbit-muted font-medium tracking-wide pt-2">
           Επόμενο επίπεδο στα {user.nextLevelXP.toLocaleString()} XP
         </p>
         {placeholderMessage && (
-          <p className="text-[8px] text-center text-anbit-yellow font-semibold tracking-wide">
+          <p className="text-[8px] text-center text-anbit-xp-accent font-semibold tracking-wide">
             {placeholderMessage}
           </p>
         )}

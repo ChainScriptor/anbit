@@ -26,7 +26,6 @@ import { Partner, UserData, Reward } from './types';
 import { MERCHANT_APPLY_URL } from './constants';
 import { useDashboardData } from './hooks/useDashboardData';
 import { FooterTaped } from './components/ui/FooterTaped';
-import AnbitCafeDemoScene from './components/AnbitCafeDemoScene';
 import { OfferCarousel } from './components/ui/offer-carousel';
 import { GREEK_OFFERS } from './data/greekOffers';
 import ScanPage from './components/ScanPage';
@@ -34,6 +33,7 @@ import StoreFromQrPage from './components/StoreFromQrPage';
 import { api } from './services/api';
 import PwaHomeScreen from './components/PwaHomeScreen';
 import CustomerLoginPage from './components/CustomerLoginPage';
+import AnbitSplashScreen from './components/AnbitSplashScreen';
 
 const App: React.FC = () => {
   const { isAuthenticated, user, isLoading: isAuthLoading, logout } = useAuth();
@@ -56,6 +56,7 @@ const App: React.FC = () => {
   const [authSuccessCallback, setAuthSuccessCallback] = useState<(() => void) | null>(null);
   const [authMessage, setAuthMessage] = useState<string | null>(null); // e.g. session expired or other global auth message
   const [xpPlaceholderMessage, setXpPlaceholderMessage] = useState<string | null>(null);
+  const [splashDone, setSplashDone] = useState(false);
   useEffect(() => { setUserData(user ?? null); }, [user]);
   useEffect(() => { if (user) setAuthMessage(null); }, [user]);
 
@@ -196,9 +197,6 @@ const App: React.FC = () => {
 
   const dashboardContent = userData ? (
     <>
-      <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6 lg:mb-8">
-        <AnbitCafeDemoScene />
-      </div>
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
         <div className="xl:col-span-8 space-y-8 lg:space-y-12">
           <AnimatePresence>{activeOrderPartner && <ActiveOperations partnerName={activeOrderPartner} />}</AnimatePresence>
@@ -252,9 +250,6 @@ const App: React.FC = () => {
     </>
   ) : (
     <>
-      <div className="w-screen relative left-1/2 right-1/2 -ml-[50vw] -mr-[50vw] mb-6 lg:mb-8">
-        <AnbitCafeDemoScene />
-      </div>
       <div className="grid grid-cols-1 xl:grid-cols-12 gap-6 lg:gap-8">
         <div className="xl:col-span-8 space-y-8 lg:space-y-12">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -308,18 +303,22 @@ const App: React.FC = () => {
     location.pathname.startsWith('/store/') || location.pathname === '/scan';
   const hideChrome = isStoreOrderLink || isLoginRoute;
 
+  if (!splashDone) {
+    return <AnbitSplashScreen onComplete={() => setSplashDone(true)} />;
+  }
+
+  const showAuthOverlay = !isLoaded || isAuthLoading;
+
   return (
-    <div className="min-h-screen bg-anbit-bg text-anbit-text font-sans antialiased overflow-x-hidden">
-      <AnimatePresence mode="wait">
-        {!isLoaded || isAuthLoading ? (
-          <motion.div key="loader" className="fixed inset-0 z-[100] bg-anbit-bg flex items-center justify-center" exit={{ opacity: 0 }}>
-            <div className="flex flex-col items-center gap-4">
-              <div className="w-10 h-10 border-4 border-anbit-yellow border-t-transparent rounded-full animate-spin" />
-              <span className="font-medium text-xs tracking-wide text-anbit-yellow animate-pulse">Συγχρονισμός...</span>
-            </div>
-          </motion.div>
-        ) : (
-          <motion.div key="app-content" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex flex-col min-h-screen">
+    <div className="min-h-screen bg-anbit-bg text-anbit-text font-sans antialiased overflow-x-hidden relative">
+      <motion.div
+        key="app-content"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: showAuthOverlay ? 0 : 1 }}
+        transition={{ duration: 0.25 }}
+        className={`flex flex-col min-h-screen ${showAuthOverlay ? 'pointer-events-none' : ''}`}
+        aria-hidden={showAuthOverlay}
+      >
             {authMessage && !isLoginRoute && (
               <div className="sticky top-0 z-[50] flex items-center justify-between gap-4 bg-amber-500/20 border-b border-amber-500/40 px-4 py-3 text-sm">
                 <p className="text-amber-200 flex-1">{authMessage}</p>
@@ -420,9 +419,8 @@ const App: React.FC = () => {
             <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} mode={authModalMode} onSwitchMode={setAuthModalMode} onSuccess={authSuccessCallback ?? undefined} />
             {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
             <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </motion.div>
+      {showAuthOverlay ? <AnbitSplashScreen key="auth-overlay" /> : null}
     </div>
   );
 };
