@@ -197,16 +197,213 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
         )}
 
         {activeTabId === 'settings' && (
-          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Ρυθμίσεις</h2>
-            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">Διαχείριση λογαριασμού και ασφάλειας.</p>
-            <div className="flex flex-wrap gap-3">
-              <Link to="/settings" className="rounded-xl bg-[color:var(--anbit-input)] px-4 py-2 text-sm font-semibold hover:opacity-90">
-                Γενικές ρυθμίσεις
-              </Link>
-              <Link to="/security" className="rounded-xl bg-[color:var(--anbit-input)] px-4 py-2 text-sm font-semibold hover:opacity-90">
-                Ασφάλεια
-              </Link>
+          <section
+            className="overflow-hidden rounded-3xl border shadow-sm"
+            style={{
+              borderColor: 'var(--anbit-border)',
+              backgroundColor: 'var(--anbit-card)',
+              color: 'var(--anbit-text)',
+            }}
+          >
+            <div className="border-b px-5 py-5 sm:px-6" style={{ borderColor: 'var(--anbit-border)' }}>
+              <h2 className="text-2xl font-bold tracking-tight" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                Ρυθμίσεις
+              </h2>
+            </div>
+
+            <div className="px-5 py-6 sm:px-6">
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-[1fr_180px] sm:items-end">
+                <div>
+                  <label className="text-xs font-medium" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                    Χώρα
+                  </label>
+                  <p className="mt-1 text-[11px]" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-muted)' }}>
+                    Το νόμισμα που συνδέεται αφορίζει τις χρεώσεις στην εφαρμογή μας
+                  </p>
+                </div>
+                <div>
+                  <select
+                    className="h-10 w-full rounded-md border px-3 text-sm outline-none"
+                    defaultValue="Ελλάδα"
+                    style={{
+                      fontFamily: 'Inter, sans-serif',
+                      borderColor: 'var(--anbit-border)',
+                      backgroundColor: 'var(--anbit-input)',
+                      color: 'var(--anbit-text)',
+                    }}
+                  >
+                    <option>Ελλάδα</option>
+                    <option>Κύπρος</option>
+                  </select>
+                </div>
+              </div>
+
+              <div
+                className="mt-6 divide-y border-y"
+                style={{ borderColor: 'var(--anbit-border)', ['--tw-divide-opacity' as never]: '1' }}
+              >
+                {[
+                  { label: 'Email', value: user.email, accent: true },
+                  { label: 'Αριθμός κινητού', value: '+30 69 1234 5678', accent: true },
+                  { label: 'Όνομα', value: user.name, accent: true },
+                  { label: 'Διαγραφή λογαριασμού', value: 'Διαγραφή', danger: true },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center justify-between gap-3 py-3">
+                    <span className="text-sm" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                      {row.label}
+                    </span>
+                    <span
+                      className={`text-sm ${row.danger ? 'text-red-500' : row.accent ? 'text-sky-500' : ''}`}
+                      style={{ fontFamily: 'Inter, sans-serif' }}
+                    >
+                      {row.value}
+                    </span>
+                  </div>
+                ))}
+              </div>
+
+              <div
+                className="mt-4 divide-y border-y"
+                style={{ borderColor: 'var(--anbit-border)', ['--tw-divide-opacity' as never]: '1' }}
+              >
+                {[
+                  { label: 'Αποστολή αποδείξεων σε email', value: true },
+                  { label: 'Αποδοχή ρύθμισης αυτόματης μετάφρασης', value: false, text: 'Επεξεργασία' },
+                  { label: 'Αποσύνδεση από τον λογαριασμό Wolt', value: false, text: 'Αποσύνδεση' },
+                ].map((row) => (
+                  <div key={row.label} className="flex items-center justify-between gap-3 py-3">
+                    <span className="text-sm" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                      {row.label}
+                    </span>
+                    {row.text ? (
+                      <span className="text-sm text-sky-500" style={{ fontFamily: 'Inter, sans-serif' }}>
+                        {row.text}
+                      </span>
+                    ) : (
+                      <button
+                        type="button"
+                        className={`relative h-6 w-11 rounded-full ${row.value ? 'bg-sky-500' : ''}`}
+                        style={{ backgroundColor: row.value ? undefined : 'var(--anbit-border)' }}
+                        aria-label={row.label}
+                      >
+                        <span
+                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${
+                            row.value ? 'left-[22px]' : 'left-0.5'
+                          }`}
+                        />
+                      </button>
+                    )}
+                  </div>
+                ))}
+              </div>
+
+              <div className="mt-4 border-y py-3" style={{ borderColor: 'var(--anbit-border)' }}>
+                <div className="flex flex-wrap items-center justify-between gap-3">
+                  <span className="text-sm" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                    Αποδοχές
+                  </span>
+                  <div
+                    className="inline-flex rounded-md border p-0.5"
+                    style={{ borderColor: 'var(--anbit-border)', backgroundColor: 'var(--anbit-input)' }}
+                  >
+                    {['Απλάχιστα', 'Φυσικά', 'Σκοτεινό', 'Υψηλή αντίθεση'].map((mode, idx) => (
+                      <button
+                        key={mode}
+                        type="button"
+                        className="rounded px-2.5 py-1 text-xs"
+                        style={{
+                          fontFamily: 'Inter, sans-serif',
+                          backgroundColor: idx === 2 ? 'var(--anbit-card)' : 'transparent',
+                          color: idx === 2 ? 'var(--anbit-text)' : 'var(--anbit-muted)',
+                          border: idx === 2 ? '1px solid var(--anbit-border)' : '1px solid transparent',
+                        }}
+                      >
+                        {mode}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                  Προστασία δεδομένων
+                </h3>
+                <div
+                  className="mt-3 divide-y border-y"
+                  style={{ borderColor: 'var(--anbit-border)', ['--tw-divide-opacity' as never]: '1' }}
+                >
+                  <div className="flex items-center justify-between gap-3 py-3">
+                    <span className="text-sm" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                      Δήλω δεδομένων λογαριασμού
+                    </span>
+                    <span className="text-sm text-sky-500" style={{ fontFamily: 'Inter, sans-serif' }}>
+                      Λήψη PDF
+                    </span>
+                  </div>
+                  {[
+                    {
+                      title: 'Αναλυτικά',
+                      desc: 'Αυτός ο απολογισμός είναι απαραίτητος για τη χρήση των υπηρεσιών της Wolt.',
+                    },
+                    {
+                      title: 'Λειτουργικά',
+                      desc: 'Χρησιμοποιούμε τεχνολογίες για την καλύτερη εμπειρία και λειτουργία της εφαρμογής.',
+                    },
+                    {
+                      title: 'Αναλυτικά στοιχεία',
+                      desc: 'Χρησιμοποιούμε τεχνολογίες για κατανόηση και βελτιστοποίηση της εμπειρίας σου.',
+                    },
+                    {
+                      title: 'Μάρκετινγκ',
+                      desc: 'Χρησιμοποιούμε τεχνολογίες για εξατομικευμένο περιεχόμενο και σχετικές προτάσεις.',
+                    },
+                  ].map((row) => (
+                    <div key={row.title} className="py-3">
+                      <div className="mb-1 flex items-center justify-between gap-3">
+                        <span className="text-sm" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                          {row.title}
+                        </span>
+                        <button type="button" className="relative h-6 w-11 rounded-full bg-sky-500" aria-label={row.title}>
+                          <span className="absolute left-[22px] top-0.5 h-5 w-5 rounded-full bg-white" />
+                        </button>
+                      </div>
+                      <p className="max-w-3xl text-xs leading-relaxed" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-muted)' }}>
+                        {row.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className="mt-8">
+                <h3 className="text-lg font-semibold" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                  Προτιμήσεις επικοινωνίας
+                </h3>
+                <div
+                  className="mt-3 divide-y border-y"
+                  style={{ borderColor: 'var(--anbit-border)', ['--tw-divide-opacity' as never]: '1' }}
+                >
+                  {[
+                    { title: 'Ειδοποιήσεις push', desc: 'Στέλνουμε push notifications και προσφορές από το Wolt και τους συνεργάτες μας.' },
+                    { title: 'Ειδικές προσφορές', desc: 'Στέλνουμε email με προσφορές από τη Wolt και τους συνεργάτες μας.' },
+                  ].map((row) => (
+                    <div key={row.title} className="py-3">
+                      <div className="mb-1 flex items-center justify-between gap-3">
+                        <span className="text-sm" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
+                          {row.title}
+                        </span>
+                        <button type="button" className="relative h-6 w-11 rounded-full bg-sky-500" aria-label={row.title}>
+                          <span className="absolute left-[22px] top-0.5 h-5 w-5 rounded-full bg-white" />
+                        </button>
+                      </div>
+                      <p className="max-w-3xl text-xs leading-relaxed" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-muted)' }}>
+                        {row.desc}
+                      </p>
+                    </div>
+                  ))}
+                </div>
+              </div>
             </div>
           </section>
         )}

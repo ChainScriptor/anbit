@@ -6,6 +6,13 @@ import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 
+/** Public folder URLs (Vite: respect base path). */
+function publicUrl(path: string): string {
+  const base = import.meta.env.BASE_URL || '/';
+  const p = path.startsWith('/') ? path.slice(1) : path;
+  return base.endsWith('/') ? `${base}${p}` : `${base}/${p}`;
+}
+
 const CATEGORY_IMAGES: Record<string, string> = {
   All: 'https://images.unsplash.com/photo-1504674900247-0877df9cc84e?auto=format&fit=crop&q=80&w=400',
   street_food: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&q=80&w=400',
@@ -70,6 +77,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const categoriesScrollRef = useRef<HTMLDivElement | null>(null);
+  const quickCategoriesScrollRef = useRef<HTMLDivElement | null>(null);
 
   const categories = [
     { id: 'All', label: t('all') },
@@ -94,6 +102,44 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
     { id: 'cooked', label: 'Μαγειρευτά' },
   ];
 
+  const quickCategories = [
+    {
+      id: 'q-restaurants',
+      label: 'Εστιατόρια',
+      mappedFilter: 'street_food',
+      image: publicUrl('categories/restaurant.gif'),
+      glowClass: 'shadow-[0_0_34px_-14px_rgba(34,197,94,0.35)]',
+    },
+    {
+      id: 'q-shopping',
+      label: 'Ψώνια',
+      mappedFilter: 'sandwiches',
+      image: publicUrl('categories/shop.gif'),
+      glowClass: 'shadow-[0_0_34px_-14px_rgba(34,197,94,0.30)]',
+    },
+    {
+      id: 'q-health',
+      label: 'Υγεία & Ευεξία',
+      mappedFilter: 'healthy',
+      image: publicUrl('categories/gym.gif'),
+      glowClass: 'shadow-[0_0_34px_-14px_rgba(59,130,246,0.30)]',
+    },
+    {
+      id: 'q-beauty',
+      label: 'Ομορφιά',
+      mappedFilter: 'sweets',
+      image: publicUrl('categories/beauty.gif'),
+      glowClass: 'shadow-[0_0_34px_-14px_rgba(168,85,247,0.30)]',
+    },
+    {
+      id: 'q-stays',
+      label: 'Διαμονή (Airbnb)',
+      mappedFilter: 'All',
+      image: publicUrl('categories/airbnb.gif'),
+      glowClass: 'shadow-[0_0_34px_-14px_rgba(14,165,233,0.30)]',
+    },
+  ];
+
   const getCategoryCount = (categoryId: string) =>
     categoryId === 'All' ? partners.length : partners.filter(p => p.category === categoryId).length;
 
@@ -101,6 +147,11 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
     if (!categoriesScrollRef.current) return;
     const step = 260;
     categoriesScrollRef.current.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
+  };
+  const scrollQuickCategories = (dir: 'left' | 'right') => {
+    if (!quickCategoriesScrollRef.current) return;
+    const step = 360;
+    quickCategoriesScrollRef.current.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
   };
 
   const filteredPartners = filter === 'All'
@@ -141,10 +192,82 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
       variants={containerVariants}
     >
       <section className="space-y-4 lg:space-y-6">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <h2 className="anbit-wordmark font-anbit text-anbit-text text-2xl sm:text-3xl lg:text-4xl leading-tight">
-            {t('thessalonikiWarriorNetwork')}
-          </h2>
+        <div className="space-y-3">
+          <div className="relative flex items-center justify-center">
+            <h2 className="anbit-wordmark w-full text-center font-anbit text-anbit-text text-2xl sm:text-3xl lg:text-4xl leading-tight">
+              Thessaloniki Partner Network
+            </h2>
+            <div className="absolute right-0 top-1/2 flex -translate-y-1/2 items-center gap-2">
+              <button
+                type="button"
+                onClick={() => scrollQuickCategories('left')}
+                className="w-8 h-8 rounded-full bg-anbit-card border border-anbit-border flex items-center justify-center text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow transition-colors"
+                aria-label="Προηγούμενες κατηγορίες"
+              >
+                <ChevronLeft className="w-4 h-4" />
+              </button>
+              <button
+                type="button"
+                onClick={() => scrollQuickCategories('right')}
+                className="w-8 h-8 rounded-full bg-anbit-card border border-anbit-border flex items-center justify-center text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow transition-colors"
+                aria-label="Επόμενες κατηγορίες"
+              >
+                <ChevronRight className="w-4 h-4" />
+              </button>
+            </div>
+          </div>
+
+          <div
+            ref={quickCategoriesScrollRef}
+            className="flex justify-start lg:justify-center gap-4 overflow-x-auto no-scrollbar pb-1"
+          >
+            {quickCategories.map((qc) => {
+              const isActive = filter === qc.mappedFilter;
+              const count = getCategoryCount(qc.mappedFilter);
+              return (
+                <button
+                  key={qc.id}
+                  type="button"
+                  onClick={() => setFilter(qc.mappedFilter)}
+                  className={`group shrink-0 w-[122px] sm:w-[140px] ${qc.glowClass} transition-all duration-300 ${
+                    isActive ? 'scale-[1.02]' : ''
+                  }`}
+                >
+                  <div
+                    className={`overflow-hidden rounded-xl border ${
+                      isActive ? 'border-anbit-yellow' : 'border-anbit-border'
+                    } bg-[#0a0a0a]`}
+                  >
+                    <div className="relative aspect-square overflow-hidden bg-[#0a0a0a]">
+                      <img
+                        src={qc.image}
+                        alt=""
+                        loading={
+                          qc.id === 'q-restaurants' ||
+                          qc.id === 'q-stays' ||
+                          qc.id === 'q-shopping' ||
+                          qc.id === 'q-health' ||
+                          qc.id === 'q-beauty'
+                            ? 'eager'
+                            : 'lazy'
+                        }
+                        decoding="async"
+                        className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
+                    </div>
+                  </div>
+                  <div className="pt-2 text-center">
+                    <p className="text-sm font-greek-bold text-anbit-text leading-tight line-clamp-2">{qc.label}</p>
+                    <p className="text-[11px] text-anbit-muted">{count} διαθέσιμα</p>
+                  </div>
+                </button>
+              );
+            })}
+          </div>
+        </div>
+
+        <div className="flex flex-wrap items-center justify-end gap-3">
           <div className="flex items-center gap-2">
             <span className="font-greek text-base lg:text-lg font-greek-bold text-anbit-muted">Ταξινόμηση</span>
             <button
