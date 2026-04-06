@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import React, { useEffect, useMemo } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   User,
   Zap,
@@ -18,6 +18,7 @@ import { UserData, Partner } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import AnbitWordmark from './AnbitWordmark';
 import AnimatedSocialLinks, { type Social } from './ui/social-links';
+import { IconTabs3D, type ProfileTabItem } from './ui/3d-icon-tabs-1';
 
 const profileSocials: Social[] = [
   {
@@ -37,8 +38,17 @@ const profileSocials: Social[] = [
   },
 ];
 
+const profileTabs: Array<ProfileTabItem & { path: string }> = [
+  { id: 'informations', label: 'Προσωπικές πληροφορίες', path: '/profile/informations' },
+  { id: 'history', label: 'Ιστορικό παραγγελιών', path: '/profile/history' },
+  { id: 'earn', label: 'Κέρδισε κουπόνια Anbit', path: '/profile/earn' },
+  { id: 'redeem', label: 'Εξαργύρωση κουπονιού', path: '/profile/redeem' },
+  { id: 'settings', label: 'Ρυθμίσεις', path: '/profile/settings' },
+];
+
 const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user, partners = [] }) => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { theme } = useTheme();
   const storeXP = user.storeXP || {};
   const totalStorePoints = Object.values(storeXP).reduce((sum, v) => sum + (Number(v) || 0), 0);
@@ -66,6 +76,15 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
     icon: index % 2 === 0 ? Coffee : UtensilsCrossed,
   }));
 
+  useEffect(() => {
+    if (location.pathname === '/profile') {
+      navigate('/profile/informations', { replace: true });
+    }
+  }, [location.pathname, navigate]);
+
+  const activeTabId =
+    profileTabs.find((tab) => location.pathname.startsWith(tab.path))?.id ?? 'informations';
+
   return (
     <div
       className="min-h-screen font-sans antialiased"
@@ -92,6 +111,108 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
       </header>
 
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <div className="mb-4">
+          <IconTabs3D
+            items={profileTabs}
+            activeId={activeTabId}
+            onSelect={(id) => {
+              const selected = profileTabs.find((tab) => tab.id === id);
+              if (selected) navigate(selected.path);
+            }}
+          />
+        </div>
+
+        {activeTabId === 'history' && (
+          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Ιστορικό παραγγελιών</h2>
+            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">Οι τελευταίες επιβεβαιωμένες κινήσεις σου.</p>
+            <h3 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)] mb-3">
+              Πρόσφατη δραστηριότητα
+            </h3>
+            <ul className="space-y-3 text-sm">
+              {recentActivity.length === 0 ? (
+                <li className="rounded-2xl bg-[color:var(--anbit-input)] p-4 text-center text-xs text-[color:var(--anbit-muted)]">
+                  Δεν βρέθηκαν παραγγελίες ακόμη.
+                </li>
+              ) : (
+                recentActivity.map((item) => (
+                  <li key={item.id} className="flex items-center justify-between rounded-2xl bg-[color:var(--anbit-input)] p-4">
+                    <div>
+                      <p className="font-semibold text-[color:var(--anbit-text)]">{item.name}</p>
+                      <p className="text-xs text-[color:var(--anbit-muted)]">{item.date}</p>
+                    </div>
+                    <p className="font-bold text-[color:var(--anbit-text)]">+{item.xp} XP</p>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
+        )}
+
+        {activeTabId === 'earn' && (
+          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Κέρδισε κουπόνια Anbit</h2>
+            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">
+              Κάνε παραγγελίες από συνεργαζόμενα καταστήματα και μάζεψε XP για νέα κουπόνια.
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="rounded-2xl bg-[color:var(--anbit-input)] p-4">
+                <p className="text-xs text-[color:var(--anbit-muted)]">Διαθέσιμα κουπόνια</p>
+                <p className="mt-1 text-2xl font-bold">{availableGifts}</p>
+              </div>
+              <div className="rounded-2xl bg-[color:var(--anbit-input)] p-4">
+                <p className="text-xs text-[color:var(--anbit-muted)]">Συνολικό store XP</p>
+                <p className="mt-1 text-2xl font-bold">{Math.round(totalStorePoints)}</p>
+              </div>
+            </div>
+          </section>
+        )}
+
+        {activeTabId === 'redeem' && (
+          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Εξαργύρωση κουπονιού</h2>
+            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">
+              Διάλεξε κατάστημα και κάνε εξαργύρωση των διαθέσιμων rewards σου.
+            </p>
+            <div className="space-y-3">
+              {topStores.length === 0 ? (
+                <div className="rounded-2xl bg-[color:var(--anbit-input)] p-4 text-sm text-[color:var(--anbit-muted)]">
+                  Δεν υπάρχουν ακόμα διαθέσιμα rewards για εξαργύρωση.
+                </div>
+              ) : (
+                topStores.map(({ partner, xp }) => (
+                  <div key={partner.id} className="rounded-2xl bg-[color:var(--anbit-input)] p-4 flex items-center justify-between">
+                    <div>
+                      <p className="font-semibold">{partner.name}</p>
+                      <p className="text-xs text-[color:var(--anbit-muted)]">{Math.round(xp)} XP διαθέσιμα</p>
+                    </div>
+                    <Link to={`/store-profile/${partner.id}`} state={{ partner }} className="text-xs font-bold underline">
+                      Προβολή
+                    </Link>
+                  </div>
+                ))
+              )}
+            </div>
+          </section>
+        )}
+
+        {activeTabId === 'settings' && (
+          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
+            <h2 className="text-2xl font-bold tracking-tight mb-2">Ρυθμίσεις</h2>
+            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">Διαχείριση λογαριασμού και ασφάλειας.</p>
+            <div className="flex flex-wrap gap-3">
+              <Link to="/settings" className="rounded-xl bg-[color:var(--anbit-input)] px-4 py-2 text-sm font-semibold hover:opacity-90">
+                Γενικές ρυθμίσεις
+              </Link>
+              <Link to="/security" className="rounded-xl bg-[color:var(--anbit-input)] px-4 py-2 text-sm font-semibold hover:opacity-90">
+                Ασφάλεια
+              </Link>
+            </div>
+          </section>
+        )}
+
+        {activeTabId === 'informations' && (
+        <>
         <section>
           <div className="relative overflow-hidden rounded-3xl border border-[color:var(--anbit-xp-surface-border)] shadow-lg">
             <div className="flex flex-col gap-4 rounded-[22px] bg-[color:var(--anbit-card)] p-4 sm:flex-row sm:gap-5 sm:p-6">
@@ -675,41 +796,9 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
             </aside>
           </div>
 
-          <section className="mt-8 rounded-3xl bg-[color:var(--anbit-card)] p-5 shadow-sm border border-[color:var(--anbit-border)]">
-            <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)]">
-              Πρόσφατη δραστηριότητα
-            </h2>
-            <ul className="mt-3 space-y-3 text-sm">
-              {recentActivity.length === 0 ? (
-                <li className="rounded-2xl bg-[color:var(--anbit-input)] p-4 text-center text-xs text-[color:var(--anbit-muted)]">
-                  Καμία πρόσφατη δραστηριότητα.
-                </li>
-              ) : (
-                recentActivity.map((item) => {
-                  const Icon = item.icon;
-                  return (
-                    <li
-                      key={item.id}
-                      className="flex items-center gap-4 rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm"
-                    >
-                      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-slate-900 text-white">
-                        <Icon className="h-5 w-5" strokeWidth={2} />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-semibold text-[color:var(--anbit-text)]">{item.name}</p>
-                        <p className="text-xs text-[color:var(--anbit-muted)]">{item.date}</p>
-                      </div>
-                      <div className="shrink-0 text-right">
-                        <p className="font-bold text-[color:var(--anbit-text)]">+{item.xp} XP</p>
-                        <p className="text-[10px] font-bold uppercase tracking-wider text-[#e63533]">Verified</p>
-                      </div>
-                    </li>
-                  );
-                })
-              )}
-            </ul>
-          </section>
         </section>
+        </>
+        )}
       </main>
     </div>
   );

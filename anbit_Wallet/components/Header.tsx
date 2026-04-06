@@ -151,15 +151,6 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
 
                     {isAuthenticated ? (
                       <>
-                        <div className="px-3 py-2 flex justify-center border-t border-anbit-border">
-                          <NotificationPopover
-                            notifications={walletNotifications}
-                            onNotificationsChange={setWalletNotifications}
-                            title={t('notificationsTitle')}
-                            markAllReadLabel={t('markAllNotificationsRead')}
-                            bellAriaLabel={t('notificationsBellAria')}
-                          />
-                        </div>
                         <button
                           type="button"
                           role="menuitem"
@@ -269,6 +260,18 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 );
               })}
             </nav>
+          </div>
+
+          <div className="md:hidden flex items-center shrink-0">
+            {isAuthenticated ? (
+              <NotificationPopover
+                notifications={walletNotifications}
+                onNotificationsChange={setWalletNotifications}
+                title={t('notificationsTitle')}
+                markAllReadLabel={t('markAllNotificationsRead')}
+                bellAriaLabel={t('notificationsBellAria')}
+              />
+            ) : null}
           </div>
 
           <div className="hidden md:flex items-center gap-2 shrink-0">

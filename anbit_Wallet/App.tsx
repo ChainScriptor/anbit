@@ -409,7 +409,7 @@ const App: React.FC = () => {
                 } />
                 <Route path="/store-profile/:partnerId" element={<StoreProfilePage />} />
                 <Route path="/quests" element={<QuestsPage quests={dashboardFeed.quests} user={userData} />} />
-                <Route path="/profile" element={userData ? <ProfilePage user={userData} partners={dashboardFeed.partners} /> : <Navigate to="/login" replace />} />
+                <Route path="/profile/*" element={userData ? <ProfilePage user={userData} partners={dashboardFeed.partners} /> : <Navigate to="/login" replace />} />
                 <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/dashboard" replace />} />
                 <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/dashboard" replace />} />
                 <Route path="*" element={<Navigate to="/dashboard" replace />} />

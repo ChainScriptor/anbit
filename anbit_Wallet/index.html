@@ -314,6 +314,25 @@
       display: none;
     }
 
+    /* Horizontal scrollbar for profile tabs */
+    .anbit-tabs-scrollbar {
+      scrollbar-width: thin;
+      scrollbar-color: #121214 transparent;
+    }
+
+    .anbit-tabs-scrollbar::-webkit-scrollbar {
+      height: 5px;
+    }
+
+    .anbit-tabs-scrollbar::-webkit-scrollbar-track {
+      background: transparent;
+    }
+
+    .anbit-tabs-scrollbar::-webkit-scrollbar-thumb {
+      background: #121214;
+      border-radius: 9999px;
+    }
+
     /* Auth page – Lysium-style: floating panel + immersive right */
     .auth-page-bg {
       background: var(--anbit-bg);
