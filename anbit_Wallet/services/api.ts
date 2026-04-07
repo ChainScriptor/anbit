@@ -181,6 +181,12 @@ export interface ApiOrderListItem {
   updatedAt?: string;
 }
 
+export interface ApiMerchantUser {
+  id: string;
+  username: string;
+  email: string;
+}
+
 function normalizeApiProduct(raw: unknown): ApiProduct | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
@@ -279,6 +285,42 @@ class ApiService {
       params: { limit, offset },
     });
     return normalizeApiProducts(data);
+  }
+
+  /**
+   * Merchant directory (ίδιο endpoint με admin merchant-users):
+   * GET /Merchants?limit&offset
+   */
+  async getMerchantsDirectory(): Promise<ApiMerchantUser[]> {
+    const pageSize = 100;
+    const all: ApiMerchantUser[] = [];
+    const seen = new Set<string>();
+
+    for (let offset = 0; ; offset += pageSize) {
+      const { data } = await apiClient.get<unknown[]>('/Merchants', {
+        params: { limit: pageSize, offset },
+      });
+      const batch = Array.isArray(data) ? data : [];
+
+      for (const row of batch) {
+        if (!row || typeof row !== 'object') continue;
+        const r = row as Record<string, unknown>;
+        const id = String(r.id ?? r.Id ?? '').trim();
+        if (!id) continue;
+        const key = id.toLowerCase();
+        if (seen.has(key)) continue;
+        seen.add(key);
+        all.push({
+          id,
+          username: String(r.username ?? r.Username ?? '').trim() || `Merchant ${id.slice(0, 8)}`,
+          email: String(r.email ?? r.Email ?? '').trim() || '—',
+        });
+      }
+
+      if (batch.length < pageSize) break;
+    }
+
+    return all;
   }
 
   async getQrCodeDetails(shortCode: string): Promise<QrCodeDetails> {

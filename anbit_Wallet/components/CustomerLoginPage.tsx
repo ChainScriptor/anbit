@@ -95,17 +95,23 @@ const CustomerLoginPage: React.FC = () => {
     }
   };
 
+  // Responsive hero height ώστε το visual να μη κόβεται σε laptop viewports.
+  const heroHeight = 'clamp(290px, 54vh, 520px)';
+
   return (
     <main
       className="relative min-h-screen w-full overflow-hidden bg-[#0a0a0a] text-white antialiased"
       style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}
     >
       {/* Top half full-background hero */}
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[46vh] overflow-hidden">
+      <div
+        className="pointer-events-none absolute inset-x-0 top-0 overflow-hidden"
+        style={{ height: heroHeight }}
+      >
         <img
           src="/couple.gif"
           alt=""
-          className="h-full w-full object-cover"
+          className="h-full w-full object-cover object-[center_35%]"
           draggable={false}
         />
         <div className="absolute inset-0 bg-black/15" />
@@ -141,12 +147,13 @@ const CustomerLoginPage: React.FC = () => {
       <div className="pointer-events-none absolute right-[10%] bottom-[14%] h-32 w-32 rounded-full bg-[#0a0a0a]/[0.06] blur-[48px]" />
       <div className="pointer-events-none absolute left-1/2 top-[52%] h-16 w-16 -translate-x-1/2 rounded-full bg-[#0a0a0a]/[0.1] blur-[24px]" />
 
-      <section className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-4 pt-0 text-center">
+      <section
+        className="relative z-10 mx-auto flex min-h-[100dvh] w-full max-w-md flex-col px-6 pb-4 text-center"
+        style={{ paddingTop: heroHeight }}
+      >
         {mode === 'landing' ? (
           <>
-            <div className="h-[330px] w-full" aria-hidden />
-
-            <div className="-mt-6 relative z-20">
+            <div className="relative z-20 -mt-4 sm:-mt-6">
               <h2 className="font-extrabold text-[1.75rem] leading-[1.1] text-white text-center mb-6">
                 Κάθε παραγγελία σου
                 <br />

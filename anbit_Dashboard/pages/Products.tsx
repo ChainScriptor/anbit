@@ -21,6 +21,7 @@ const ACCENT = '#0a0a0a';
 const PLACEHOLDER_PRODUCT_IMAGE =
   'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400';
 const MAX_PRODUCT_IMAGE_BYTES = 10 * 1024 * 1024;
+const PRODUCT_OPTIONS_STORAGE_KEY = 'anbit_dashboard_product_options_v1';
 
 async function convertAvifToWebp(file: File): Promise<File> {
   if (file.type !== 'image/avif') return file;
@@ -114,6 +115,20 @@ const Products: React.FC = () => {
   const [imageFieldBusy, setImageFieldBusy] = useState(false);
   const [showDeleteImageConfirm, setShowDeleteImageConfirm] = useState(false);
   const [modalImageError, setModalImageError] = useState<string | null>(null);
+  const [detailProductId, setDetailProductId] = useState<string | null>(null);
+  const [detailDraft, setDetailDraft] = useState<{
+    name: string;
+    description: string;
+    category: string;
+    price: string;
+    pointsReward: string;
+    isActive: boolean;
+  } | null>(null);
+  const [productOptions, setProductOptions] = useState<Record<string, string[]>>({});
+  const [newOptionText, setNewOptionText] = useState('');
+  const detailFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [detailImageBusy, setDetailImageBusy] = useState(false);
+  const [detailImageError, setDetailImageError] = useState<string | null>(null);
 
   const loadProducts = async (): Promise<Product[]> => {
     setIsLoading(true);
@@ -175,6 +190,32 @@ const Products: React.FC = () => {
     })();
   }, []);
 
+  useEffect(() => {
+    try {
+      const raw = localStorage.getItem(PRODUCT_OPTIONS_STORAGE_KEY);
+      if (!raw) return;
+      const parsed = JSON.parse(raw) as Record<string, unknown>;
+      const normalized: Record<string, string[]> = {};
+      Object.entries(parsed ?? {}).forEach(([productId, value]) => {
+        if (Array.isArray(value)) {
+          normalized[productId] = value.map((x) => String(x).trim()).filter(Boolean);
+        }
+      });
+      setProductOptions(normalized);
+    } catch {
+      // ignore malformed options cache
+    }
+  }, []);
+
+  const persistProductOptions = (next: Record<string, string[]>) => {
+    setProductOptions(next);
+    try {
+      localStorage.setItem(PRODUCT_OPTIONS_STORAGE_KEY, JSON.stringify(next));
+    } catch {
+      // ignore storage errors
+    }
+  };
+
   const categories = useMemo(() => {
     const base = Array.from(new Set(items.map((p) => p.category)));
     const merged = Array.from(new Set([...base, ...extraCategories])).sort();
@@ -203,6 +244,11 @@ const Products: React.FC = () => {
     );
   }, [items, activeCategory, searchQuery]);
 
+  const detailProduct = useMemo(
+    () => (detailProductId ? items.find((p) => p.id === detailProductId) ?? null : null),
+    [detailProductId, items],
+  );
+
   const allVisibleSelected = products.length > 0 && products.every((p) => selectedProductIds.has(p.id));
   const selectedVisibleCount = products.filter((p) => selectedProductIds.has(p.id)).length;
   const groupedProducts = useMemo(() => {
@@ -221,8 +267,12 @@ const Products: React.FC = () => {
   }, [products]);
 
   const optionsCount = useMemo(
-    () => items.reduce((sum, p) => sum + (p.allergens?.length ?? 0), 0),
-    [items],
+    () =>
+      items.reduce(
+        (sum, p) => sum + (p.allergens?.length ?? 0) + (productOptions[p.id]?.length ?? 0),
+        0,
+      ),
+    [items, productOptions],
   );
 
   const resetForm = () => {
@@ -540,6 +590,107 @@ const Products: React.FC = () => {
     // Options tab: keep single top action visible (feature editor placeholder for now).
   };
 
+  const openProductDetailModal = (product: Product) => {
+    setDetailProductId(product.id);
+    setDetailDraft({
+      name: product.name,
+      description: product.description ?? '',
+      category: product.category,
+      price: String(product.price),
+      pointsReward: String(product.pointsReward ?? 0),
+      isActive: product.isActive,
+    });
+    setNewOptionText('');
+  };
+
+  const closeProductDetailModal = () => {
+    setDetailProductId(null);
+    setDetailDraft(null);
+    setNewOptionText('');
+    setDetailImageError(null);
+    setDetailImageBusy(false);
+  };
+
+  const saveDetailChanges = () => {
+    if (!detailProductId || !detailDraft) return;
+    const price = Number(detailDraft.price.replace(',', '.'));
+    const pointsReward = Number(detailDraft.pointsReward.replace(',', '.'));
+    if (Number.isNaN(price) || price <= 0) return;
+    if (Number.isNaN(pointsReward) || pointsReward < 0) return;
+    setItems((prev) =>
+      prev.map((p) =>
+        p.id === detailProductId
+          ? {
+              ...p,
+              name: detailDraft.name.trim() || p.name,
+              description: detailDraft.description.trim(),
+              category: detailDraft.category.trim() || p.category,
+              price,
+              pointsReward: Math.trunc(pointsReward),
+              isActive: detailDraft.isActive,
+            }
+          : p,
+      ),
+    );
+  };
+
+  const addProductOption = () => {
+    if (!detailProductId) return;
+    const option = newOptionText.trim();
+    if (!option) return;
+    const next = { ...productOptions };
+    const current = next[detailProductId] ?? [];
+    if (!current.some((x) => x.toLowerCase() === option.toLowerCase())) {
+      next[detailProductId] = [...current, option];
+      persistProductOptions(next);
+    }
+    setNewOptionText('');
+  };
+
+  const removeProductOption = (option: string) => {
+    if (!detailProductId) return;
+    const next = { ...productOptions };
+    next[detailProductId] = (next[detailProductId] ?? []).filter((x) => x !== option);
+    persistProductOptions(next);
+  };
+
+  const handleDetailImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const rawFile = e.target.files?.[0];
+    if (!rawFile || !detailProductId) return;
+    setDetailImageError(null);
+
+    if (!rawFile.type.startsWith('image/')) {
+      setDetailImageError('Επίλεξε έγκυρο αρχείο εικόνας.');
+      e.target.value = '';
+      return;
+    }
+    if (rawFile.size > MAX_PRODUCT_IMAGE_BYTES) {
+      setDetailImageError('Το αρχείο είναι πολύ μεγάλο. Μέγιστο ~10MB.');
+      e.target.value = '';
+      return;
+    }
+
+    let file = rawFile;
+    try {
+      file = await convertAvifToWebp(rawFile);
+    } catch (err) {
+      setDetailImageError(err instanceof Error ? err.message : 'Αποτυχία μετατροπής AVIF.');
+      e.target.value = '';
+      return;
+    }
+
+    setDetailImageBusy(true);
+    try {
+      await api.uploadProductImage(detailProductId, file);
+      await loadProducts();
+    } catch (err) {
+      setDetailImageError(formatProductImageApiError(err));
+    } finally {
+      setDetailImageBusy(false);
+      e.target.value = '';
+    }
+  };
+
   return (
     <div className="flex flex-col gap-6 bg-[#f8f9fa] text-slate-900">
       <div className="space-y-6 rounded-3xl bg-[#f8f9fa] p-6 md:p-8">
@@ -631,12 +782,14 @@ const Products: React.FC = () => {
                   {group.items.map((product) => (
                     <article
                       key={product.id}
-                      className="relative rounded-3xl bg-white p-5 shadow-[0_16px_40px_-24px_rgba(25,28,29,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+                      onClick={() => openProductDetailModal(product)}
+                      className="relative cursor-pointer rounded-3xl bg-white p-5 shadow-[0_16px_40px_-24px_rgba(25,28,29,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
                     >
                       <div className="flex items-center gap-4">
                         <input
                           type="checkbox"
                           checked={selectedProductIds.has(product.id)}
+                          onClick={(e) => e.stopPropagation()}
                           onChange={() => toggleProductSelection(product.id)}
                           className="rounded border-slate-300"
                         />
@@ -666,10 +819,11 @@ const Products: React.FC = () => {
                         <div className="flex flex-col items-end gap-2">
                           <button
                             type="button"
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setOpenMenuProductId((prev) => (prev === product.id ? null : product.id));
+                            }}
                             className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                            onClick={() =>
-                              setOpenMenuProductId((prev) => (prev === product.id ? null : product.id))
-                            }
                           >
                             <MoreHorizontal className="h-5 w-5" />
                           </button>
@@ -682,6 +836,7 @@ const Products: React.FC = () => {
                             type="button"
                             className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-700 hover:bg-slate-100"
                             onClick={() => {
+                              setDetailProductId(null);
                               startEditProduct(product);
                               setOpenMenuProductId(null);
                             }}
@@ -779,15 +934,168 @@ const Products: React.FC = () => {
         )}
       </div>
 
+      {detailProduct && detailDraft && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-lg max-h-[92vh] overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between">
+              <h2 className="text-lg font-semibold">Product details</h2>
+              <button className="text-sm" onClick={closeProductDetailModal}>
+                Close
+              </button>
+            </div>
+            <div className="grid gap-5 md:grid-cols-[220px_1fr]">
+              <div className="overflow-hidden rounded-xl border border-slate-200">
+                <img src={detailProduct.image} alt={detailProduct.name} className="h-full w-full object-cover" />
+              </div>
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <Button
+                    size="sm"
+                    type="button"
+                    onClick={() => detailFileInputRef.current?.click()}
+                    disabled={detailImageBusy}
+                    style={{ backgroundColor: ACCENT }}
+                    className="text-white"
+                  >
+                    {detailImageBusy ? 'Uploading...' : 'Change image'}
+                  </Button>
+                  <input
+                    ref={detailFileInputRef}
+                    type="file"
+                    accept="image/*,.avif,image/avif"
+                    className="hidden"
+                    onChange={(ev) => void handleDetailImageSelected(ev)}
+                  />
+                  {detailImageError && <span className="text-xs text-red-600">{detailImageError}</span>}
+                </div>
+                <div className="grid gap-3 md:grid-cols-2">
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-xs font-medium">Name</label>
+                    <input
+                      type="text"
+                      value={detailDraft.name}
+                      onChange={(e) => setDetailDraft({ ...detailDraft, name: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1 md:col-span-2">
+                    <label className="text-xs font-medium">Description</label>
+                    <textarea
+                      value={detailDraft.description}
+                      onChange={(e) => setDetailDraft({ ...detailDraft, description: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm min-h-[90px]"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Category</label>
+                    <select
+                      value={detailDraft.category}
+                      onChange={(e) => setDetailDraft({ ...detailDraft, category: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    >
+                      {categories
+                        .filter((c) => c !== 'All')
+                        .map((c) => (
+                          <option key={c} value={c}>
+                            {c}
+                          </option>
+                        ))}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Price (€)</label>
+                    <input
+                      type="number"
+                      step="0.01"
+                      min="0"
+                      value={detailDraft.price}
+                      onChange={(e) => setDetailDraft({ ...detailDraft, price: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-medium">Points</label>
+                    <input
+                      type="number"
+                      step="1"
+                      min="0"
+                      value={detailDraft.pointsReward}
+                      onChange={(e) => setDetailDraft({ ...detailDraft, pointsReward: e.target.value })}
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                    />
+                  </div>
+                  <label className="mt-5 inline-flex items-center gap-2 text-sm font-medium">
+                    <input
+                      type="checkbox"
+                      checked={detailDraft.isActive}
+                      onChange={(e) => setDetailDraft({ ...detailDraft, isActive: e.target.checked })}
+                    />
+                    Active / In stock
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 rounded-xl border border-slate-200 p-4">
+              <h3 className="text-sm font-semibold text-slate-900">Product options</h3>
+              <p className="mt-1 text-xs text-slate-500">Πρόσθεσε επιλογές όπως μέγεθος, έξτρα υλικά, toppings κτλ.</p>
+              <div className="mt-3 flex gap-2">
+                <input
+                  type="text"
+                  value={newOptionText}
+                  onChange={(e) => setNewOptionText(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && addProductOption()}
+                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                  placeholder="π.χ. Extra cheese"
+                />
+                <Button size="sm" onClick={addProductOption} style={{ backgroundColor: ACCENT }} className="text-white">
+                  Add option
+                </Button>
+              </div>
+              <div className="mt-3 flex flex-wrap gap-2">
+                {(productOptions[detailProduct.id] ?? []).length === 0 ? (
+                  <p className="text-xs text-slate-500">Δεν υπάρχουν options ακόμα.</p>
+                ) : (
+                  (productOptions[detailProduct.id] ?? []).map((opt) => (
+                    <span
+                      key={opt}
+                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium"
+                    >
+                      {opt}
+                      <button
+                        type="button"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => removeProductOption(opt)}
+                      >
+                        ×
+                      </button>
+                    </span>
+                  ))
+                )}
+              </div>
+            </div>
+
+            <div className="mt-5 flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={closeProductDetailModal}>
+                Cancel
+              </Button>
+              <Button size="sm" onClick={saveDetailChanges} style={{ backgroundColor: ACCENT }} className="text-white">
+                Save changes
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Add product modal */}
       {isAddOpen && (
         <>
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-          <div className="w-full max-w-2xl rounded-2xl bg-white p-6 shadow-lg">
-            <div className="mb-4 flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:px-4 sm:py-8">
+          <div className="w-full h-[92vh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-white p-4 sm:p-6 shadow-lg overflow-y-auto">
+            <div className="mb-4 flex items-center justify-between gap-3">
               <h2 className="text-lg font-semibold">{editingProductId ? 'Edit product' : 'Add product'}</h2>
               <button
-                className="text-sm"
+                className="text-sm shrink-0"
                 onClick={() => {
                   setIsAddOpen(false);
                   resetForm();
@@ -796,7 +1104,7 @@ const Products: React.FC = () => {
                 Close
               </button>
             </div>
-              <div className="space-y-4">
+              <div className="space-y-4 pb-4 sm:pb-0">
               {saveError && (
                 <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
                   {saveError}
@@ -994,10 +1302,11 @@ const Products: React.FC = () => {
                   placeholder="Γάλα, Γλουτένη"
                 />
               </div>
-              <div className="mt-4 flex justify-end gap-2">
+              <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
                 <Button
                   variant="outline"
                   size="sm"
+                  className="w-full sm:w-auto"
                   onClick={() => {
                     setIsAddOpen(false);
                     resetForm();
@@ -1010,7 +1319,7 @@ const Products: React.FC = () => {
                   onClick={handleAddProduct}
                   disabled={isSaving}
                   style={{ backgroundColor: ACCENT }}
-                  className="text-white"
+                  className="text-white w-full sm:w-auto"
                 >
                   {isSaving ? 'Saving...' : editingProductId ? 'Save changes' : 'Save product'}
                 </Button>

@@ -13,6 +13,9 @@ import {
   Settings,
   Clock,
   ExternalLink,
+  Copy,
+  Facebook,
+  Linkedin,
 } from 'lucide-react';
 import { UserData, Partner } from '../types';
 import { useTheme } from '../context/ThemeContext';
@@ -94,23 +97,15 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
         color: 'var(--anbit-text)',
       }}
     >
-      <header className="bg-[color:var(--anbit-card)] shadow-sm border-b border-[color:var(--anbit-border)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <button
-            type="button"
-            onClick={() => navigate('/dashboard')}
-            className="inline-flex h-9 items-center rounded-full border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 text-xs font-medium text-[color:var(--anbit-muted)] shadow-sm hover:bg-[color:var(--anbit-input)]"
-          >
-            ← Πίσω
-          </button>
-          <span className="flex flex-wrap items-baseline justify-end gap-2 text-slate-400">
-            <AnbitWordmark className="text-sm text-slate-500" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Προφίλ</span>
-          </span>
-        </div>
-      </header>
-
       <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
+        <div className="mb-4 sm:mb-5">
+          <h1
+            className="anbit-wordmark font-anbit text-4xl sm:text-5xl leading-none text-white"
+            style={{ textShadow: '0 0 8px rgba(255,255,255,0.12)' }}
+          >
+            Προφίλ
+          </h1>
+        </div>
         <div className="mb-4">
           <IconTabs3D
             items={profileTabs}
@@ -150,48 +145,110 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
         )}
 
         {activeTabId === 'earn' && (
-          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Κέρδισε κουπόνια Anbit</h2>
-            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">
-              Κάνε παραγγελίες από συνεργαζόμενα καταστήματα και μάζεψε XP για νέα κουπόνια.
-            </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div className="rounded-2xl bg-[color:var(--anbit-input)] p-4">
-                <p className="text-xs text-[color:var(--anbit-muted)]">Διαθέσιμα κουπόνια</p>
-                <p className="mt-1 text-2xl font-bold">{availableGifts}</p>
+          <section className="mx-auto max-w-3xl rounded-3xl border border-[color:var(--anbit-border)] bg-[#05070b] p-5 shadow-sm sm:p-7">
+            <div className="overflow-hidden rounded-2xl border border-white/10">
+              <img src="/categories/coupon.gif" alt="Referral coupon" className="h-[190px] w-full object-cover sm:h-[240px]" />
+            </div>
+
+            <div className="mt-6 space-y-4 text-white">
+              <h2 className="text-center text-2xl font-extrabold leading-tight sm:text-4xl">
+                Προσκάλεσε τους φίλους σου και κέρδισε προσφορές
+              </h2>
+
+              <div className="space-y-4 text-[15px] leading-relaxed text-white/95">
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e63533] text-sm font-bold">1</span>
+                  <p>
+                    Οι φίλοι σου θα κερδίσουν 3,00 € σε Anbit κουπόνια όταν χρησιμοποιήσουν τον κωδικό σου για κάθε μία από τις
+                    πρώτες τους 3 παραγγελίες.
+                  </p>
+                </div>
+                <div className="flex items-start gap-3">
+                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e63533] text-sm font-bold">2</span>
+                  <p>
+                    Θα κερδίσεις 3,00 € σε Anbit κουπόνια για κάθε μία από τις πρώτες 3 παραγγελίες των φίλων σου. Μπορείς να
+                    κερδίσεις έναν μέγιστο αριθμό 15,00 € μονάδων πίστωσης προσκαλώντας τους φίλους σας να γίνουν μέλη της Anbit.
+                  </p>
+                </div>
               </div>
-              <div className="rounded-2xl bg-[color:var(--anbit-input)] p-4">
-                <p className="text-xs text-[color:var(--anbit-muted)]">Συνολικό store XP</p>
-                <p className="mt-1 text-2xl font-bold">{Math.round(totalStorePoints)}</p>
+
+              <div className="pt-1 text-center">
+                <button type="button" className="text-[#e63533] hover:text-[#cf2f2d] transition-colors">
+                  Πώς λειτουργούν τα κουπόνια Anbit;
+                </button>
+              </div>
+
+              <div className="rounded-2xl border border-white/15 bg-white/5 p-4">
+                <div className="flex items-center justify-between gap-3">
+                  <div>
+                    <p className="text-sm text-white/70">Ο κωδικός σου</p>
+                    <p className="mt-1 text-2xl font-bold tracking-wide">ATUD5MF</p>
+                  </div>
+                  <button
+                    type="button"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white/90 hover:bg-white/10 transition-colors"
+                    aria-label="Αντιγραφή κωδικού"
+                  >
+                    <Copy className="h-5 w-5" />
+                  </button>
+                </div>
+              </div>
+
+              <div className="pt-1 text-center">
+                <p className="text-sm text-white/75">Μοιράσου τον εκπτωτικό κωδικό σου</p>
+                <div className="mt-3 flex items-center justify-center gap-4">
+                  <button
+                    type="button"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white hover:bg-white/10 transition-colors"
+                    aria-label="Share on Facebook"
+                  >
+                    <Facebook className="h-5 w-5" />
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white hover:bg-white/10 transition-colors"
+                    aria-label="Share on X"
+                  >
+                    <span className="text-lg font-semibold">X</span>
+                  </button>
+                  <button
+                    type="button"
+                    className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white hover:bg-white/10 transition-colors"
+                    aria-label="Share on LinkedIn"
+                  >
+                    <Linkedin className="h-5 w-5" />
+                  </button>
+                </div>
               </div>
             </div>
           </section>
         )}
 
         {activeTabId === 'redeem' && (
-          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Εξαργύρωση κουπονιού</h2>
-            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">
-              Διάλεξε κατάστημα και κάνε εξαργύρωση των διαθέσιμων rewards σου.
-            </p>
-            <div className="space-y-3">
-              {topStores.length === 0 ? (
-                <div className="rounded-2xl bg-[color:var(--anbit-input)] p-4 text-sm text-[color:var(--anbit-muted)]">
-                  Δεν υπάρχουν ακόμα διαθέσιμα rewards για εξαργύρωση.
-                </div>
-              ) : (
-                topStores.map(({ partner, xp }) => (
-                  <div key={partner.id} className="rounded-2xl bg-[color:var(--anbit-input)] p-4 flex items-center justify-between">
-                    <div>
-                      <p className="font-semibold">{partner.name}</p>
-                      <p className="text-xs text-[color:var(--anbit-muted)]">{Math.round(xp)} XP διαθέσιμα</p>
-                    </div>
-                    <Link to={`/store-profile/${partner.id}`} state={{ partner }} className="text-xs font-bold underline">
-                      Προβολή
-                    </Link>
-                  </div>
-                ))
-              )}
+          <section className="mx-auto max-w-3xl rounded-3xl border border-[color:var(--anbit-border)] bg-[#05070b] p-5 shadow-sm sm:p-7">
+            <div className="overflow-hidden rounded-2xl border border-white/10">
+              <img src="/categories/coupons.gif" alt="Coupon redemption" className="h-[190px] w-full object-cover sm:h-[240px]" />
+            </div>
+
+            <div className="mt-6 text-center text-white">
+              <h2 className="text-3xl font-extrabold leading-tight sm:text-5xl">Εξαργύρωση κωδικού</h2>
+              <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-white/85 sm:text-2xl">
+                Εάν έχεις δωροκάρτα Anbit ή κωδικό προσφοράς, πληκτρολόγησέ τον παρακάτω για να τον εξαργυρώσεις!
+              </p>
+
+              <div className="mx-auto mt-7 flex w-full max-w-2xl flex-col gap-3 sm:flex-row">
+                <input
+                  type="text"
+                  placeholder="Εισάγετε τον κωδικό..."
+                  className="h-12 flex-1 rounded-2xl border border-white/20 bg-black/40 px-4 text-white outline-none placeholder:text-white/45 focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/20"
+                />
+                <button
+                  type="button"
+                  className="h-12 rounded-2xl bg-[#e63533] px-7 font-bold text-white transition-colors hover:bg-[#cf2f2d]"
+                >
+                  Εξαργύρωση
+                </button>
+              </div>
             </div>
           </section>
         )}
@@ -269,7 +326,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                 {[
                   { label: 'Αποστολή αποδείξεων σε email', value: true },
                   { label: 'Αποδοχή ρύθμισης αυτόματης μετάφρασης', value: false, text: 'Επεξεργασία' },
-                  { label: 'Αποσύνδεση από τον λογαριασμό Wolt', value: false, text: 'Αποσύνδεση' },
+                  { label: 'Αποσύνδεση από τον λογαριασμό Anbit', value: false, text: 'Αποσύνδεση' },
                 ].map((row) => (
                   <div key={row.label} className="flex items-center justify-between gap-3 py-3">
                     <span className="text-sm" style={{ fontFamily: 'Inter, sans-serif', color: 'var(--anbit-text)' }}>
@@ -344,7 +401,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                   {[
                     {
                       title: 'Αναλυτικά',
-                      desc: 'Αυτός ο απολογισμός είναι απαραίτητος για τη χρήση των υπηρεσιών της Wolt.',
+                      desc: 'Αυτός ο απολογισμός είναι απαραίτητος για τη χρήση των υπηρεσιών της Anbit.',
                     },
                     {
                       title: 'Λειτουργικά',
@@ -385,8 +442,8 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                   style={{ borderColor: 'var(--anbit-border)', ['--tw-divide-opacity' as never]: '1' }}
                 >
                   {[
-                    { title: 'Ειδοποιήσεις push', desc: 'Στέλνουμε push notifications και προσφορές από το Wolt και τους συνεργάτες μας.' },
-                    { title: 'Ειδικές προσφορές', desc: 'Στέλνουμε email με προσφορές από τη Wolt και τους συνεργάτες μας.' },
+                    { title: 'Ειδοποιήσεις push', desc: 'Στέλνουμε push notifications και προσφορές από το Anbit και τους συνεργάτες μας.' },
+                    { title: 'Ειδικές προσφορές', desc: 'Στέλνουμε email με προσφορές από το Anbit και τους συνεργάτες μας.' },
                   ].map((row) => (
                     <div key={row.title} className="py-3">
                       <div className="mb-1 flex items-center justify-between gap-3">
@@ -608,7 +665,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                         <Link
                           to={`/store-profile/${partner.id}`}
                           state={{ partner }}
-                          className="w-full py-3 rounded-2xl border border-[color:var(--anbit-border)]/50 flex items-center justify-center gap-2 text-xs font-bold hover:bg-[color:var(--anbit-input)] hover:text-[color:var(--anbit-text)] transition-all"
+                          className="w-full py-3 rounded-2xl border border-[#e63533] bg-[#e63533] text-white flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#cf2f2d] hover:border-[#cf2f2d] transition-all"
                         >
                           Explore Store{" "}
                           <span className="material-symbols-outlined text-sm" data-icon="open_in_new">
@@ -886,7 +943,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                             <Link
                               to={`/store-profile/${partner.id}`}
                               state={{ partner }}
-                              className="w-full py-3 rounded-2xl border border-[color:var(--anbit-border)] flex items-center justify-center gap-2 text-xs font-bold hover:bg-[color:var(--anbit-input)] hover:text-[color:var(--anbit-text)] transition-all"
+                              className="w-full py-3 rounded-2xl border border-[#e63533] bg-[#e63533] text-white flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#cf2f2d] hover:border-[#cf2f2d] transition-all"
                             >
                               Explore Store
                               <ExternalLink className="w-4 h-4" />
@@ -923,7 +980,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                   </Link>
                   <Link
                     to="/network"
-                    className="block rounded-2xl bg-[color:var(--anbit-yellow)] p-4 text-[color:var(--anbit-yellow-content)] shadow-md transition hover:opacity-95"
+                    className="block rounded-2xl bg-[#e63533] p-4 text-white shadow-md transition hover:bg-[#cf2f2d]"
                   >
                     <p className="text-xs uppercase tracking-wide opacity-80">Καταστήματα</p>
                     <p className="mt-1 text-sm font-semibold">Παραγγελίες & δίκτυο</p>

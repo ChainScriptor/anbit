@@ -284,7 +284,7 @@ function OfferCard({
       <div className="flex gap-2 pt-1">
         <button
           type="button"
-          className="flex-1 py-2.5 rounded-lg bg-anbit-yellow text-anbit-yellow-content text-sm font-bold hover:opacity-90 transition-opacity"
+          className="flex-1 py-2.5 rounded-lg bg-[#e63533] text-white text-sm font-bold hover:bg-[#cf2f2d] transition-colors"
         >
           {t('claimOffer')}
         </button>

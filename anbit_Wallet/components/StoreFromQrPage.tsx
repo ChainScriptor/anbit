@@ -7,6 +7,7 @@ import { Partner, Product } from '../types';
 import StoreMenuPage from './StoreMenuPage';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useLanguage } from '../context/LanguageContext';
+import AnbitSplashScreen from './AnbitSplashScreen';
 
 const STORE_LANG_KEY = 'anbit-store-lang-chosen';
 const STORE_QR_PARTNER_CACHE_PREFIX = 'anbit-store-partner-cache:';
@@ -125,7 +126,7 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
         } else {
           found = {
             id: details.merchantId,
-            name: `Store ${details.merchantId.slice(0, 6)}`,
+            name: 'Partner Store',
             category: 'burger',
             image:
               'https://images.pexels.com/photos/323682/pexels-photo-323682.jpeg?auto=compress&cs=tinysrgb&w=400',
@@ -270,26 +271,12 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
   }
 
   if (!partner && isResolving) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-white">
-        <div className="w-10 h-10 border-4 border-[#333] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[#666] font-medium tracking-wide uppercase">
-          Φόρτωση καταλόγου καταστήματος...
-        </p>
-      </div>
-    );
+    return <AnbitSplashScreen />;
   }
 
   // Guard against race conditions where resolving finished but partner is still null.
   if (!partner) {
-    return (
-      <div className="min-h-[60vh] flex flex-col items-center justify-center gap-4 bg-white">
-        <div className="w-10 h-10 border-4 border-[#333] border-t-transparent rounded-full animate-spin" />
-        <p className="text-xs text-[#666] font-medium tracking-wide uppercase">
-          Φόρτωση καταλόγου καταστήματος...
-        </p>
-      </div>
-    );
+    return <AnbitSplashScreen />;
   }
 
   return (

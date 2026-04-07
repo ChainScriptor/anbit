@@ -1,12 +1,25 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, Star, Truck, Zap, ChevronLeft, ChevronRight, Info, SlidersHorizontal, X } from 'lucide-react';
-import { Partner, type PartnerCategory } from '../types';
+import { Check, MapPin, RotateCcw, Star, Truck, Zap, ChevronLeft, ChevronRight, Info, SlidersHorizontal, X } from 'lucide-react';
+import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
+import { cn } from '@/lib/utils';
 
-/** Public folder URLs (Vite: respect base path). */
+/** Carousel arrows: ορατά ελαφρά στο κινητό, πλήρη fade στο hover (desktop) όπως τα deals */
+const dealsCarouselNavBtnLeft =
+  'absolute top-1/2 -translate-y-1/2 left-0 z-10 w-10 h-10 rounded-full bg-anbit-card/95 backdrop-blur-md border border-anbit-border shadow-lg flex items-center justify-center text-anbit-text opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow hover:shadow-anbit-yellow/20';
+const dealsCarouselNavBtnRight =
+  'absolute top-1/2 -translate-y-1/2 right-0 z-10 w-10 h-10 rounded-full bg-anbit-card/95 backdrop-blur-md border border-anbit-border shadow-lg flex items-center justify-center text-anbit-text opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow hover:shadow-anbit-yellow/20';
+
+/** Βέλη στο μαύρο panel κατηγοριών */
+const categoriesCarouselNavBtnLeft =
+  'absolute top-1/2 -translate-y-1/2 left-1 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-zinc-950/90 text-white shadow-lg shadow-black/40 backdrop-blur-md opacity-90 transition-all duration-300 hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:opacity-100 md:opacity-0 md:group-hover:opacity-100';
+const categoriesCarouselNavBtnRight =
+  'absolute top-1/2 -translate-y-1/2 right-1 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-zinc-950/90 text-white shadow-lg shadow-black/40 backdrop-blur-md opacity-90 transition-all duration-300 hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:opacity-100 md:opacity-0 md:group-hover:opacity-100';
+
+/** Helpers */
 function publicUrl(path: string): string {
   const base = import.meta.env.BASE_URL || '/';
   const p = path.startsWith('/') ? path.slice(1) : path;
@@ -46,496 +59,423 @@ interface NetworkPageProps {
   unlockedMerchantId?: string | null;
 }
 
-type SortOption = 'default' | 'name_asc' | 'name_desc' | 'rating_desc' | 'rating_asc' | 'delivery_asc' | 'min_order_asc';
+type SortOption = 'default' | 'name_asc' | 'rating_desc' | 'delivery_asc' | 'min_order_asc';
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
   { value: 'default', label: 'Προεπιλογή' },
   { value: 'name_asc', label: 'Όνομα Α-Ω' },
-  { value: 'name_desc', label: 'Όνομα Ω-Α' },
-  { value: 'rating_desc', label: 'Βαθμολογία (υψηλή → χαμηλή)' },
-  { value: 'rating_asc', label: 'Βαθμολογία (χαμηλή → υψηλή)' },
-  { value: 'delivery_asc', label: 'Χρόνος παράδοσης (πιο γρήγορα)' },
-  { value: 'min_order_asc', label: 'Ελάχ. παραγγελία (από μικρότερο)' },
+  { value: 'rating_desc', label: 'Βαθμολογία' },
+  { value: 'delivery_asc', label: 'Πιο γρήγορα' },
+  { value: 'min_order_asc', label: 'Ελάχιστη παραγγελία' },
 ];
 
 const NetworkPage: React.FC<NetworkPageProps> = ({
   partners,
   storeXP = {},
-  onOpenQR,
-  onOrderComplete,
-  onOpenStoreMenu,
   onOpenStoreProfile,
   unlockedMerchantId = null,
 }) => {
   const { t } = useLanguage();
   const { theme } = useTheme();
-  const pointsAccentClass = theme === 'dark' ? 'text-white' : 'text-[color:var(--xp-gold,#CA8A04)]';
-  const pointsRowSurfaceClass =
-    theme === 'dark' ? 'bg-white/[0.06] border border-white/15' : 'bg-black/[0.04] border border-black/[0.08]';
   const [filter, setFilter] = useState('All');
-  /** Μοναδική επιλογή στη γραμμή quick categories (πολλά chips μοιράζονται το ίδιο mappedFilter). */
   const [quickSelectionId, setQuickSelectionId] = useState<string | null>(null);
   const [sortBy, setSortBy] = useState<SortOption>('default');
   const [isSortModalOpen, setIsSortModalOpen] = useState(false);
-  const scrollRef = useRef<HTMLDivElement | null>(null);
+
   const categoriesScrollRef = useRef<HTMLDivElement | null>(null);
   const quickCategoriesScrollRef = useRef<HTMLDivElement | null>(null);
+
+  const pointsAccentClass = theme === 'dark' ? 'text-white' : 'text-[#CA8A04]';
 
   const categories = [
     { id: 'All', label: t('all') },
     { id: 'street_food', label: 'Street Food' },
-    { id: 'sandwiches', label: 'Σάντουιτς' },
-    { id: 'brunch', label: 'Brunch' },
-    { id: 'coffee', label: 'καφέ' },
-    { id: 'bar', label: 'μπάρ' },
     { id: 'burger', label: 'Burger' },
-    { id: 'sweets', label: 'Γλυκά' },
-    { id: 'bbq', label: 'BBQ' },
-    { id: 'breakfast', label: 'Πρωινό' },
-    { id: 'italian', label: 'ιταλικό' },
-    { id: 'asian', label: 'Asian' },
+    { id: 'coffee', label: 'Καφέ' },
     { id: 'pizza', label: 'Pizza' },
-    { id: 'crepe', label: 'κρέπα' },
-    { id: 'healthy', label: 'Healthy' },
+    { id: 'italian', label: 'Ιταλικό' },
+    { id: 'sweets', label: 'Γλυκά' },
+    { id: 'brunch', label: 'Brunch' },
     { id: 'pasta', label: 'Ζυμαρικά' },
-    { id: 'bougatsa', label: 'Μπουγάτσα' },
-    { id: 'salads', label: 'Σαλάτες' },
-    { id: 'souvlaki', label: 'Σουβλάκι' },
-    { id: 'cooked', label: 'Μαγειρευτά' },
+    { id: 'healthy', label: 'Healthy' },
+    { id: 'asian', label: 'Asian' },
   ];
 
-  const quickCategories: {
-    id: string;
-    label: string;
-    mappedFilter: PartnerCategory | 'All';
-    image: string;
-    glowClass: string;
-  }[] = [
-    {
-      id: 'q-restaurants',
-      label: 'Εστιατόρια',
-      mappedFilter: 'street_food',
-      image: publicUrl('categories/restaurant.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(34,197,94,0.35)]',
-    },
-    {
-      id: 'q-shopping',
-      label: 'Ψώνια',
-      mappedFilter: 'sandwiches',
-      image: publicUrl('categories/shop.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(34,197,94,0.30)]',
-    },
-    {
-      id: 'q-health',
-      label: 'Υγεία & Ευεξία',
-      mappedFilter: 'healthy',
-      image: publicUrl('categories/gym.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(59,130,246,0.30)]',
-    },
-    {
-      id: 'q-beauty',
-      label: 'Ομορφιά & Φροντίδα',
-      mappedFilter: 'sweets',
-      image: publicUrl('categories/beauty.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(168,85,247,0.30)]',
-    },
-    {
-      id: 'q-drinks',
-      label: 'Ποτά',
-      mappedFilter: 'bar',
-      image: publicUrl('categories/drinks.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(234,179,8,0.32)]',
-    },
-    {
-      id: 'q-baby',
-      label: 'Baby',
-      mappedFilter: 'All',
-      image: publicUrl('categories/baby.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(251,113,133,0.26)]',
-    },
-    {
-      id: 'q-clothes',
-      label: 'Ένδυση',
-      mappedFilter: 'All',
-      image: publicUrl('categories/clothes.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(147,51,234,0.26)]',
-    },
-    {
-      id: 'q-flowers',
-      label: 'Ανθοπωλεία',
-      mappedFilter: 'All',
-      image: publicUrl('categories/flowers.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(244,114,182,0.30)]',
-    },
-    {
-      id: 'q-gifts',
-      label: 'Δώρα',
-      mappedFilter: 'sweets',
-      image: publicUrl('categories/gifts.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(251,191,36,0.30)]',
-    },
-    {
-      id: 'q-hobbie',
-      label: 'Χόμπι',
-      mappedFilter: 'All',
-      image: publicUrl('categories/hobbie.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(20,184,166,0.28)]',
-    },
-    {
-      id: 'q-home',
-      label: 'Σπίτι',
-      mappedFilter: 'All',
-      image: publicUrl('categories/home.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(120,113,108,0.30)]',
-    },
-    {
-      id: 'q-pets',
-      label: 'Είδη Κατοικιδίων',
-      mappedFilter: 'All',
-      image: publicUrl('categories/pets.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(249,115,22,0.28)]',
-    },
-    {
-      id: 'q-stays',
-      label: 'Διαμονή (Airbnb)',
-      mappedFilter: 'All',
-      image: publicUrl('categories/airbnb.gif'),
-      glowClass: 'shadow-[0_0_34px_-14px_rgba(14,165,233,0.30)]',
-    },
+  // ΕΠΑΝΑΦΟΡΑ ΟΛΩΝ ΤΩΝ ΕΠΙΛΟΓΩΝ ΟΠΩΣ ΣΤΗ WOLT
+  const quickCategories = [
+    { id: 'q-restaurants', label: 'Εστιατόρια', mappedFilter: 'street_food', image: publicUrl('categories/restaurant.gif') },
+    { id: 'q-shopping', label: 'Ψώνια', mappedFilter: 'sandwiches', image: publicUrl('categories/shop.gif') },
+    { id: 'q-market', label: 'Διαμονή', mappedFilter: 'All', image: publicUrl('categories/airbnb.gif') },
+    { id: 'q-health', label: 'Υγεία & Ευεξία', mappedFilter: 'healthy', image: publicUrl('categories/gym.gif') },
+    { id: 'q-beauty', label: 'Ομορφιά', mappedFilter: 'sweets', image: publicUrl('categories/beauty.gif') },
+    { id: 'q-drinks', label: 'Ποτά', mappedFilter: 'bar', image: publicUrl('categories/drinks.gif') },
+    { id: 'q-pets', label: 'Κατοικίδια', mappedFilter: 'All', image: publicUrl('categories/pets.gif') },
+    { id: 'q-electronics', label: 'Ηλεκτρονικά', mappedFilter: 'All', image: publicUrl('categories/electronics.gif') },
+    { id: 'q-baby', label: 'Παιδικά', mappedFilter: 'All', image: publicUrl('categories/baby.gif') },
+    { id: 'q-home', label: 'Σπίτι & DIY', mappedFilter: 'All', image: publicUrl('categories/home.gif') },
+    { id: 'q-flowers', label: 'Ανθοπωλεία', mappedFilter: 'All', image: publicUrl('categories/flowers.gif') },
+    { id: 'q-hobbies', label: 'Χόμπι & Αθλητισμός', mappedFilter: 'All', image: publicUrl('categories/hobbie.gif') },
+    { id: 'q-clothes', label: 'Ένδυση', mappedFilter: 'All', image: publicUrl('categories/clothes.gif') },
+    { id: 'q-gifts', label: 'Δώρα', mappedFilter: 'All', image: publicUrl('categories/gifts.gif') },
   ];
-
-  const getCategoryCount = (categoryId: string) =>
-    categoryId === 'All' ? partners.length : partners.filter(p => p.category === categoryId).length;
 
   const scrollStrip = (el: HTMLDivElement | null, dir: 'left' | 'right') => {
     if (!el) return;
-    const maxLeft = Math.max(0, el.scrollWidth - el.clientWidth);
-    if (maxLeft <= 0) return;
-    const step = Math.min(Math.max(el.clientWidth * 0.88, 280), maxLeft);
-    const next =
-      dir === 'right' ? Math.min(el.scrollLeft + step, maxLeft) : Math.max(el.scrollLeft - step, 0);
-    el.scrollTo({ left: next, behavior: 'smooth' });
+    const step = el.clientWidth * 0.8;
+    el.scrollTo({ left: dir === 'right' ? el.scrollLeft + step : el.scrollLeft - step, behavior: 'smooth' });
   };
 
-  const scrollCategories = (dir: 'left' | 'right') => scrollStrip(categoriesScrollRef.current, dir);
-  const scrollQuickCategories = (dir: 'left' | 'right') => scrollStrip(quickCategoriesScrollRef.current, dir);
-
-  const filteredPartners = filter === 'All'
-    ? partners
-    : partners.filter(p => p.category === filter);
+  const filteredPartners = filter === 'All' ? partners : partners.filter(p => p.category === filter);
 
   const sortedPartners = useMemo(() => {
     const list = [...filteredPartners];
-    if (sortBy === 'default') return list;
-    if (sortBy === 'name_asc') return list.sort((a, b) => a.name.localeCompare(b.name));
-    if (sortBy === 'name_desc') return list.sort((a, b) => b.name.localeCompare(a.name));
     if (sortBy === 'rating_desc') return list.sort((a, b) => b.rating - a.rating);
-    if (sortBy === 'rating_asc') return list.sort((a, b) => a.rating - b.rating);
     if (sortBy === 'delivery_asc') {
       const parseMins = (s: string | undefined) => {
-        if (!s || s === '—') return 9999;
-        const m = s.match(/(\d+)/);
+        const m = s?.match(/(\d+)/);
         return m ? parseInt(m[1], 10) : 9999;
       };
       return list.sort((a, b) => parseMins(a.deliveryTime) - parseMins(b.deliveryTime));
     }
-    if (sortBy === 'min_order_asc') {
-      const parseEuro = (s: string | undefined) => {
-        if (!s || s === '—') return 9999;
-        const n = parseFloat(s.replace(/[^\d,.]/g, '').replace(',', '.'));
-        return isNaN(n) ? 9999 : n;
-      };
-      return list.sort((a, b) => parseEuro(a.minOrder) - parseEuro(b.minOrder));
-    }
     return list;
   }, [filteredPartners, sortBy]);
 
-  return (
-    <motion.div
-      className="min-w-0 space-y-8 lg:space-y-12"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
-    >
-      <section className="min-w-0 space-y-4 lg:space-y-6">
-        <div className="min-w-0 space-y-3">
-          <div className="relative flex items-center justify-center">
-            <h2 className="anbit-wordmark w-full text-center font-anbit text-anbit-text text-2xl sm:text-3xl lg:text-4xl leading-tight">
-              Thessaloniki Partner Network
-            </h2>
-            <div className="absolute right-0 top-1/2 flex -translate-y-1/2 items-center gap-2">
-              <button
-                type="button"
-                onClick={() => scrollQuickCategories('left')}
-                className="w-8 h-8 rounded-full bg-anbit-card border border-anbit-border flex items-center justify-center text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow transition-colors"
-                aria-label="Προηγούμενες κατηγορίες"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollQuickCategories('right')}
-                className="w-8 h-8 rounded-full bg-anbit-card border border-anbit-border flex items-center justify-center text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow transition-colors"
-                aria-label="Επόμενες κατηγορίες"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-          </div>
+  const getCategoryCount = (id: string) => id === 'All' ? partners.length : partners.filter(p => p.category === id).length;
 
+  /** Ετικέτα για το header «Κατηγορίες»: πρώτα από quick strip, αλλιώς από επιλεγμένη κάρτα κατηγορίας */
+  const categoriesContextLabel =
+    (quickSelectionId ? quickCategories.find((q) => q.id === quickSelectionId)?.label : null) ||
+    (filter !== 'All' ? categories.find((c) => c.id === filter)?.label : null) ||
+    null;
+
+  return (
+    <motion.div className="min-w-0 space-y-8 md:space-y-10 pb-28" initial="hidden" animate="visible" variants={containerVariants}>
+
+      {/* Γρήγορες επιλογές */}
+      <motion.section variants={itemVariants} className="space-y-4">
+        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h2 className="section-title text-anbit-text text-lg lg:text-xl">Γρήγορες επιλογές</h2>
+            <p className="mt-1 text-xs text-anbit-muted">Πρόσβαση ανά τύπο υπηρεσίας — σύρε οριζόντια</p>
+          </div>
+        </div>
+        <div className="relative w-full min-w-0 group">
+          <button
+            type="button"
+            onClick={() => scrollStrip(quickCategoriesScrollRef.current, 'left')}
+            className={dealsCarouselNavBtnLeft}
+            aria-label="Προηγούμενο"
+          >
+            <ChevronLeft className="w-6 h-6" />
+          </button>
           <div
             ref={quickCategoriesScrollRef}
-            className="flex w-full min-w-0 flex-nowrap justify-start gap-4 overflow-x-auto overflow-y-visible anbit-tabs-scrollbar pb-2 pl-0 pr-4 sm:pr-6 scroll-smooth"
+            className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory scroll-smooth"
           >
-            {quickCategories.map((qc, qcIndex) => {
+            {quickCategories.map((qc) => {
               const isActive = quickSelectionId === qc.id;
-              const count = getCategoryCount(qc.mappedFilter);
               return (
-                <button
+                <motion.button
                   key={qc.id}
                   type="button"
-                  onClick={() => {
-                    setQuickSelectionId(qc.id);
-                    setFilter(qc.mappedFilter);
-                  }}
-                  className={`group shrink-0 w-[122px] sm:w-[140px] ${qc.glowClass} transition-all duration-300 ${isActive ? 'scale-[1.02]' : ''
-                    }`}
+                  onClick={() => { setQuickSelectionId(qc.id); setFilter(qc.mappedFilter); }}
+                  whileHover={{ y: -6 }}
+                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                  className={cn(
+                    'group relative flex-shrink-0 w-[240px] sm:w-[260px] rounded-2xl overflow-hidden snap-start border-2 border-transparent bg-anbit-card text-left shadow-lg shadow-black/30 transition-all duration-300 outline-none focus:outline-none focus-visible:outline-none',
+                    isActive
+                      ? 'border-white ring-2 ring-white/30 shadow-xl shadow-black/40'
+                      : 'hover:shadow-xl hover:shadow-black/35',
+                  )}
                 >
-                  <div
-                    className={`overflow-hidden rounded-xl border ${isActive ? 'border-anbit-yellow' : 'border-anbit-border'
-                      } bg-[#0a0a0a]`}
-                  >
-                    <div className="relative aspect-square overflow-hidden bg-[#0a0a0a]">
-                      <img
-                        src={qc.image}
-                        alt=""
-                        loading={qcIndex < 8 ? 'eager' : 'lazy'}
-                        decoding="async"
-                        className="absolute inset-0 h-full w-full object-cover object-center transition-transform duration-500 group-hover:scale-105"
-                      />
-                      <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-black/25 via-transparent to-transparent" />
-                    </div>
+                  <div className="relative h-[158px] sm:h-[168px] w-full overflow-hidden bg-anbit-border">
+                    <img
+                      src={qc.image}
+                      alt=""
+                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-90" />
                   </div>
-                  <div className="pt-2 text-center">
-                    <p className="text-sm font-greek-bold text-anbit-text leading-tight line-clamp-2">{qc.label}</p>
-                    <p className="text-[11px] text-anbit-muted">{count} διαθέσιμα</p>
+                  <div className="relative border-t border-anbit-border/25 bg-anbit-card p-4">
+                    <p className="text-sm font-bold leading-tight text-anbit-text line-clamp-2 sm:text-base">{qc.label}</p>
                   </div>
-                </button>
+                </motion.button>
               );
             })}
           </div>
+          <button
+            type="button"
+            onClick={() => scrollStrip(quickCategoriesScrollRef.current, 'right')}
+            className={dealsCarouselNavBtnRight}
+            aria-label="Επόμενο"
+          >
+            <ChevronRight className="w-6 h-6" />
+          </button>
         </div>
+      </motion.section>
 
-        <div className="flex flex-wrap items-center justify-end gap-3">
-          <div className="flex items-center gap-2">
-            <span className="font-greek text-base lg:text-lg font-greek-bold text-anbit-muted">Ταξινόμηση</span>
+      {/* Κατηγορίες — μαύρο panel, refined typography & cards */}
+      <motion.section variants={itemVariants} className="min-w-0">
+        <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-zinc-950 via-black to-black shadow-2xl shadow-black/60 ring-1 ring-white/[0.04] sm:rounded-3xl">
+          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-anbit-yellow/35 to-transparent sm:inset-x-12" />
+
+          <div className="relative border-b border-white/[0.07] px-5 pb-5 pt-6 text-left sm:px-7 sm:pb-6 sm:pt-7">
+            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
+              <div className="min-w-0 w-full space-y-2">
+                {categoriesContextLabel && (
+                  <p className="font-greek-bold text-base leading-none tracking-tight text-[#e63533] sm:text-lg">
+                    {categoriesContextLabel}
+                  </p>
+                )}
+                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-anbit-yellow/90">Φίλτρα</p>
+                <div className="flex flex-wrap items-center justify-start gap-2.5">
+                  <h2 className="font-greek-bold text-xl tracking-tight text-white sm:text-2xl">Κατηγορίες</h2>
+                  <span
+                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-neutral-400 transition-colors hover:bg-white/[0.12] hover:text-white"
+                    title="Φίλτρο λίστας καταστημάτων"
+                  >
+                    <Info className="h-3.5 w-3.5" aria-hidden />
+                  </span>
+                </div>
+                <p className="max-w-md text-left text-[13px] leading-relaxed text-neutral-500 sm:text-sm">
+                  Διάλεξε τύπο κουζίνας — η λίστα καταστημάτων ενημερώνεται αμέσως. Σύρε για περισσότερες.
+                </p>
+              </div>
+              {filter !== 'All' && (
+                <button
+                  type="button"
+                  onClick={() => {
+                    setFilter('All');
+                    setQuickSelectionId(null);
+                  }}
+                  className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-xs font-bold text-white/90 backdrop-blur-sm transition-all hover:border-anbit-yellow/50 hover:bg-anbit-yellow/10 hover:text-anbit-yellow sm:self-auto"
+                >
+                  <RotateCcw className="h-3.5 w-3.5 opacity-80" aria-hidden />
+                  Όλα τα καταστήματα
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="relative w-full min-w-0 bg-black/40 px-1 pb-5 pt-4 group sm:px-2 sm:pb-6 sm:pt-5">
+            <div className="pointer-events-none absolute inset-y-4 left-0 z-[8] w-8 bg-gradient-to-r from-black via-black/80 to-transparent sm:inset-y-5 sm:w-12" />
+            <div className="pointer-events-none absolute inset-y-4 right-0 z-[8] w-8 bg-gradient-to-l from-black via-black/80 to-transparent sm:inset-y-5 sm:w-12" />
+
             <button
               type="button"
-              onClick={() => setIsSortModalOpen(true)}
-              className="flex items-center gap-2 px-3 py-2 rounded-xl border border-anbit-border bg-anbit-card text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow transition-colors"
-              aria-label="Ταξινόμηση"
+              onClick={() => scrollStrip(categoriesScrollRef.current, 'left')}
+              className={categoriesCarouselNavBtnLeft}
+              aria-label="Προηγούμενο"
             >
-              <SlidersHorizontal className="w-4 h-4" />
-              <span className="font-greek text-sm font-greek-bold hidden sm:inline max-w-[140px] truncate">{SORT_OPTIONS.find(o => o.value === sortBy)?.label ?? 'Προεπιλογή'}</span>
+              <ChevronLeft className="h-5 w-5" />
+            </button>
+            <div
+              ref={categoriesScrollRef}
+              className="flex snap-x snap-mandatory scroll-smooth gap-3.5 overflow-x-auto px-3 pb-1 pt-1 no-scrollbar sm:gap-4 sm:px-5"
+            >
+              {categories.map((cat) => {
+                const count = getCategoryCount(cat.id);
+                const isActive = filter === cat.id;
+                const catImg = CATEGORY_IMAGES[cat.id] ?? CATEGORY_IMAGES.All;
+                const storeWord = count === 1 ? 'κατάστημα' : 'καταστήματα';
+                return (
+                  <motion.button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setQuickSelectionId(null);
+                      setFilter(cat.id);
+                    }}
+                    whileHover={{ y: -4 }}
+                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                    className={cn(
+                      'group relative h-[236px] w-[158px] shrink-0 snap-start overflow-hidden rounded-[1.25rem] border-2 text-left transition-all duration-300 sm:h-[258px] sm:w-[178px]',
+                      isActive
+                        ? 'border-anbit-yellow shadow-[0_0_0_1px_rgba(234,179,8,0.15),0_22px_48px_-14px_rgba(0,0,0,0.9)] ring-2 ring-anbit-yellow/25'
+                        : 'border-transparent shadow-xl shadow-black/70 ring-1 ring-inset ring-white/[0.06] hover:ring-white/[0.14] hover:shadow-2xl',
+                    )}
+                  >
+                    <img
+                      src={catImg}
+                      alt=""
+                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/5" />
+                    {isActive && (
+                      <div className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-anbit-yellow text-anbit-yellow-content shadow-lg ring-2 ring-black/40">
+                        <Check className="h-4 w-4" strokeWidth={2.8} aria-hidden />
+                      </div>
+                    )}
+                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-stretch p-3.5 text-left sm:p-4">
+                      <p className="w-full font-greek-bold text-[15px] leading-snug tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] line-clamp-2 sm:text-[17px]">
+                        {cat.label}
+                      </p>
+                      <span
+                        className={cn(
+                          'mt-2.5 inline-flex max-w-full self-start rounded-lg px-2.5 py-1 text-left text-[11px] font-semibold leading-none backdrop-blur-md',
+                          count > 0 ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70',
+                        )}
+                      >
+                        {count} {storeWord}
+                      </span>
+                    </div>
+                  </motion.button>
+                );
+              })}
+            </div>
+            <button
+              type="button"
+              onClick={() => scrollStrip(categoriesScrollRef.current, 'right')}
+              className={categoriesCarouselNavBtnRight}
+              aria-label="Επόμενο"
+            >
+              <ChevronRight className="h-5 w-5" />
             </button>
           </div>
         </div>
+      </motion.section>
 
-        {/* Κατηγορίες – horizontal cards με εικόνα + πλήθος καταστημάτων */}
-        <div className="space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h3 className="text-xl font-greek-bold text-anbit-text">Κατηγορίες</h3>
-              <button type="button" className="w-5 h-5 rounded-full border border-anbit-border flex items-center justify-center text-anbit-muted hover:text-anbit-text" aria-label="Πληροφορίες">
-                <Info className="w-3 h-3" />
-              </button>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                type="button"
-                onClick={() => scrollCategories('left')}
-                className="w-9 h-9 rounded-full bg-anbit-card border border-anbit-border flex items-center justify-center text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow transition-colors"
-                aria-label="Προηγούμενες"
-              >
-                <ChevronLeft className="w-5 h-5" />
-              </button>
-              <button
-                type="button"
-                onClick={() => scrollCategories('right')}
-                className="w-9 h-9 rounded-full bg-anbit-card border border-anbit-border flex items-center justify-center text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow transition-colors"
-                aria-label="Επόμενες"
-              >
-                <ChevronRight className="w-5 h-5" />
-              </button>
-            </div>
+      {/* Καταστήματα */}
+      <motion.section variants={itemVariants} className="space-y-5 font-greek">
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('partnerStores')}</h2>
+            <p className="mt-1 text-xs text-anbit-muted">
+              {sortedPartners.length} {sortedPartners.length === 1 ? 'αποτέλεσμα' : 'αποτελέσματα'}
+              {filter !== 'All' && (
+                <span className="text-anbit-text/80"> · φίλτρο ενεργό</span>
+              )}
+            </p>
           </div>
-          <div
-            ref={categoriesScrollRef}
-            className="flex w-full min-w-0 flex-nowrap gap-5 overflow-x-auto anbit-tabs-scrollbar pb-2 pl-0 pr-4 sm:pr-6 scroll-smooth"
+          <button
+            type="button"
+            onClick={() => setIsSortModalOpen(true)}
+            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-transparent bg-anbit-card px-4 py-2.5 text-xs font-bold tracking-wide text-anbit-text shadow-md shadow-black/25 transition-all hover:bg-white/[0.06] sm:self-auto"
           >
-            {categories.map((cat) => {
-              const count = getCategoryCount(cat.id);
-              const isActive = filter === cat.id;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setQuickSelectionId(null);
-                    setFilter(cat.id);
-                  }}
-                  className={`flex-shrink-0 w-[200px] sm:w-[220px] rounded-2xl overflow-hidden border-2 transition-all shadow-lg ${isActive ? 'border-anbit-yellow ring-2 ring-anbit-yellow/30' : 'border-anbit-border hover:border-anbit-muted'
-                    }`}
-                >
-                  <div className="aspect-square overflow-hidden bg-anbit-border">
-                    <img
-                      src={CATEGORY_IMAGES[cat.id] ?? CATEGORY_IMAGES.All}
-                      alt=""
-                      className="w-full h-full object-cover rounded-t-[14px]"
-                    />
-                  </div>
-                  <div className="bg-anbit-card px-4 py-3 text-left font-greek">
-                    <p className="text-lg font-greek-bold text-anbit-text leading-tight truncate">
-                      {cat.label}
-                    </p>
-                    <p className="text-sm font-semibold text-anbit-muted mt-1">
-                      {count} {count === 1 ? 'κατάστημα' : 'καταστήματα'}
-                    </p>
-                  </div>
-                </button>
-              );
-            })}
-          </div>
+            <SlidersHorizontal className="h-4 w-4 text-anbit-yellow" />
+            Ταξινόμηση
+          </button>
         </div>
-      </section>
 
-      <section className="space-y-4 lg:space-y-6 font-greek">
-        <h2 className="section-title font-greek-bold text-anbit-text text-xl lg:text-2xl px-1">
-          {t('partnerStores')}
-        </h2>
-        <div ref={scrollRef} className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 lg:gap-5">
-          {sortedPartners.map((partner) => {
-            const isUnlocked =
-              !!unlockedMerchantId &&
-              unlockedMerchantId.toLowerCase() === partner.id.toLowerCase();
-            return (
-              <motion.div
-                key={partner.id}
-                variants={itemVariants}
-                className={`rounded-xl overflow-hidden border border-anbit-border bg-anbit-card shadow-md flex flex-col ${isUnlocked ? '' : 'opacity-80'
-                  }`}
-              >
-                {/* Εικόνα με badges */}
-                <div className="relative aspect-[4/3] overflow-hidden">
-                  <img src={partner.image} alt={partner.name} className="w-full h-full object-cover transition-transform duration-300 hover:scale-105" />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-transparent to-transparent" />
-                  <div className="absolute top-1.5 left-1.5 flex flex-col gap-1">
-                    {partner.bonusXp && (
-                      <span className="inline-flex items-center gap-0.5 bg-sky-500/90 text-white px-1.5 py-0.5 rounded text-[9px] font-bold shadow">
-                        <Zap className="w-2.5 h-2.5" /> +{partner.bonusXp}%
-                      </span>
-                    )}
-                    {partner.minOrder && partner.minOrder !== '—' && (
-                      <span className="bg-emerald-600/90 text-white px-1.5 py-0.5 rounded text-[8px] font-bold shadow leading-tight">
-                        ΕΛΑΧ. {partner.minOrder}
-                      </span>
-                    )}
-                  </div>
-                  {partner.deliveryTime && partner.deliveryTime !== '—' && (
-                    <div className="absolute top-1.5 right-1.5 bg-sky-500/90 text-white px-2 py-0.5 rounded text-[9px] font-bold shadow">
-                      {partner.deliveryTime}
-                    </div>
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 xl:grid-cols-4">
+          {sortedPartners.map((partner) => (
+            <motion.div
+              key={partner.id}
+              variants={itemVariants}
+              className="group cursor-pointer overflow-hidden rounded-2xl border border-transparent bg-anbit-card shadow-md shadow-black/25 transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl hover:shadow-black/35"
+              onClick={() => onOpenStoreProfile(partner)}
+            >
+              <div className="relative aspect-[2/1] w-full overflow-hidden">
+                <img
+                  src={partner.image}
+                  alt={partner.name}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-transparent to-transparent opacity-90" />
+                <div className="absolute left-3 top-3 flex flex-col gap-1">
+                  {partner.bonusXp && (
+                    <span className="rounded-md bg-sky-500 px-2 py-0.5 text-[9px] font-black text-white shadow-lg">
+                      -{partner.bonusXp}% XP
+                    </span>
                   )}
                 </div>
-                {/* Πληροφορίες – μεγαλύτερα, bold, ευανάγνωστα */}
-                <div className="p-3 flex-1 flex flex-col min-w-0 font-greek">
-                  <h3 className="text-base lg:text-lg font-greek-bold text-anbit-text leading-tight line-clamp-2 mb-1">
-                    {partner.name}
-                  </h3>
-                  <p className="text-xs lg:text-sm font-semibold text-anbit-muted leading-snug line-clamp-1 mb-2">
-                    {categories.find(c => c.id === partner.category)?.label ?? partner.category} · {partner.location}
-                  </p>
-                  {/* Γραμμή: delivery · τιμές · rating */}
-                  <div className="flex items-center gap-2 text-xs font-semibold text-anbit-muted mb-2">
-                    <span className="flex items-center gap-0.5">
-                      <Truck className="w-3.5 h-3.5" />
-                      {partner.minOrder && partner.minOrder !== '—' ? partner.minOrder : '—'}
-                    </span>
-                    <span className="text-anbit-text">€€</span>
-                    <span className="flex items-center gap-0.5 font-bold text-anbit-text">
-                      <Star className="w-3.5 h-3.5 text-amber-400 fill-amber-400" />
-                      {partner.rating.toFixed(1)}
-                    </span>
+                {partner.deliveryTime && (
+                  <div className="absolute bottom-3 right-3 rounded-md bg-white/95 px-2 py-1 text-[9px] font-bold text-neutral-900 shadow-md backdrop-blur-sm">
+                    {partner.deliveryTime}
                   </div>
-                  {/* XP στο κατάστημα */}
-                  <div className={`flex items-center gap-1.5 py-1.5 px-2.5 rounded-md mb-2 ${pointsRowSurfaceClass}`}>
-                    <Zap className={`w-3.5 h-3.5 shrink-0 ${pointsAccentClass}`} />
-                    <span className="text-xs font-bold text-anbit-text truncate">{t('pointsAtStore')}</span>
-                    <span className={`text-sm font-black ml-auto anbit-tabular-nums ${pointsAccentClass}`}>
-                      {(storeXP[partner.id] ?? 0).toLocaleString()}
-                    </span>
-                  </div>
-                  {/* Κουμπιά Παραγγελία / Προφίλ καταστήματος */}
-                  <div className="grid grid-cols-2 gap-2 mt-auto">
-                    <button
-                      onClick={() => onOpenStoreMenu(partner)}
-                      disabled={!isUnlocked}
-                      className={`py-2.5 rounded-lg font-greek-bold text-sm tracking-wide border transition-all ${isUnlocked
-                          ? 'bg-anbit-card border-anbit-border text-anbit-text hover:bg-anbit-yellow hover:text-anbit-yellow-content'
-                          : 'bg-anbit-border/50 border-anbit-border text-anbit-muted cursor-not-allowed'
-                        }`}
-                      title={isUnlocked ? t('orderBtn') : 'Κλειδωμένο: χρειάζεται scan QR/NFC για αυτό το κατάστημα'}
-                    >
-                      {isUnlocked ? t('orderBtn') : `${t('orderBtn')} (Locked)`}
-                    </button>
-                    <button
-                      onClick={() => onOpenStoreProfile(partner)}
-                      className="py-2.5 rounded-lg font-greek-bold text-sm tracking-wide bg-anbit-yellow text-anbit-yellow-content hover:opacity-90 transition-all"
-                    >
-                      Προφίλ
-                    </button>
+                )}
+              </div>
+
+              <div className="space-y-2 p-4">
+                <div className="flex items-start justify-between gap-2">
+                  <h3 className="line-clamp-2 text-[15px] font-greek-bold leading-snug text-anbit-text">{partner.name}</h3>
+                  <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-amber-400/15 px-2 py-0.5">
+                    <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
+                    <span className="text-[11px] font-bold text-anbit-text">{partner.rating.toFixed(1)}</span>
                   </div>
                 </div>
-              </motion.div>
-            );
-          })}
+                <p className="line-clamp-1 text-[11px] font-medium text-anbit-muted">
+                  {partner.category} · {partner.location}
+                </p>
+                <div className="flex items-center justify-between border-t border-anbit-border/50 pt-3">
+                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-anbit-muted">
+                    <Truck className="h-3.5 w-3.5 opacity-80" />
+                    {partner.minOrder !== '—' ? partner.minOrder : '0,00€'}
+                  </div>
+                  <div
+                    className={cn(
+                      'flex items-center gap-1 rounded-full border border-transparent px-2.5 py-1 text-[10px] font-black',
+                      theme === 'dark' ? 'bg-white/[0.08]' : 'bg-anbit-border/15',
+                    )}
+                  >
+                    <Zap className={cn('h-3 w-3', pointsAccentClass)} />
+                    <span className={pointsAccentClass}>{(storeXP[partner.id] ?? 0).toLocaleString()} XP</span>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+          ))}
         </div>
-      </section>
+      </motion.section>
 
-      <section className="dashboard-card h-64 lg:h-80 relative overflow-hidden flex items-center justify-center group">
-        <div className="absolute inset-0 opacity-10 grayscale group-hover:grayscale-0 group-hover:scale-105 transition-all duration-1000" style={{ backgroundImage: 'url(https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&q=80&w=1200)', backgroundSize: 'cover', backgroundPosition: 'center' }} />
-        <div className="relative z-10 text-center space-y-4 p-8 bg-anbit-bg/60 backdrop-blur-lg border border-anbit-border rounded-3xl max-w-lg">
-          <MapPin className="w-10 h-10 text-anbit-yellow mx-auto" />
-          <h2 className="section-title text-anbit-text text-lg">{t('battleMap')}</h2>
-          <button className="bg-anbit-yellow text-anbit-yellow-content px-8 py-3 rounded-xl font-semibold text-xs tracking-wide hover:opacity-90 transition-all">{t('launchMap')}</button>
+      {/* Χάρτης */}
+      <motion.section
+        variants={itemVariants}
+        className="group relative flex min-h-[17rem] items-center justify-center overflow-hidden rounded-2xl border border-transparent shadow-xl shadow-black/35 sm:min-h-[19rem] sm:rounded-3xl"
+      >
+        <div
+          className="absolute inset-0 scale-105 bg-cover bg-center transition-transform duration-[1.4s] ease-out group-hover:scale-100"
+          style={{
+            backgroundImage:
+              'url(https://images.unsplash.com/photo-1526772662000-3f88f10405ff?auto=format&fit=crop&q=80&w=1600)',
+          }}
+        />
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0a0a0a]/92 via-[#0a0a0a]/75 to-anbit-yellow/10" />
+        <div className="relative z-10 mx-4 w-full max-w-md rounded-2xl border border-transparent bg-black/50 p-8 text-center shadow-2xl backdrop-blur-xl sm:p-10">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-anbit-yellow/15 ring-1 ring-anbit-yellow/30">
+            <MapPin className="h-6 w-6 text-anbit-yellow" />
+          </div>
+          <h2 className="mb-2 font-greek-bold text-lg text-anbit-text sm:text-xl">{t('battleMap')}</h2>
+          <p className="mb-6 text-xs leading-relaxed text-anbit-muted">Δες συνεργάτες γύρω σου στον χάρτη μάχης.</p>
+          <button
+            type="button"
+            className="rounded-xl bg-anbit-yellow px-8 py-3 text-xs font-bold text-anbit-yellow-content shadow-lg shadow-anbit-yellow/25 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+          >
+            {t('launchMap')}
+          </button>
         </div>
-      </section>
+      </motion.section>
 
       {/* Modal ταξινόμησης */}
       {isSortModalOpen && (
-        <div
-          className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm"
+        <motion.div
+          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/70 p-4 backdrop-blur-md"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
           onClick={() => setIsSortModalOpen(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="sort-modal-title"
         >
-          <div
-            className="bg-anbit-card border border-anbit-border rounded-2xl shadow-xl max-w-sm w-full max-h-[80vh] overflow-hidden"
+          <motion.div
+            className="w-full max-w-sm overflow-hidden rounded-3xl border border-transparent bg-anbit-card shadow-2xl shadow-black/50"
+            initial={{ opacity: 0, scale: 0.94, y: 12 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            transition={{ type: 'spring', stiffness: 320, damping: 28 }}
             onClick={(e) => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between px-4 py-3 border-b border-anbit-border">
-              <h3 id="sort-modal-title" className="font-greek text-lg font-greek-bold text-anbit-text">Ταξινόμηση</h3>
-              <button
-                type="button"
-                onClick={() => setIsSortModalOpen(false)}
-                className="p-2 rounded-lg text-anbit-muted hover:text-anbit-text hover:bg-anbit-border transition-colors"
-                aria-label="Κλείσιμο"
-              >
-                <X className="w-5 h-5" />
-              </button>
+            <div className="border-b border-anbit-border/20 bg-white/[0.02] px-5 py-4">
+              <div className="flex items-center justify-between">
+                <h3 className="font-greek-bold text-base text-anbit-text">Ταξινόμηση</h3>
+                <button
+                  type="button"
+                  onClick={() => setIsSortModalOpen(false)}
+                  className="rounded-lg p-1.5 text-anbit-muted transition-colors hover:bg-white/5 hover:text-anbit-text"
+                  aria-label="Κλείσιμο"
+                >
+                  <X className="h-5 w-5" />
+                </button>
+              </div>
+              <p className="mt-1 text-xs text-anbit-muted">Διάλεξε πώς να ταξινομούνται τα καταστήματα</p>
             </div>
-            <div className="p-2 overflow-y-auto max-h-[60vh]">
+            <div className="space-y-1.5 p-4">
               {SORT_OPTIONS.map((opt) => (
                 <button
                   key={opt.value}
@@ -544,19 +484,20 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                     setSortBy(opt.value);
                     setIsSortModalOpen(false);
                   }}
-                  className={`w-full text-left px-4 py-3 rounded-xl font-greek text-base font-semibold transition-colors ${sortBy === opt.value
-                      ? 'bg-anbit-yellow/20 text-anbit-yellow border border-anbit-yellow/40'
-                      : 'text-anbit-text hover:bg-anbit-border border border-transparent'
-                    }`}
+                  className={cn(
+                    'w-full rounded-xl px-4 py-3.5 text-left text-sm font-bold transition-colors',
+                    sortBy === opt.value
+                      ? 'bg-anbit-yellow text-anbit-yellow-content shadow-md shadow-anbit-yellow/20'
+                      : 'text-anbit-text hover:bg-white/[0.06]',
+                  )}
                 >
                   {opt.label}
                 </button>
               ))}
             </div>
-          </div>
-        </div>
+          </motion.div>
+        </motion.div>
       )}
-
     </motion.div>
   );
 };
