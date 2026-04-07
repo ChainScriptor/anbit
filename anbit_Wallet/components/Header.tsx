@@ -107,7 +107,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                             className={itemClass}
                           >
                             <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
-                            <span className="font-greek font-greek-bold text-sm">{t(item.labelKey)}</span>
+                            <span className="text-sm font-semibold">{t(item.labelKey)}</span>
                           </button>
                         );
                       }
@@ -121,7 +121,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                           className={itemClass}
                         >
                           <Icon className={`w-5 h-5 lg:w-6 lg:h-6 ${isActive ? "text-anbit-bg" : ""}`} />
-                          <span className="font-greek font-greek-bold text-sm">{t(item.labelKey)}</span>
+                          <span className="text-sm font-semibold">{t(item.labelKey)}</span>
                         </NavLink>
                       );
                     })}
@@ -131,7 +131,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                     <div className="px-3 py-1">
                       <div className="flex items-center gap-3">
                         <LanguageSelector />
-                        <span className="font-greek font-greek-bold text-sm text-anbit-text">{t("languageSelection")}</span>
+                        <span className="text-sm font-semibold text-anbit-text">{t("languageSelection")}</span>
                       </div>
                     </div>
 
@@ -146,7 +146,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       aria-label={theme === "dark" ? "Light mode" : "Dark mode"}
                     >
                       {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-                      <span className="font-greek font-greek-bold text-sm">{theme === "dark" ? "Light" : "Dark"}</span>
+                      <span className="text-sm font-semibold">{theme === "dark" ? "Light" : "Dark"}</span>
                     </button>
 
                     {isAuthenticated ? (
@@ -162,7 +162,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                           aria-label={t("logout")}
                         >
                           <LogOut className="w-5 h-5" />
-                          <span className="font-greek font-greek-bold text-sm">{t("logout")}</span>
+                          <span className="text-sm font-semibold">{t("logout")}</span>
                         </button>
                       </>
                     ) : (
@@ -176,7 +176,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                           }}
                           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-anbit-border bg-anbit-card text-anbit-muted hover:text-anbit-yellow hover:bg-anbit-border/40 transition-colors"
                         >
-                          <span className="font-greek font-greek-bold text-sm">Σύνδεση</span>
+                          <span className="text-sm font-semibold">Σύνδεση</span>
                         </button>
                         <button
                           type="button"
@@ -187,7 +187,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                           }}
                           className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-anbit-yellow text-anbit-yellow-content rounded-lg hover:opacity-90 transition-opacity"
                         >
-                          <span className="font-greek font-greek-bold text-sm">Εγγραφή</span>
+                          <span className="text-sm font-semibold">Εγγραφή</span>
                         </button>
                       </>
                     )}
@@ -212,7 +212,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 className={`w-6 h-6 lg:w-8 lg:h-8 shrink-0 ${theme === 'dark' ? 'text-white' : 'text-anbit-yellow'}`}
                 strokeWidth={2}
               />
-              <span className="font-greek text-sm lg:text-base font-greek-bold max-w-[120px] truncate">{city.labelEl}</span>
+              <span className="text-sm font-semibold lg:text-base max-w-[120px] truncate">{city.labelEl}</span>
               <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${cityModalOpen ? 'rotate-180' : ''}`} />
             </button>
           </div>
@@ -230,7 +230,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                     className="nav-hover-card pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-48 -translate-x-1/2 rounded-lg border border-anbit-border bg-anbit-card px-4 py-3 shadow-lg outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
                     style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                   >
-                    <p className="nav-hover-card-text text-center text-sm font-greek-bold text-anbit-text">
+                    <p className="nav-hover-card-text text-center text-sm font-semibold text-anbit-text">
                       {t(item.labelKey)}
                     </p>
                   </div>
@@ -307,7 +307,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                   aria-label={t('logout')}
                 >
                   <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
-                  <span className="font-greek text-lg font-greek-bold tracking-tight normal-case hidden sm:inline">{t('logout')}</span>
+                  <span className="text-lg font-semibold tracking-tight normal-case hidden sm:inline">{t('logout')}</span>
                 </button>
               </>
             ) : (
@@ -322,14 +322,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <button
                   type="button"
                   onClick={() => onOpenLogin?.()}
-                  className="font-greek px-4 py-2 text-lg font-greek-bold text-anbit-text hover:text-anbit-yellow transition-colors"
+                  className="px-4 py-2 text-lg font-semibold text-anbit-text hover:text-anbit-yellow transition-colors"
                 >
                   Σύνδεση
                 </button>
                 <button
                   type="button"
                   onClick={onOpenRegister}
-                  className="font-greek px-4 py-2.5 text-lg font-greek-bold bg-anbit-yellow text-anbit-yellow-content rounded-lg hover:opacity-90 transition-opacity"
+                  className="px-4 py-2.5 text-lg font-semibold bg-anbit-yellow text-anbit-yellow-content rounded-lg hover:opacity-90 transition-opacity"
                 >
                   Εγγραφή
                 </button>

@@ -229,7 +229,7 @@ export const NotificationPopover = ({
               )}
               style={{ backgroundColor: 'var(--anbit-card)' }}
             >
-              <h3 className="text-sm font-semibold font-greek text-anbit-text">{title}</h3>
+              <h3 className="text-sm font-semibold text-anbit-text">{title}</h3>
               <Button
                 type="button"
                 onClick={markAllAsRead}

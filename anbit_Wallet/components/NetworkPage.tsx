@@ -1,23 +1,20 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { Check, MapPin, RotateCcw, Star, Truck, Zap, ChevronLeft, ChevronRight, Info, SlidersHorizontal, X } from 'lucide-react';
+import { MapPin, RotateCcw, Star, Truck, Zap, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
 import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '@/lib/utils';
 
+/** Ίδιο secondary copy με QuestsPage (`questMuted`) */
+const networkQuestMuted = 'text-[#b0b0b0]';
+
 /** Carousel arrows: ορατά ελαφρά στο κινητό, πλήρη fade στο hover (desktop) όπως τα deals */
 const dealsCarouselNavBtnLeft =
   'absolute top-1/2 -translate-y-1/2 left-0 z-10 w-10 h-10 rounded-full bg-anbit-card/95 backdrop-blur-md border border-anbit-border shadow-lg flex items-center justify-center text-anbit-text opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow hover:shadow-anbit-yellow/20';
 const dealsCarouselNavBtnRight =
   'absolute top-1/2 -translate-y-1/2 right-0 z-10 w-10 h-10 rounded-full bg-anbit-card/95 backdrop-blur-md border border-anbit-border shadow-lg flex items-center justify-center text-anbit-text opacity-80 hover:opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-all duration-300 hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow hover:shadow-anbit-yellow/20';
-
-/** Βέλη στο μαύρο panel κατηγοριών */
-const categoriesCarouselNavBtnLeft =
-  'absolute top-1/2 -translate-y-1/2 left-1 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-zinc-950/90 text-white shadow-lg shadow-black/40 backdrop-blur-md opacity-90 transition-all duration-300 hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:opacity-100 md:opacity-0 md:group-hover:opacity-100';
-const categoriesCarouselNavBtnRight =
-  'absolute top-1/2 -translate-y-1/2 right-1 z-20 flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-zinc-950/90 text-white shadow-lg shadow-black/40 backdrop-blur-md opacity-90 transition-all duration-300 hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:opacity-100 md:opacity-0 md:group-hover:opacity-100';
 
 /** Helpers */
 function publicUrl(path: string): string {
@@ -156,7 +153,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
         <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
           <div>
             <h2 className="section-title text-anbit-text text-lg lg:text-xl">Γρήγορες επιλογές</h2>
-            <p className="mt-1 text-xs text-anbit-muted">Πρόσβαση ανά τύπο υπηρεσίας — σύρε οριζόντια</p>
+            <p className={`mt-1 text-sm ${networkQuestMuted}`}>Πρόσβαση ανά τύπο υπηρεσίας — σύρε οριζόντια</p>
           </div>
         </div>
         <div className="relative w-full min-w-0 group">
@@ -179,13 +176,23 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                   key={qc.id}
                   type="button"
                   onClick={() => { setQuickSelectionId(qc.id); setFilter(qc.mappedFilter); }}
-                  whileHover={{ y: -6 }}
+                  whileHover={theme === 'light' ? { y: -2 } : { y: -6 }}
                   transition={{ type: 'spring', stiffness: 400, damping: 28 }}
                   className={cn(
-                    'group relative flex-shrink-0 w-[240px] sm:w-[260px] rounded-2xl overflow-hidden snap-start border-2 border-transparent bg-anbit-card text-left shadow-lg shadow-black/30 transition-all duration-300 outline-none focus:outline-none focus-visible:outline-none',
-                    isActive
-                      ? 'border-white ring-2 ring-white/30 shadow-xl shadow-black/40'
-                      : 'hover:shadow-xl hover:shadow-black/35',
+                    'group relative flex-shrink-0 w-[240px] sm:w-[260px] rounded-2xl overflow-hidden snap-start bg-anbit-card text-left transition-all duration-300 outline-none focus:outline-none focus-visible:outline-none',
+                    theme === 'light'
+                      ? cn(
+                          'border border-anbit-border shadow-none hover:-translate-y-0.5 hover:shadow-none',
+                          isActive
+                            ? 'border-anbit-text ring-2 ring-black/[0.06]'
+                            : 'hover:border-anbit-border',
+                        )
+                      : cn(
+                          'border-2 border-transparent shadow-lg shadow-black/30',
+                          isActive
+                            ? 'border-white ring-2 ring-white/30 shadow-xl shadow-black/40'
+                            : 'hover:shadow-xl hover:shadow-black/35',
+                        ),
                   )}
                 >
                   <div className="relative h-[158px] sm:h-[168px] w-full overflow-hidden bg-anbit-border">
@@ -196,8 +203,13 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-90" />
                   </div>
-                  <div className="relative border-t border-anbit-border/25 bg-anbit-card p-4">
-                    <p className="text-sm font-bold leading-tight text-anbit-text line-clamp-2 sm:text-base">{qc.label}</p>
+                  <div
+                    className={cn(
+                      'relative bg-anbit-card p-4',
+                      theme !== 'light' && 'border-t border-anbit-border/25',
+                    )}
+                  >
+                    <p className="font-bold text-sm leading-tight text-anbit-text line-clamp-2 sm:text-base">{qc.label}</p>
                   </div>
                 </motion.button>
               );
@@ -214,32 +226,26 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
         </div>
       </motion.section>
 
-      {/* Κατηγορίες — μαύρο panel, refined typography & cards */}
+      {/* Κατηγορίες — ίδιο layout με quests, μέσα σε μαύρο panel */}
       <motion.section variants={itemVariants} className="min-w-0">
-        <div className="relative overflow-hidden rounded-2xl border border-white/[0.07] bg-gradient-to-b from-zinc-950 via-black to-black shadow-2xl shadow-black/60 ring-1 ring-white/[0.04] sm:rounded-3xl">
-          <div className="pointer-events-none absolute inset-x-8 top-0 h-px bg-gradient-to-r from-transparent via-anbit-yellow/35 to-transparent sm:inset-x-12" />
-
-          <div className="relative border-b border-white/[0.07] px-5 pb-5 pt-6 text-left sm:px-7 sm:pb-6 sm:pt-7">
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-start sm:justify-between">
-              <div className="min-w-0 w-full space-y-2">
+        <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl shadow-black sm:rounded-3xl">
+          <div className="space-y-5 px-5 py-6 sm:space-y-6 sm:px-8 sm:py-7">
+            <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-start sm:justify-between sm:pb-6">
+              <div className="min-w-0 space-y-2">
+                <h2 className="text-lg font-extrabold tracking-tight text-white lg:text-xl">
+                  Κατηγορίες
+                </h2>
+                <p className={`text-sm ${networkQuestMuted}`}>
+                  Διάλεξε κατηγορία — η λίστα ανανεώνεται αμέσως. Σύρε οριζόντια.
+                </p>
                 {categoriesContextLabel && (
-                  <p className="font-greek-bold text-base leading-none tracking-tight text-[#e63533] sm:text-lg">
-                    {categoriesContextLabel}
+                  <p className={`text-xs font-bold tracking-wide ${networkQuestMuted}`}>{categoriesContextLabel}</p>
+                )}
+                {filter !== 'All' && (
+                  <p className="text-sm font-bold text-white">
+                    {getCategoryCount(filter)} {getCategoryCount(filter) === 1 ? 'κατάστημα' : 'καταστήματα'}
                   </p>
                 )}
-                <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-anbit-yellow/90">Φίλτρα</p>
-                <div className="flex flex-wrap items-center justify-start gap-2.5">
-                  <h2 className="font-greek-bold text-xl tracking-tight text-white sm:text-2xl">Κατηγορίες</h2>
-                  <span
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-white/[0.08] text-neutral-400 transition-colors hover:bg-white/[0.12] hover:text-white"
-                    title="Φίλτρο λίστας καταστημάτων"
-                  >
-                    <Info className="h-3.5 w-3.5" aria-hidden />
-                  </span>
-                </div>
-                <p className="max-w-md text-left text-[13px] leading-relaxed text-neutral-500 sm:text-sm">
-                  Διάλεξε τύπο κουζίνας — η λίστα καταστημάτων ενημερώνεται αμέσως. Σύρε για περισσότερες.
-                </p>
               </div>
               {filter !== 'All' && (
                 <button
@@ -248,95 +254,84 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                     setFilter('All');
                     setQuickSelectionId(null);
                   }}
-                  className="inline-flex shrink-0 items-center gap-2 self-start rounded-full border border-white/15 bg-white/[0.06] px-4 py-2 text-xs font-bold text-white/90 backdrop-blur-sm transition-all hover:border-anbit-yellow/50 hover:bg-anbit-yellow/10 hover:text-anbit-yellow sm:self-auto"
+                  className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:self-auto"
                 >
-                  <RotateCcw className="h-3.5 w-3.5 opacity-80" aria-hidden />
+                  <RotateCcw className="h-4 w-4 opacity-80" aria-hidden />
                   Όλα τα καταστήματα
                 </button>
               )}
             </div>
-          </div>
 
-          <div className="relative w-full min-w-0 bg-black/40 px-1 pb-5 pt-4 group sm:px-2 sm:pb-6 sm:pt-5">
-            <div className="pointer-events-none absolute inset-y-4 left-0 z-[8] w-8 bg-gradient-to-r from-black via-black/80 to-transparent sm:inset-y-5 sm:w-12" />
-            <div className="pointer-events-none absolute inset-y-4 right-0 z-[8] w-8 bg-gradient-to-l from-black via-black/80 to-transparent sm:inset-y-5 sm:w-12" />
-
-            <button
-              type="button"
-              onClick={() => scrollStrip(categoriesScrollRef.current, 'left')}
-              className={categoriesCarouselNavBtnLeft}
-              aria-label="Προηγούμενο"
-            >
-              <ChevronLeft className="h-5 w-5" />
-            </button>
-            <div
-              ref={categoriesScrollRef}
-              className="flex snap-x snap-mandatory scroll-smooth gap-3.5 overflow-x-auto px-3 pb-1 pt-1 no-scrollbar sm:gap-4 sm:px-5"
-            >
-              {categories.map((cat) => {
-                const count = getCategoryCount(cat.id);
-                const isActive = filter === cat.id;
-                const catImg = CATEGORY_IMAGES[cat.id] ?? CATEGORY_IMAGES.All;
-                const storeWord = count === 1 ? 'κατάστημα' : 'καταστήματα';
-                return (
-                  <motion.button
-                    key={cat.id}
-                    type="button"
-                    onClick={() => {
-                      setQuickSelectionId(null);
-                      setFilter(cat.id);
-                    }}
-                    whileHover={{ y: -4 }}
-                    transition={{ type: 'spring', stiffness: 420, damping: 30 }}
-                    className={cn(
-                      'group relative h-[236px] w-[158px] shrink-0 snap-start overflow-hidden rounded-[1.25rem] border-2 text-left transition-all duration-300 sm:h-[258px] sm:w-[178px]',
-                      isActive
-                        ? 'border-anbit-yellow shadow-[0_0_0_1px_rgba(234,179,8,0.15),0_22px_48px_-14px_rgba(0,0,0,0.9)] ring-2 ring-anbit-yellow/25'
-                        : 'border-transparent shadow-xl shadow-black/70 ring-1 ring-inset ring-white/[0.06] hover:ring-white/[0.14] hover:shadow-2xl',
-                    )}
-                  >
-                    <img
-                      src={catImg}
-                      alt=""
-                      className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.05]"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/45 to-black/5" />
-                    {isActive && (
-                      <div className="absolute right-2.5 top-2.5 flex h-8 w-8 items-center justify-center rounded-full bg-anbit-yellow text-anbit-yellow-content shadow-lg ring-2 ring-black/40">
-                        <Check className="h-4 w-4" strokeWidth={2.8} aria-hidden />
+            <div className="relative w-full min-w-0 group">
+              <button
+                type="button"
+                onClick={() => scrollStrip(categoriesScrollRef.current, 'left')}
+                className={dealsCarouselNavBtnLeft}
+                aria-label="Προηγούμενο"
+              >
+                <ChevronLeft className="w-6 h-6" />
+              </button>
+              <div
+                ref={categoriesScrollRef}
+                className="flex snap-x snap-mandatory scroll-smooth gap-4 overflow-x-auto pb-4 no-scrollbar sm:gap-6"
+              >
+                {categories.map((cat) => {
+                  const count = getCategoryCount(cat.id);
+                  const isActive = filter === cat.id;
+                  const catImg = CATEGORY_IMAGES[cat.id] ?? CATEGORY_IMAGES.All;
+                  const storeWord = count === 1 ? 'κατάστημα' : 'καταστήματα';
+                  return (
+                    <motion.button
+                      key={cat.id}
+                      type="button"
+                      aria-pressed={isActive}
+                      aria-label={`${cat.label}, ${count} ${storeWord}`}
+                      onClick={() => {
+                        setQuickSelectionId(null);
+                        setFilter(cat.id);
+                      }}
+                      whileHover={{ y: -4 }}
+                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
+                      className={cn(
+                        'group relative w-[200px] shrink-0 snap-start overflow-hidden rounded-xl border-2 border-anbit-border bg-anbit-card text-left shadow-md shadow-black/25 outline-none transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50 sm:w-[220px]',
+                        isActive
+                          ? 'border-anbit-text ring-2 ring-white/25 shadow-lg shadow-black/35'
+                          : 'hover:border-anbit-yellow/30 hover:shadow-lg hover:shadow-black/30',
+                      )}
+                    >
+                      <div className="relative h-[148px] w-full overflow-hidden bg-anbit-border sm:h-[158px]">
+                        <img
+                          src={catImg}
+                          alt=""
+                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-90" />
                       </div>
-                    )}
-                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-stretch p-3.5 text-left sm:p-4">
-                      <p className="w-full font-greek-bold text-[15px] leading-snug tracking-tight text-white drop-shadow-[0_2px_8px_rgba(0,0,0,0.85)] line-clamp-2 sm:text-[17px]">
-                        {cat.label}
-                      </p>
-                      <span
-                        className={cn(
-                          'mt-2.5 inline-flex max-w-full self-start rounded-lg px-2.5 py-1 text-left text-[11px] font-semibold leading-none backdrop-blur-md',
-                          count > 0 ? 'bg-white/20 text-white' : 'bg-white/10 text-white/70',
-                        )}
-                      >
-                        {count} {storeWord}
-                      </span>
-                    </div>
-                  </motion.button>
-                );
-              })}
+                      <div className="relative border-t border-anbit-border/25 bg-anbit-card p-4">
+                        <p className="line-clamp-2 font-bold text-sm leading-tight text-anbit-text sm:text-base">{cat.label}</p>
+                        <p className={`mt-1 text-xs ${networkQuestMuted}`}>
+                          {count} {storeWord}
+                        </p>
+                      </div>
+                    </motion.button>
+                  );
+                })}
+              </div>
+              <button
+                type="button"
+                onClick={() => scrollStrip(categoriesScrollRef.current, 'right')}
+                className={dealsCarouselNavBtnRight}
+                aria-label="Επόμενο"
+              >
+                <ChevronRight className="w-6 h-6" />
+              </button>
             </div>
-            <button
-              type="button"
-              onClick={() => scrollStrip(categoriesScrollRef.current, 'right')}
-              className={categoriesCarouselNavBtnRight}
-              aria-label="Επόμενο"
-            >
-              <ChevronRight className="h-5 w-5" />
-            </button>
           </div>
         </div>
       </motion.section>
 
       {/* Καταστήματα */}
-      <motion.section variants={itemVariants} className="space-y-5 font-greek">
+      <motion.section variants={itemVariants} className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('partnerStores')}</h2>
@@ -350,7 +345,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
           <button
             type="button"
             onClick={() => setIsSortModalOpen(true)}
-            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-transparent bg-anbit-card px-4 py-2.5 text-xs font-bold tracking-wide text-anbit-text shadow-md shadow-black/25 transition-all hover:bg-white/[0.06] sm:self-auto"
+            className="inline-flex items-center justify-center gap-2 self-start rounded-xl border border-transparent bg-anbit-card px-4 py-2.5 text-sm font-bold tracking-wide text-anbit-text shadow-md shadow-black/25 transition-all hover:bg-white/[0.06] sm:self-auto"
           >
             <SlidersHorizontal className="h-4 w-4 text-anbit-yellow" />
             Ταξινόμηση
@@ -388,17 +383,17 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
 
               <div className="space-y-2 p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <h3 className="line-clamp-2 text-[15px] font-greek-bold leading-snug text-anbit-text">{partner.name}</h3>
+                  <h3 className="line-clamp-2 font-bold text-sm leading-snug text-anbit-text">{partner.name}</h3>
                   <div className="flex shrink-0 items-center gap-0.5 rounded-full bg-amber-400/15 px-2 py-0.5">
                     <Star className="h-3.5 w-3.5 fill-amber-400 text-amber-400" />
                     <span className="text-[11px] font-bold text-anbit-text">{partner.rating.toFixed(1)}</span>
                   </div>
                 </div>
-                <p className="line-clamp-1 text-[11px] font-medium text-anbit-muted">
+                <p className="line-clamp-1 text-xs font-medium text-anbit-muted">
                   {partner.category} · {partner.location}
                 </p>
                 <div className="flex items-center justify-between border-t border-anbit-border/50 pt-3">
-                  <div className="flex items-center gap-1.5 text-[10px] font-bold text-anbit-muted">
+                  <div className="flex items-center gap-1.5 text-sm font-medium text-anbit-muted">
                     <Truck className="h-3.5 w-3.5 opacity-80" />
                     {partner.minOrder !== '—' ? partner.minOrder : '0,00€'}
                   </div>
@@ -435,11 +430,11 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
           <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-2xl bg-anbit-yellow/15 ring-1 ring-anbit-yellow/30">
             <MapPin className="h-6 w-6 text-anbit-yellow" />
           </div>
-          <h2 className="mb-2 font-greek-bold text-lg text-anbit-text sm:text-xl">{t('battleMap')}</h2>
-          <p className="mb-6 text-xs leading-relaxed text-anbit-muted">Δες συνεργάτες γύρω σου στον χάρτη μάχης.</p>
+          <h2 className="section-title mb-2 text-anbit-text text-lg lg:text-xl">{t('battleMap')}</h2>
+          <p className="mb-6 text-sm text-anbit-muted">Δες συνεργάτες γύρω σου στον χάρτη μάχης.</p>
           <button
             type="button"
-            className="rounded-xl bg-anbit-yellow px-8 py-3 text-xs font-bold text-anbit-yellow-content shadow-lg shadow-anbit-yellow/25 transition-transform hover:scale-[1.02] active:scale-[0.98]"
+            className="rounded-xl bg-anbit-yellow px-8 py-3 text-sm font-bold text-anbit-yellow-content shadow-lg shadow-anbit-yellow/25 transition-transform hover:scale-[1.02] active:scale-[0.98]"
           >
             {t('launchMap')}
           </button>
@@ -463,7 +458,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
           >
             <div className="border-b border-anbit-border/20 bg-white/[0.02] px-5 py-4">
               <div className="flex items-center justify-between">
-                <h3 className="font-greek-bold text-base text-anbit-text">Ταξινόμηση</h3>
+                <h3 className="text-base font-bold text-anbit-text">Ταξινόμηση</h3>
                 <button
                   type="button"
                   onClick={() => setIsSortModalOpen(false)}
@@ -473,7 +468,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                   <X className="h-5 w-5" />
                 </button>
               </div>
-              <p className="mt-1 text-xs text-anbit-muted">Διάλεξε πώς να ταξινομούνται τα καταστήματα</p>
+              <p className="mt-1 text-sm text-anbit-muted">Διάλεξε πώς να ταξινομούνται τα καταστήματα</p>
             </div>
             <div className="space-y-1.5 p-4">
               {SORT_OPTIONS.map((opt) => (

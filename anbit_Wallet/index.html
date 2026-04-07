@@ -17,6 +17,12 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="apple-touch-icon" href="https://cdn-icons-png.flaticon.com/512/1162/1162456.png" />
 
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Eczar:wght@700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&display=swap"
+    rel="stylesheet" />
+
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
     rel="stylesheet">
@@ -40,6 +46,8 @@
           fontFamily: {
             sans: ['Inter', 'system-ui', 'sans-serif'],
             anbit: ['Omnes', 'Inter', 'sans-serif'],
+            eczar: ['Eczar', 'serif'],
+            stix: ['"STIX Two Text"', 'ui-serif', 'Georgia', 'serif'],
           },
         },
       },
@@ -53,6 +61,7 @@
       --sal: env(safe-area-inset-left);
       --font-primary: 'Omnes', 'Inter', system-ui, sans-serif;
       --font-inter: 'Inter', system-ui, sans-serif;
+      --font-greek-stix: 'STIX Two Text', ui-serif, Georgia, serif;
       --font-body: var(--font-primary);
       --brand-red: #0a0a0a;
       --xp-gold: #CA8A04;
@@ -618,17 +627,29 @@
       -webkit-user-select: text !important;
     }
 
-    /* Greek UI: Inter only (Omnes unicode-range skips Greek glyphs) */
+    /* Greek UI: STIX Two Text (variable 400–700), optical sizing */
     .font-greek {
-      font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
-      font-weight: 600;
-      letter-spacing: -0.02em;
+      font-family: var(--font-greek-stix);
+      font-optical-sizing: auto;
+      font-weight: 500;
+      font-style: normal;
+      letter-spacing: -0.015em;
     }
 
     .font-greek-bold {
-      font-family: var(--font-inter, 'Inter', system-ui, sans-serif);
+      font-family: var(--font-greek-stix);
+      font-optical-sizing: auto;
       font-weight: 700;
-      letter-spacing: -0.02em;
+      font-style: normal;
+      letter-spacing: -0.015em;
+    }
+
+    /* Alias — STIX Two Text bold 700 για ελληνικά blocks */
+    .font-stix-greek {
+      font-family: var(--font-greek-stix);
+      font-optical-sizing: auto;
+      font-weight: 700;
+      font-style: normal;
     }
 
     /* FrostedHoverNav */
