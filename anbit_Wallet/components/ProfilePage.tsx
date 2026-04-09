@@ -1,61 +1,81 @@
-import React, { useEffect, useMemo } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  User,
-  Zap,
-  Star,
-  Mail,
-  Coffee,
-  UtensilsCrossed,
-  ChevronLeft,
-  ChevronRight,
-  Gift,
-  Settings,
-  Clock,
-  ExternalLink,
-  Copy,
-  Facebook,
-  Linkedin,
-} from 'lucide-react';
+import { Copy, Facebook, Linkedin, Trophy } from 'lucide-react';
 import { UserData, Partner } from '../types';
 import { useTheme } from '../context/ThemeContext';
-import AnbitWordmark from './AnbitWordmark';
-import AnimatedSocialLinks, { type Social } from './ui/social-links';
 import { IconTabs3D, type ProfileTabItem } from './ui/3d-icon-tabs-1';
+import { ProfileInsightsSection } from './profile/ProfileInsightsSection';
 
-const profileSocials: Social[] = [
+type OrderHistoryFilter = 'all' | 'supermarket' | 'food';
+
+type OrderHistoryEntry = {
+  id: string;
+  storeName: string;
+  storeImage: string;
+  dateTime: string;
+  status: 'completed' | 'cancelled';
+  price: string;
+  itemsSummary: string;
+  xp?: number;
+  category: 'supermarket' | 'food';
+};
+
+const ORDER_HISTORY_MOCK: OrderHistoryEntry[] = [
   {
-    name: 'Instagram',
-    image:
-      'https://images.unsplash.com/photo-1518770660439-4636190af475?auto=format&fit=crop&w=200&q=80',
+    id: '1',
+    storeName: 'Anbit Market',
+    storeImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuA1R3KTvL-Zjrr9zGyuScQJcSY0KkyFxF-hXC36_5EA_BEpjUdTyed8t6ueWdwYazjt0TXPhs3Uv_Z9yfy2SPOdNsc_T7d1dze7SJwhTfqSBc_feLSBGxGeUc_z2NSGFce762-vxmSs3ZXmdQ8ETS5NLBqos3Vxz1z9z5r4Mu9qRiz9EBfO6fLykl3HLnPTtSQQS2zy86aDb7_xIOnHnkN6wfSEJDVcyp5c1sRHFqO-J6Vk0ftTS52DLTMKMgCMsLlK2frWs5L826k',
+    dateTime: '10 Απριλίου, 20:30',
+    status: 'completed',
+    price: '24.50 €',
+    itemsSummary: '1x Γάλα Φρέσκο, 2x Μπανάνες, 1x Ψωμί',
+    xp: 150,
+    category: 'supermarket',
   },
   {
-    name: 'TikTok',
-    image:
-      'https://images.unsplash.com/photo-1551434678-e076c223a692?auto=format&fit=crop&w=200&q=80',
+    id: '2',
+    storeName: 'Meat the King',
+    storeImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuA_WiKyEt4PbNC2i15LG1PRA9qoOBdxQKfEvDbhNXm3awPcKOpYyNohg7v2rBY49oBf5UEYGsYQmSGIK-g6lJa0MX3jsXNTwdYJElzazCS41MbMDqOEVBZpOtXlzvXbaDbAdiYUhXtLv8BH_qrHvhIFIuQzNn8kHkPDYRy7G5acg_m-ZJqtStIhCzGnzcUJeoBuO550BYrA-BljIi7-UmPJvecy-0xihUM5lT_3B-rY9aswUf5nLPQ2U7WRCLiFy3zVD0ds6hpRxp0',
+    dateTime: '08 Απριλίου, 14:15',
+    status: 'completed',
+    price: '42.80 €',
+    itemsSummary: '2x Μπριζόλες Μοσχαρίσιες, 1x Χοιρινό Σουβλάκι (5 τμχ)',
+    xp: 280,
+    category: 'food',
   },
   {
-    name: 'Google',
-    image:
-      'https://images.unsplash.com/photo-1592609931041-40265b692757?auto=format&fit=crop&w=200&q=80',
+    id: '3',
+    storeName: 'Pizza Squad',
+    storeImage:
+      'https://lh3.googleusercontent.com/aida-public/AB6AXuBH8r80SC7C60gnIrADg_DLZf60pxDunUx0v14lfoeuF8_187xj5DZdIgmpAciyaPfOBnEHkEh9AfCqWnROiL3h2Mi-FpXSpQ9wkp89o1RSdN-Ewt971H-lBqvE0nrGxJm7jWxPBO5aOZq3xbMFTMsCeCihkHz6_A8mgvQaJIQ-A1nQ-d0E6Sdh9TBqTf3BNgoS53XW7vjXDQufMrl2FFMjlFNYOo_gXsj0zU20PoEkEst76nnkKHnWePV_3XjBO0o4Uxy61pRoFM0',
+    dateTime: '05 Απριλίου, 21:05',
+    status: 'cancelled',
+    price: '18.20 €',
+    itemsSummary: '1x Pizza Special (Μεγάλη), 1x Coca Cola 500ml',
+    category: 'food',
   },
 ];
 
 const profileTabs: Array<ProfileTabItem & { path: string }> = [
   { id: 'informations', label: 'Προσωπικές πληροφορίες', path: '/profile/informations' },
+  { id: 'favorites', label: 'Αγαπημένα καταστήματα', path: '/profile/favorites' },
   { id: 'history', label: 'Ιστορικό παραγγελιών', path: '/profile/history' },
   { id: 'earn', label: 'Κέρδισε κουπόνια Anbit', path: '/profile/earn' },
   { id: 'redeem', label: 'Εξαργύρωση κουπονιού', path: '/profile/redeem' },
   { id: 'settings', label: 'Ρυθμίσεις', path: '/profile/settings' },
 ];
 
-const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user, partners = [] }) => {
+const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
+  user,
+  partners = [],
+}) => {
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useTheme();
   const storeXP = user.storeXP || {};
   const totalStorePoints = Object.values(storeXP).reduce((sum, v) => sum + (Number(v) || 0), 0);
-  const availableGifts = 3;
 
   const partnersWithPoints = useMemo(
     () =>
@@ -65,19 +85,11 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
     [partners, storeXP]
   );
 
-  const topStores = partnersWithPoints.slice(0, 3);
-  // Kept for legacy/hidden UI below (we replace the visible layout with the template).
-  const pointsCapXp = 200;
-  const levelProgress = Math.max(0, Math.min(100, user.levelProgress ?? 0));
-  const storesWithXpCount = partnersWithPoints.filter((x) => x.xp > 0).length;
-
-  const recentActivity = partnersWithPoints.slice(0, 4).map((entry, index) => ({
-    id: `${entry.partner.id}-${index}`,
-    name: entry.partner.name,
-    xp: Math.max(10, Math.round((entry.xp || 0) * 0.06)),
-    date: ['Σήμερα · 09:45', 'Χθες · 19:12', 'Πριν 2 μέρες · 20:30', 'Πρόσφατα'][index] ?? 'Πρόσφατα',
-    icon: index % 2 === 0 ? Coffee : UtensilsCrossed,
-  }));
+  const [orderHistoryFilter, setOrderHistoryFilter] = useState<OrderHistoryFilter>('all');
+  const filteredOrderHistory = useMemo(() => {
+    if (orderHistoryFilter === 'all') return ORDER_HISTORY_MOCK;
+    return ORDER_HISTORY_MOCK.filter((o) => o.category === orderHistoryFilter);
+  }, [orderHistoryFilter]);
 
   useEffect(() => {
     if (location.pathname === '/profile') {
@@ -118,30 +130,114 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
         </div>
 
         {activeTabId === 'history' && (
-          <section className="rounded-3xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm">
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Ιστορικό παραγγελιών</h2>
-            <p className="text-sm text-[color:var(--anbit-muted)] mb-5">Οι τελευταίες επιβεβαιωμένες κινήσεις σου.</p>
-            <h3 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)] mb-3">
-              Πρόσφατη δραστηριότητα
-            </h3>
-            <ul className="space-y-3 text-sm">
-              {recentActivity.length === 0 ? (
-                <li className="rounded-2xl bg-[color:var(--anbit-input)] p-4 text-center text-xs text-[color:var(--anbit-muted)]">
-                  Δεν βρέθηκαν παραγγελίες ακόμη.
-                </li>
-              ) : (
-                recentActivity.map((item) => (
-                  <li key={item.id} className="flex items-center justify-between rounded-2xl bg-[color:var(--anbit-input)] p-4">
-                    <div>
-                      <p className="font-semibold text-[color:var(--anbit-text)]">{item.name}</p>
-                      <p className="text-xs text-[color:var(--anbit-muted)]">{item.date}</p>
+          <div className="mx-auto w-full max-w-4xl px-2 pb-12 pt-2 sm:px-4">
+            <div className="mb-10 sm:mb-12">
+              <h2 className="mb-3 text-4xl font-extrabold tracking-tight text-white sm:text-5xl md:text-6xl">
+                Ιστορικό Παραγγελιών
+              </h2>
+              <p className="text-lg font-medium text-[#ababab]/80">
+                Δείτε και διαχειριστείτε τις προηγούμενες αγορές σας
+              </p>
+            </div>
+
+            <div className="mb-10 flex gap-4 overflow-x-auto pb-2 sm:mb-12 [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
+              {(
+                [
+                  { id: 'all' as const, label: 'Όλες' },
+                  { id: 'supermarket' as const, label: 'Σούπερ Μάρκετ' },
+                  { id: 'food' as const, label: 'Φαγητό' },
+                ] as const
+              ).map((pill) => {
+                const active = orderHistoryFilter === pill.id;
+                return (
+                  <button
+                    key={pill.id}
+                    type="button"
+                    onClick={() => setOrderHistoryFilter(pill.id)}
+                    className={
+                      active
+                        ? 'shrink-0 rounded-full bg-[#e63533] px-8 py-3 text-sm font-bold text-white shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all hover:brightness-110 active:scale-95'
+                        : 'shrink-0 whitespace-nowrap rounded-full border border-white/5 bg-[#131313] px-8 py-3 text-sm font-bold text-[#ababab] transition-all hover:bg-[#1f1f1f]'
+                    }
+                  >
+                    {pill.label}
+                  </button>
+                );
+              })}
+            </div>
+
+            <div className="space-y-8">
+              {filteredOrderHistory.map((order) => {
+                const isCancelled = order.status === 'cancelled';
+                return (
+                  <div
+                    key={order.id}
+                    className={`group relative rounded-xl border p-6 sm:p-8 transition-all hover:ring-1 hover:ring-white/10 ${isCancelled ? 'border-[#e63533]/20' : 'border-white/5'} bg-[linear-gradient(145deg,#131313_0%,#0e0e0e_100%)] shadow-[0_4px_30px_rgba(0,0,0,0.5)]`}
+                  >
+                    <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                      <div className="flex gap-4 sm:gap-5">
+                        <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-lg border border-white/5 bg-[#1f1f1f] sm:h-16 sm:w-16">
+                          <img
+                            src={order.storeImage}
+                            alt=""
+                            className="h-10 w-10 object-contain sm:h-12 sm:w-12"
+                            draggable={false}
+                          />
+                        </div>
+                        <div className="min-w-0">
+                          <h3 className="mb-1 text-xl font-extrabold text-white sm:text-2xl">{order.storeName}</h3>
+                          {isCancelled ? (
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#e63533]">
+                              {order.dateTime} • Ακυρώθηκε
+                            </p>
+                          ) : (
+                            <p className="text-sm font-medium tracking-wide text-[#ababab]">
+                              {order.dateTime} • Ολοκληρώθηκε
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <div className="flex flex-col items-start sm:items-end">
+                        <span
+                          className={`text-2xl font-black sm:text-3xl ${isCancelled ? 'text-white/20 line-through' : 'text-white'}`}
+                        >
+                          {order.price}
+                        </span>
+                      </div>
                     </div>
-                    <p className="font-bold text-[color:var(--anbit-text)]">+{item.xp} XP</p>
-                  </li>
-                ))
-              )}
-            </ul>
-          </section>
+
+                    <div className="mb-6 flex flex-col gap-3 rounded-lg border border-white/5 bg-black/40 px-4 py-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
+                      <p className="text-sm font-medium italic text-[#ababab]">{order.itemsSummary}</p>
+                      {!isCancelled && order.xp != null ? (
+                        <div className="flex shrink-0 items-center gap-1.5 self-start rounded-full border border-[#e63533]/20 bg-[#e63533]/10 px-3 py-1.5 sm:self-auto">
+                          <Trophy className="h-4 w-4 text-white" aria-hidden />
+                          <span className="text-xs font-bold tracking-widest text-white">+{order.xp} XP</span>
+                        </div>
+                      ) : null}
+                    </div>
+
+                    <div className="flex gap-4">
+                      {isCancelled ? (
+                        <button
+                          type="button"
+                          className="w-full rounded-lg border border-white/10 bg-[#131313] py-4 text-xs font-extrabold tracking-wider text-[#e5e5e5] transition-all duration-300 hover:bg-[#1f1f1f] active:scale-[0.99]"
+                        >
+                          ΑΝΑΦΟΡΑ ΠΡΟΒΛΗΜΑΤΟΣ
+                        </button>
+                      ) : (
+                        <button
+                          type="button"
+                          className="w-full rounded-lg bg-[#e63533] py-4 text-xs font-extrabold tracking-wider text-white transition-all duration-300 hover:bg-[#ff3d3b] active:scale-[0.99]"
+                        >
+                          ΛΕΠΤΟΜΕΡΕΙΕΣ
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
         )}
 
         {activeTabId === 'earn' && (
@@ -344,9 +440,8 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
                         aria-label={row.label}
                       >
                         <span
-                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${
-                            row.value ? 'left-[22px]' : 'left-0.5'
-                          }`}
+                          className={`absolute top-0.5 h-5 w-5 rounded-full bg-white transition ${row.value ? 'left-[22px]' : 'left-0.5'
+                            }`}
                         />
                       </button>
                     )}
@@ -466,592 +561,36 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({ user,
         )}
 
         {activeTabId === 'informations' && (
-        <>
-        <section>
-          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--anbit-xp-surface-border)] shadow-lg">
-            <div className="flex flex-col gap-4 rounded-[22px] bg-[color:var(--anbit-card)] p-4 sm:flex-row sm:gap-5 sm:p-6">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-[color:var(--anbit-input)] shadow-sm sm:h-24 sm:w-24">
-                <img src={user.avatar} alt={user.name} className="h-full w-full object-cover" />
-                <div className="absolute -bottom-1 -right-1 rounded-lg bg-[color:var(--anbit-xp-bar)] px-1.5 py-0.5 text-[10px] font-bold text-[color:var(--anbit-bg)] shadow-sm">
-                  LVL {user.currentLevel}
-                </div>
-              </div>
-              <div className="flex-1 space-y-2">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">{user.name}</h1>
-                    <p className="text-xs text-[color:var(--anbit-muted)]">
-                      {user.currentLevelName ?? user.email}
-                    </p>
-                  </div>
-                  <div className="w-fit rounded-2xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm">
-                    <span className="text-amber-300">★</span>
-                    <span className="ml-1.5 text-white/90">Global Rank #45</span>
-                  </div>
-                </div>
+          <ProfileInsightsSection user={user} partnersWithPoints={partnersWithPoints} />
+        )}
 
-                <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
-                  <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                      Συνολικά XP
-                    </p>
-                    <p className="mt-1 flex items-center gap-1 text-sm font-semibold tabular-nums">
-                      <Zap className="h-4 w-4 text-[color:var(--anbit-xp-accent)]" />
-                      <span className="text-[color:var(--anbit-xp-accent)]">{user.totalXP.toLocaleString()} XP</span>
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                      Επόμενο επίπεδο ({levelProgress}%)
-                    </p>
-                    <div className="mt-2 h-2 w-full overflow-hidden rounded-full bg-[color:var(--anbit-border)]">
-                      <div
-                        className="h-full rounded-full bg-[color:var(--anbit-xp-bar)]"
-                        style={{ width: `${levelProgress}%` }}
-                      />
-                    </div>
-                  </div>
-                  <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm sm:col-span-2 lg:col-span-1">
-                    <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                      Καταστήματα με XP
-                    </p>
-                    <p className="mt-1 flex items-center gap-1 text-sm font-semibold">
-                      <Star className="h-4 w-4 text-[color:var(--anbit-xp-accent)]" />
-                      <span className="text-[color:var(--anbit-xp-accent)]">{storesWithXpCount} ενεργά</span>
-                    </p>
-                  </div>
-                </div>
-              </div>
+        {activeTabId === 'favorites' && (
+          <section
+            className="flex w-full max-w-5xl flex-col items-start justify-between gap-8 rounded-2xl bg-black p-8 md:flex-row md:items-center md:p-12"
+            data-purpose="favorites-banner"
+            id="favorites-hero"
+          >
+            <div className="flex-1 space-y-4">
+              <h2 className="text-3xl font-extrabold tracking-tight text-white md:text-4xl">
+                Τα αγαπημένα σου
+              </h2>
+              <p className="max-w-2xl text-base leading-relaxed text-[#A1A1AA] md:text-lg">
+                Όλα τα αγαπημένα σου εστιατόρια και καταστήματα θα εμφανίζονται εδώ. Μπορείς να τα προσθέσεις
+                στην λίστα των αγαπημένων σου απλά πατώντας το εικονίδιο με την καρδιά.
+              </p>
             </div>
-          </div>
-        </section>
-
-        <section className="mt-8">
-          <div className="mb-12">
-            <h1 className="text-4xl font-extrabold tracking-tight mb-2">Οι πόντοι σου ανά κατάστημα</h1>
-            <p className="text-[color:var(--anbit-muted)] text-lg">
-              Κάθε συνεργαζόμενο μέρος κρατά ξεχωριστά XP — δες πού 'καίει' το score σου.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
-            <div className="lg:col-span-8">
-              <div className="flex items-center justify-between mb-8">
-                <button className="w-10 h-10 rounded-full flex items-center justify-center bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] text-[color:var(--anbit-muted)] hover:text-[color:var(--anbit-text)] transition-colors">
-                  <span className="material-symbols-outlined text-sm" data-icon="chevron_left">
-                    chevron_left
-                  </span>
-                </button>
-
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-1 bg-[color:var(--anbit-text)] rounded-full" />
-                  <div className="w-1 h-1 bg-[color:var(--anbit-border)] rounded-full" />
-                  <div className="w-1 h-1 bg-[color:var(--anbit-border)] rounded-full" />
-                  <div className="w-1 h-1 bg-[color:var(--anbit-border)] rounded-full" />
-                </div>
-
-                <button className="w-10 h-10 rounded-full flex items-center justify-center bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] text-[color:var(--anbit-muted)] hover:text-[color:var(--anbit-text)] transition-colors">
-                  <span className="material-symbols-outlined text-sm" data-icon="chevron_right">
-                    chevron_right
-                  </span>
-                </button>
-              </div>
-
-              {topStores.length === 0 ? (
-                  <p className="px-4 py-10 text-center text-sm font-medium text-[color:var(--anbit-muted)]">
-                  Δεν υπάρχουν ακόμα πόντοι. Εξερεύνησε το δίκτυο.
-                </p>
-              ) : (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  {topStores.map(({ partner, xp }, idx) => {
-                    const tier = idx === 1 ? "SILVER" : "GOLD";
-                    const capXp = idx === 1 ? 150 : 200;
-                    const points = Math.round(xp);
-                    const safePct = Math.max(0, Math.min(100, Math.round((points / capXp) * 100)));
-
-                    // Match the template's constants: r=42 => circumference ≈ 263.8
-                    const radius = 42;
-                    const circumference = 263.8;
-                    const dashOffset = Number(
-                      (circumference - (circumference * safePct) / 100).toFixed(1),
-                    );
-
-                    const lastVisit =
-                      idx === 0 ? "2 μέρες πριν" : idx === 1 ? "5 μέρες πριν" : "1 μέρα πριν";
-
-                    return (
-                      <div
-                        key={partner.id}
-                        className="relative bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] rounded-3xl p-6"
-                      >
-                        <div className="flex items-center gap-4 mb-8">
-                          <div className="w-14 h-14 rounded-full border-2 border-[color:var(--anbit-border)] p-0.5">
-                            <img
-                              alt={partner.name}
-                              className="w-full h-full object-cover rounded-full"
-                              src={partner.image}
-                            />
-                          </div>
-                          <div>
-                            <h3 className="font-bold text-[color:var(--anbit-text)]">{partner.name}</h3>
-                            <div className="flex items-center gap-2">
-                              <span
-                                className="material-symbols-outlined text-[10px] text-yellow-500"
-                                data-icon="star"
-                                style={{ fontVariationSettings: "'FILL' 1" }}
-                              >
-                                star
-                              </span>
-                              <span className="text-[10px] font-bold text-[color:var(--anbit-muted)]">
-                                {partner.rating.toFixed(1)}
-                              </span>
-                              <span className="text-[10px] font-bold text-[color:var(--anbit-muted)] uppercase tracking-widest ml-1">
-                                {tier}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="flex justify-between items-end mb-8">
-                          <div>
-                            <p className="text-[10px] text-[color:var(--anbit-muted)] font-bold uppercase mb-1">Points</p>
-                            <p className="text-4xl font-black text-[color:var(--anbit-text)]">{points}</p>
-                            <p className="text-[11px] text-[color:var(--anbit-muted)] mt-1">από {capXp} XP</p>
-                          </div>
-
-                          <div className="relative w-20 h-20">
-                            <svg
-                              className="w-full h-full"
-                              viewBox="0 0 100 100"
-                              style={{ transform: "rotate(-90deg)" }}
-                            >
-                              <circle
-                                className="text-[color:var(--anbit-border)] stroke-current"
-                                cx="50"
-                                cy="50"
-                                fill="transparent"
-                                r={radius}
-                                strokeWidth="6"
-                              />
-                              <circle
-                                className="text-[color:var(--anbit-text)] stroke-current"
-                                cx="50"
-                                cy="50"
-                                fill="transparent"
-                                r={radius}
-                                strokeDasharray={`${circumference}`}
-                                strokeDashoffset={`${dashOffset}`}
-                                strokeLinecap="round"
-                                strokeWidth="6"
-                              />
-                            </svg>
-                            <div className="absolute inset-0 flex items-center justify-center font-black text-sm">
-                              {safePct}%
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="h-1 bg-[color:var(--anbit-border)] rounded-full mb-8 overflow-hidden">
-                          <div className="h-full bg-[color:var(--anbit-text)]" style={{ width: `${safePct}%` }} />
-                        </div>
-
-                        <div className="flex items-center gap-2 text-[color:var(--anbit-muted)] text-[10px] font-bold mb-6">
-                          <span className="material-symbols-outlined text-sm" data-icon="schedule">
-                            schedule
-                          </span>
-                          Τελευταία επίσκεψη: {lastVisit}
-                        </div>
-
-                        <Link
-                          to={`/store-profile/${partner.id}`}
-                          state={{ partner }}
-                          className="w-full py-3 rounded-2xl border border-[#e63533] bg-[#e63533] text-white flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#cf2f2d] hover:border-[#cf2f2d] transition-all"
-                        >
-                          Explore Store{" "}
-                          <span className="material-symbols-outlined text-sm" data-icon="open_in_new">
-                            open_in_new
-                          </span>
-                        </Link>
-                      </div>
-                    );
-                  })}
-                </div>
-              )}
+            <div
+              className="flex w-full shrink-0 justify-center md:w-auto md:max-w-[min(100%,520px)] lg:max-w-[min(100%,640px)]"
+              data-purpose="favourite-visual"
+            >
+              <img
+                src="/fav.gif"
+                alt=""
+                className="h-auto max-h-[min(72vh,640px)] w-full object-contain"
+                draggable={false}
+              />
             </div>
-
-            <div className="lg:col-span-4 space-y-4">
-              <div className="bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] rounded-3xl p-6">
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-[color:var(--anbit-muted)] mb-6">
-                  ΓΡΗΓΟΡΕΣ ΕΝΕΡΓΕΙΕΣ
-                </h4>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="material-symbols-outlined text-[color:var(--anbit-muted)] text-lg"
-                        data-icon="card_giftcard"
-                      >
-                        card_giftcard
-                      </span>
-                      <span className="text-sm text-[color:var(--anbit-muted)]">Διαθέσιμα Δώρα</span>
-                    </div>
-                    <span className="text-sm font-black text-[color:var(--anbit-text)]">{availableGifts}</span>
-                  </div>
-
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <span
-                        className="material-symbols-outlined text-[color:var(--anbit-muted)] text-lg"
-                        data-icon="trending_up"
-                      >
-                        trending_up
-                      </span>
-                      <span className="text-sm text-[color:var(--anbit-muted)]">Συνολικοί Πόντοι</span>
-                    </div>
-                    <span className="text-sm font-black text-[color:var(--anbit-text)]">{Math.round(totalStorePoints)}</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] rounded-3xl p-6">
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-[color:var(--anbit-muted)] mb-6">
-                  ΡΥΘΜΙΣΕΙΣ
-                </h4>
-                <div className="space-y-4">
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[color:var(--anbit-muted)] text-lg" data-icon="settings">
-                      settings
-                    </span>
-                    <span className="text-sm text-[color:var(--anbit-muted)]">Ρυθμίσεις Λογαριασμού</span>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className="material-symbols-outlined text-[color:var(--anbit-muted)] text-lg" data-icon="person">
-                      person
-                    </span>
-                    <span className="text-sm text-[color:var(--anbit-muted)]">Προφίλ</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] rounded-3xl p-6">
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-[color:var(--anbit-muted)] mb-6">SOCIAL</h4>
-                <div className="flex items-center gap-3">
-                  <span className="material-symbols-outlined text-[color:var(--anbit-muted)] text-lg" data-icon="group">
-                    group
-                  </span>
-                  <span className="text-sm text-[color:var(--anbit-muted)]">Προσκάλεσε Φίλους</span>
-                </div>
-              </div>
-
-              <div className="bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] rounded-3xl p-6">
-                <h4 className="text-[11px] font-black uppercase tracking-widest text-[color:var(--anbit-muted)] mb-6">
-                  ΣΤΟΙΧΕΙΑ ΛΟΓΑΡΙΑΣΜΟΥ
-                </h4>
-                <div className="space-y-6">
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="material-symbols-outlined text-[color:var(--anbit-muted)] text-lg mt-0.5"
-                      data-icon="person_outline"
-                    >
-                      person_outline
-                    </span>
-                    <div>
-                      <p className="text-[9px] text-[color:var(--anbit-muted)] font-bold uppercase tracking-widest">Όνομα</p>
-                      <p className="text-sm font-black text-[color:var(--anbit-text)]">{user.name} Anbit</p>
-                    </div>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <span
-                      className="material-symbols-outlined text-[color:var(--anbit-muted)] text-lg mt-0.5"
-                      data-icon="equalizer"
-                    >
-                      equalizer
-                    </span>
-                    <div>
-                      <p className="text-[9px] text-[color:var(--anbit-muted)] font-bold uppercase tracking-widest">Επίπεδο</p>
-                      <p className="text-sm font-black text-[color:var(--anbit-text)]">{user.currentLevelName}</p>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="mb-12 hidden">
-            <h2 className="text-4xl font-extrabold tracking-tight mb-2 text-[color:var(--anbit-text)]">
-              Οι πόντοι σου ανά κατάστημα
-            </h2>
-            <p className="text-[color:var(--anbit-muted)] text-lg">
-              Κάθε συνεργαζόμενο μέρος κρατά ξεχωριστά XP — δες πού «καίει» το score σου.
-            </p>
-          </div>
-
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 hidden">
-            <div className="lg:col-span-8">
-              <section className="relative overflow-hidden rounded-3xl border-2 border-[color:var(--anbit-yellow)] bg-[color:var(--anbit-card)] p-5 shadow-lg sm:p-6">
-                <div
-                  className="pointer-events-none absolute -right-8 -top-12 h-32 w-32 rounded-full bg-[color:var(--anbit-yellow)] opacity-[0.12]"
-                  aria-hidden
-                />
-
-                {topStores.length === 0 ? (
-                  <p className="px-4 py-10 text-center text-sm font-medium text-[color:var(--anbit-muted)]">
-                    Δεν υπάρχουν ακόμα πόντοι. Εξερεύνησε το δίκτυο.
-                  </p>
-                ) : (
-                  <div className="relative space-y-0 rounded-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)]/40 p-5 sm:p-6">
-                    <div className="flex items-center justify-between mb-8">
-                      <button
-                        type="button"
-                        className="w-10 h-10 rounded-full flex items-center justify-center bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] text-[color:var(--anbit-muted)] hover:text-[color:var(--anbit-text)] transition-colors"
-                        aria-label="Previous"
-                      >
-                        <ChevronLeft className="w-5 h-5" />
-                      </button>
-
-                      <div className="flex items-center gap-2">
-                        {Array.from({ length: Math.min(4, Math.max(1, Math.ceil(topStores.length / 3))) }).map((_, i) => {
-                          const isActive = i === 0;
-                          return (
-                            <div
-                              key={i}
-                              className={`${isActive ? "bg-[color:var(--anbit-text)]" : "bg-[color:var(--anbit-muted)]"} h-1 rounded-full`}
-                              style={{ width: isActive ? 32 : 8 }}
-                            />
-                          );
-                        })}
-                      </div>
-
-                      <button
-                        type="button"
-                        className="w-10 h-10 rounded-full flex items-center justify-center bg-[color:var(--anbit-card)] border border-[color:var(--anbit-border)] text-[color:var(--anbit-muted)] hover:text-[color:var(--anbit-text)] transition-colors"
-                        aria-label="Next"
-                      >
-                        <ChevronRight className="w-5 h-5" />
-                      </button>
-                    </div>
-
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                      {topStores.map(({ partner, xp }, idx) => {
-                        const tier = idx === 0 ? "GOLD" : idx === 1 ? "SILVER" : "NEW";
-                        const isGold = tier === "GOLD";
-                        const isSilver = tier === "SILVER";
-
-                        const pct = Math.round((xp / pointsCapXp) * 100);
-                        const safePct = Math.max(0, Math.min(100, pct));
-                        const radius = 42;
-                        const circumference = 2 * Math.PI * radius;
-                        const dashOffset = circumference - (circumference * safePct) / 100;
-
-                        const lastVisitLabels = ["2 μέρες πριν", "5 μέρες πριν", "1 μέρα πριν", "Χθες · 19:12"];
-                        const lastVisit = lastVisitLabels[idx % lastVisitLabels.length] ?? "Πρόσφατα";
-
-                        return (
-                          <div
-                            key={partner.id}
-                            className="relative bg-[#0a0a0a]/40 border border-[#2a2a2a]/50 rounded-3xl p-6"
-                          >
-                            <div className="flex items-center gap-4 mb-8">
-                              <div className="w-14 h-14 rounded-full border-2 border-[color:var(--anbit-border)] p-0.5 overflow-hidden">
-                                <img
-                                  src={partner.image}
-                                  alt={partner.name}
-                                  className="w-full h-full object-cover rounded-full"
-                                  draggable={false}
-                                />
-                              </div>
-
-                              <div className="min-w-0">
-                                <div className="font-bold text-[color:var(--anbit-text)] truncate">{partner.name}</div>
-                                <div className="flex items-center gap-2 mt-1">
-                                  <Star
-                                    className="w-[10px] h-[10px]"
-                                    fill="currentColor"
-                                    aria-hidden
-                                    style={{
-                                      color: isGold
-                                        ? "var(--anbit-yellow)"
-                                        : isSilver
-                                          ? "rgba(255,255,255,0.75)"
-                                          : "rgba(255,255,255,0.55)",
-                                    }}
-                                  />
-                                  <span className="text-[10px] font-bold text-[color:var(--anbit-muted)]">
-                                    {partner.rating.toFixed(1)}
-                                  </span>
-                                  <span
-                                    className="text-[10px] font-bold uppercase tracking-widest ml-1"
-                                    style={{
-                                      color: isGold
-                                        ? "var(--anbit-yellow)"
-                                        : isSilver
-                                          ? "rgba(255,255,255,0.70)"
-                                          : "rgba(255,255,255,0.45)",
-                                    }}
-                                  >
-                                    {tier}
-                                  </span>
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="flex justify-between items-end mb-8">
-                              <div>
-                                <p className="text-[10px] text-[color:var(--anbit-muted)] font-bold uppercase mb-1">Points</p>
-                                <p className="text-4xl font-black text-[color:var(--anbit-text)]">{xp.toLocaleString()}</p>
-                                <p className="text-[11px] text-[color:var(--anbit-muted)] mt-1">από {pointsCapXp} XP</p>
-                              </div>
-
-                              <div className="relative w-20 h-20">
-                                <svg className="w-full h-full" viewBox="0 0 100 100">
-                                  <circle
-                                    className="text-[color:var(--anbit-border)] stroke-current"
-                                    cx="50"
-                                    cy="50"
-                                    fill="transparent"
-                                    r={radius}
-                                    strokeWidth="6"
-                                  />
-                                  <circle
-                                    className="text-[color:var(--anbit-text)] stroke-current"
-                                    cx="50"
-                                    cy="50"
-                                    fill="transparent"
-                                    r={radius}
-                                    strokeDasharray={`${circumference}`}
-                                    strokeDashoffset={`${dashOffset}`}
-                                    strokeLinecap="round"
-                                    strokeWidth="6"
-                                    transform="rotate(-90 50 50)"
-                                  />
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center font-black text-sm">
-                                  {safePct}%
-                                </div>
-                              </div>
-                            </div>
-
-                            <div className="h-1 bg-[color:var(--anbit-border)] rounded-full mb-8 overflow-hidden">
-                              <div className="h-full bg-[color:var(--anbit-text)]" style={{ width: `${safePct}%` }} />
-                            </div>
-
-                            <div className="flex items-center gap-2 text-[color:var(--anbit-muted)] text-[10px] font-bold mb-6">
-                              <Clock className="w-4 h-4" aria-hidden />
-                              Τελευταία επίσκεψη: {lastVisit}
-                            </div>
-
-                            <Link
-                              to={`/store-profile/${partner.id}`}
-                              state={{ partner }}
-                              className="w-full py-3 rounded-2xl border border-[#e63533] bg-[#e63533] text-white flex items-center justify-center gap-2 text-xs font-bold hover:bg-[#cf2f2d] hover:border-[#cf2f2d] transition-all"
-                            >
-                              Explore Store
-                              <ExternalLink className="w-4 h-4" />
-                            </Link>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
-              </section>
-            </div>
-
-            <aside className="lg:col-span-4 space-y-6">
-              <section className="rounded-3xl bg-[color:var(--anbit-card)] p-5 shadow-sm border border-[color:var(--anbit-border)]">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                    Γρήγορες ενέργειες
-                  </h2>
-                  <span className="rounded-full bg-[color:var(--anbit-yellow)] px-3 py-1 text-[11px] font-semibold text-[color:var(--anbit-yellow-content)] shadow-sm">
-                    Anbit
-                  </span>
-                </div>
-                <div className="mt-4 grid gap-4">
-                  <Link
-                    to="/quests"
-                    className="block rounded-2xl bg-slate-900 p-4 text-white shadow-md transition hover:opacity-95"
-                  >
-                    <p className="text-xs uppercase tracking-wide text-slate-300">Προσφορές</p>
-                    <p className="mt-1 text-sm font-semibold">Δες offers & κέρδισε XP</p>
-                    <p className="mt-3 flex items-center gap-1 text-xs text-slate-300">
-                      <Gift className="h-3.5 w-3.5" /> Quests
-                    </p>
-                  </Link>
-                  <Link
-                    to="/network"
-                    className="block rounded-2xl bg-[#e63533] p-4 text-white shadow-md transition hover:bg-[#cf2f2d]"
-                  >
-                    <p className="text-xs uppercase tracking-wide opacity-80">Καταστήματα</p>
-                    <p className="mt-1 text-sm font-semibold">Παραγγελίες & δίκτυο</p>
-                    <p className="mt-3 text-xs opacity-80">Βρες το επόμενό σου μέρος.</p>
-                  </Link>
-                </div>
-              </section>
-
-              <section className="rounded-3xl bg-[color:var(--anbit-card)] p-5 shadow-sm border border-[color:var(--anbit-border)]">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                    Ρυθμίσεις
-                  </h2>
-                  <Settings className="h-4 w-4 text-slate-400" />
-                </div>
-                <p className="mt-1 text-xs text-[color:var(--anbit-muted)]">
-                  Διαχείριση λογαριασμού και προτιμήσεων.
-                </p>
-                <Link
-                  to="/settings"
-                  className="mt-4 inline-flex w-full items-center justify-center rounded-2xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white shadow-md transition hover:bg-black"
-                >
-                  Άνοιγμα ρυθμίσεων
-                </Link>
-              </section>
-
-              <section className="rounded-3xl bg-[color:var(--anbit-card)] p-5 shadow-sm border border-[color:var(--anbit-border)]">
-                <div className="flex items-center justify-between gap-2">
-                  <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                    Social
-                  </h2>
-                  <User className="h-4 w-4 text-slate-400" />
-                </div>
-                <p className="mt-1 text-xs text-[color:var(--anbit-muted)]">Ακολούθησε το Anbit στα social.</p>
-                <div className="mt-3">
-                  <AnimatedSocialLinks socials={profileSocials} />
-                </div>
-              </section>
-
-              <section className="rounded-3xl bg-[color:var(--anbit-card)] p-5 shadow-sm border border-[color:var(--anbit-border)]">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                  Στοιχεία λογαριασμού
-                </h2>
-                <dl className="mt-4 space-y-3 text-sm">
-                  <div className="flex items-start gap-3">
-                    <dt className="mt-0.5">
-                      <Mail className="h-4 w-4 text-slate-400" />
-                    </dt>
-                    <dd className="flex-1 text-[color:var(--anbit-text)]">{user.email}</dd>
-                  </div>
-                  <div className="flex items-start gap-3">
-                    <dt className="mt-0.5">
-                      <Zap className="h-4 w-4 text-slate-400" />
-                    </dt>
-                    <dd className="flex-1">
-                      Επίπεδο {user.currentLevel}
-                      {user.nextLevelXP ? (
-                        <>
-                          {' '}
-                          · Στόχος: {user.nextLevelXP.toLocaleString()} XP
-                        </>
-                      ) : null}
-                    </dd>
-                  </div>
-                </dl>
-              </section>
-            </aside>
-          </div>
-
-        </section>
-        </>
+          </section>
         )}
       </main>
     </div>

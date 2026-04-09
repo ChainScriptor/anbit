@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { NavLink, useLocation } from 'react-router-dom';
-import { Home, MapPin, Star, User, LogOut, Zap, Sun, Moon, ChevronDown } from 'lucide-react';
+import { MapPin, Star, User, LogOut, Zap, Sun, Moon, ChevronDown } from 'lucide-react';
 import { BurgerToggle } from './ui/BurgerToggle';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -21,10 +21,9 @@ interface HeaderProps {
 
 const SCROLL_THRESHOLD = 24;
 
-const navPaths: { path: string; labelKey: string; icon: typeof Home }[] = [
-  { path: '/dashboard', labelKey: 'dashboard', icon: Home },
-  { path: '/network', labelKey: 'network', icon: MapPin },
+const navPaths: { path: string; labelKey: string; icon: typeof User }[] = [
   { path: '/quests', labelKey: 'quests', icon: Star },
+  { path: '/network', labelKey: 'network', icon: MapPin },
   { path: '/profile', labelKey: 'profile', icon: User },
 ];
 
@@ -32,6 +31,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
   const location = useLocation();
   const isStoreProfileRoute = location.pathname.startsWith('/store-profile/');
   const [isScrolled, setIsScrolled] = useState(false);
+  const isStoreProfileHeroMode = isStoreProfileRoute && !isScrolled;
   const [cityModalOpen, setCityModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [walletNotifications, setWalletNotifications] = useState<Notification[]>(() => [...defaultWalletNotifications]);
@@ -203,14 +203,15 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               )}
             </div>
 
-            <NavLink to="/dashboard" className="logo-anbit cursor-pointer">
+            <NavLink to="/network" className="logo-anbit cursor-pointer">
               <AnbitWordmark className="text-3xl sm:text-4xl lg:text-5xl" />
             </NavLink>
             <button
               type="button"
               onClick={() => setCityModalOpen(true)}
-              className={`flex items-center gap-2 py-2 text-anbit-text transition-colors rounded-lg focus:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50 ${theme === 'dark' ? 'hover:text-white/80' : 'hover:text-anbit-yellow'
-                }`}
+              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-anbit-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50 ${
+                theme === 'dark' ? 'hover:text-white/80' : 'hover:text-anbit-yellow'
+              }`}
               aria-label="Αλλαγή τοποθεσίας"
               aria-expanded={cityModalOpen}
               aria-haspopup="dialog"
@@ -225,12 +226,21 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
           </div>
 
           <div className="flex-1 flex items-center justify-center">
-            <nav className="hidden md:flex items-center justify-center bg-white/[0.03] border border-anbit-border rounded-full px-2 py-1 gap-1 shrink-0">
+            <nav className={`hidden md:flex items-center justify-center rounded-full px-2 py-1 gap-1 shrink-0 ${
+              isStoreProfileHeroMode
+                ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
+                : 'bg-white/[0.03] border border-anbit-border'
+            }`}>
               {navPaths.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
                 const isProfileAsGuest = item.path === '/profile' && !isAuthenticated && onOpenLogin;
-                const baseClass = `relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all ${isActive ? 'bg-anbit-text text-anbit-bg shadow-sm' : 'text-white hover:bg-anbit-border/40 hover:text-white'
+                const baseClass = `relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all ${
+                  isActive
+                    ? 'bg-anbit-text text-anbit-bg shadow-sm'
+                    : isStoreProfileHeroMode
+                      ? 'bg-[#121214] text-white hover:bg-[#121214] hover:text-white'
+                      : 'text-white hover:bg-anbit-border/40 hover:text-white'
                   }`;
                 const hoverCardContent = (
                   <div
@@ -282,10 +292,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
           </div>
 
           <div className="hidden md:flex items-center gap-2 shrink-0">
-            <LanguageSelector />
+            <LanguageSelector buttonClassName={isStoreProfileRoute ? '!bg-[#121214] !border-white/15 !text-white' : undefined} />
             {isAuthenticated ? (
               <>
-                <div className="hidden md:flex items-center gap-2 bg-white/[0.03] border border-white/10 px-3 py-2 rounded-lg">
+                <div className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg ${
+                  isStoreProfileRoute ? 'bg-[#121214] border border-white/15' : 'bg-white/[0.03] border border-white/10'
+                }`}>
                   <Zap
                     className={`w-4 h-4 shrink-0 ${theme === 'dark' ? 'text-white fill-white' : 'text-anbit-yellow fill-anbit-yellow'}`}
                   />
@@ -295,7 +307,11 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 </div>
                 <button
                   onClick={toggleTheme}
-                  className="w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-white hover:text-white transition-colors"
+                  className={`w-10 h-10 lg:w-11 lg:h-11 rounded-lg flex items-center justify-center text-white hover:text-white transition-colors ${
+                    isStoreProfileHeroMode
+                      ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
+                      : 'bg-white/[0.05] border border-anbit-border'
+                  }`}
                   aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -303,6 +319,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <NotificationPopover
                   notifications={walletNotifications}
                   onNotificationsChange={setWalletNotifications}
+                  buttonClassName={isStoreProfileRoute ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-[#121214] border border-white/15 text-white hover:text-white transition-colors shadow-none' : undefined}
                   title={t('notificationsTitle')}
                   markAllReadLabel={t('markAllNotificationsRead')}
                   bellAriaLabel={t('notificationsBellAria')}
@@ -310,7 +327,11 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <button
                   type="button"
                   onClick={() => logout()}
-                  className="flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-xl border border-anbit-border bg-white/[0.03] text-anbit-muted hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/5 transition-colors"
+                  className={`flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-xl border transition-colors ${
+                    isStoreProfileRoute
+                      ? 'border-white/15 bg-[#121214] text-white hover:text-red-300 hover:border-red-300/60 hover:bg-[#121214]'
+                      : 'border-anbit-border bg-white/[0.03] text-anbit-muted hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/5'
+                  }`}
                   aria-label={t('logout')}
                 >
                   <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -321,7 +342,11 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               <>
                 <button
                   onClick={toggleTheme}
-                  className="w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-white hover:text-white transition-colors"
+                  className={`w-10 h-10 lg:w-11 lg:h-11 rounded-lg flex items-center justify-center text-white hover:text-white transition-colors ${
+                    isStoreProfileHeroMode
+                      ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
+                      : 'bg-white/[0.05] border border-anbit-border'
+                  }`}
                   aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}

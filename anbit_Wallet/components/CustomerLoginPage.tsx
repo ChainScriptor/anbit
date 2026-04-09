@@ -42,11 +42,7 @@ const CustomerLoginPage: React.FC = () => {
       navigate(target, { replace: true });
       return;
     }
-    if (window.history.length > 1) {
-      navigate(-1);
-      return;
-    }
-    navigate('/dashboard', { replace: true });
+    navigate('/network', { replace: true });
   };
 
   const onLogin = async (e: React.FormEvent) => {

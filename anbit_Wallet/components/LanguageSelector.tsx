@@ -7,7 +7,11 @@ const LANGUAGES = [
   { code: 'en' as const, name: 'English', flag: '🇬🇧' },
 ];
 
-const LanguageSelector: React.FC = () => {
+interface LanguageSelectorProps {
+  buttonClassName?: string;
+}
+
+const LanguageSelector: React.FC<LanguageSelectorProps> = ({ buttonClassName }) => {
   const { i18n, t } = useTranslation();
   const [isOpen, setIsOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -27,7 +31,7 @@ const LanguageSelector: React.FC = () => {
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-white hover:text-white transition-colors"
+        className={`w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-white hover:text-white transition-colors ${buttonClassName ?? ''}`}
         aria-expanded={isOpen}
         aria-haspopup="listbox"
         aria-label={t('languageSelection')}

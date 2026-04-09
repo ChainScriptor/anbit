@@ -139,10 +139,14 @@ const App: React.FC = () => {
     setAuthModalMode('register');
     setAuthModalOpen(true);
   }, []);
+  /** Με `returnTo` μόνο όταν χρειάζεται ρητή επιστροφή (π.χ. scan → profile). Αλλιώς μετά τη σύνδεση → `/network`. */
   const openLoginPage = useCallback((returnTo?: string) => {
-    const target = returnTo ?? location.pathname;
-    navigate(`/login?returnTo=${encodeURIComponent(target)}`);
-  }, [location.pathname, navigate]);
+    if (returnTo !== undefined) {
+      navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
+      return;
+    }
+    navigate('/login');
+  }, [navigate]);
   const closeAuthModal = useCallback(() => {
     setAuthSuccessCallback(null);
     setAuthModalOpen(false);
@@ -349,9 +353,9 @@ const App: React.FC = () => {
                 : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}
             >
               <Routes>
-                <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                <Route path="/" element={<Navigate to="/network" replace />} />
                 <Route path="/login" element={<CustomerLoginPage />} />
-                <Route path="/dashboard" element={dashboardContent} />
+                <Route path="/dashboard" element={<Navigate to="/network" replace />} />
                 <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
                 <Route
                   path="/scan"
@@ -414,11 +418,23 @@ const App: React.FC = () => {
                   )
                 } />
                 <Route path="/store-profile/:partnerId" element={<StoreProfilePage />} />
-                <Route path="/quests" element={<QuestsPage quests={dashboardFeed.quests} user={userData} />} />
-                <Route path="/profile/*" element={userData ? <ProfilePage user={userData} partners={dashboardFeed.partners} /> : <Navigate to="/login" replace />} />
-                <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/dashboard" replace />} />
-                <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/dashboard" replace />} />
-                <Route path="*" element={<Navigate to="/dashboard" replace />} />
+                <Route
+                  path="/quests"
+                  element={
+                    <QuestsPage quests={dashboardFeed.quests} partners={dashboardFeed.partners} />
+                  }
+                />
+                <Route
+                  path="/profile/*"
+                  element={
+                    userData
+                      ? <ProfilePage user={userData} partners={dashboardFeed.partners} />
+                      : <Navigate to="/login" replace />
+                  }
+                />
+                <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/network" replace />} />
+                <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/network" replace />} />
+                <Route path="*" element={<Navigate to="/network" replace />} />
               </Routes>
             </main>
             {!hideChrome && <FooterTaped t={t} />}

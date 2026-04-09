@@ -71,6 +71,8 @@ export interface Quest {
   storeImage?: string;
   /** Optional 2x XP multiplier label */
   multiplier?: number;
+  /** Links offer to dashboard partner for grouping / filters */
+  partnerId?: string;
 }
 
 export interface Reward {
