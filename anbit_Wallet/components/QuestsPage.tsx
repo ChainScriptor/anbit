@@ -762,9 +762,11 @@ function OfferCard({
   index: number;
   t: (key: string) => string;
 }) {
-  const storeName = quest.storeName || t('partnerStore');
   const daysNum = quest.expiresIn.replace(/\D/g, '') || '0';
   const WeatherIcon = quest.weather ? getWeatherIcon(quest.weather) : null;
+  const bannerSrc =
+    quest.bannerImage ??
+    'https://images.unsplash.com/photo-1544025162-766942260318?auto=format&fit=crop&q=80&w=1200&h=480';
 
   return (
     <motion.div
@@ -773,51 +775,48 @@ function OfferCard({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="flex flex-col gap-4 rounded-xl border border-anbit-border bg-anbit-card p-5 transition-colors hover:border-anbit-yellow/30"
+      className="flex flex-col overflow-hidden rounded-xl border border-anbit-border bg-anbit-card transition-colors hover:border-anbit-yellow/30"
     >
-      <div className="flex items-start justify-between gap-2">
-        <div className="flex min-w-0 items-center gap-3">
-          <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-full bg-white/5 ring-2 ring-anbit-border">
-            {quest.storeImage ? (
-              <img src={quest.storeImage} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center text-xl">
-                {WeatherIcon ? <WeatherIcon size={24} /> : quest.icon}
-              </div>
-            )}
-          </div>
-          <div className="min-w-0">
-            <p className="truncate text-sm font-bold text-anbit-text">{storeName}</p>
-            <p className={`text-xs ${questMuted}`}>{t('categoryOffer')}</p>
-          </div>
-        </div>
-        <span className="inline-flex items-center gap-1 rounded-md border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)] px-2 py-1 text-xs font-bold text-anbit-xp-accent">
+      <div className="relative h-36 w-full shrink-0 bg-white/5 sm:h-40">
+        <img src={bannerSrc} alt="" className="h-full w-full object-cover" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
+        {WeatherIcon ? (
+          <span className="absolute bottom-2 left-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm">
+            <WeatherIcon size={22} />
+          </span>
+        ) : (
+          <span className="absolute bottom-2 left-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-lg backdrop-blur-sm">
+            {quest.icon}
+          </span>
+        )}
+        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)]/95 px-2 py-1 text-xs font-bold text-anbit-xp-accent shadow-sm backdrop-blur-sm">
           <Star className="h-3 w-3" />+{quest.reward} XP
         </span>
       </div>
 
-      <div>
+      <div className="flex flex-col gap-4 p-5">
+        <div>
         <h3 className="mb-1 text-lg font-bold text-anbit-text">{quest.title}</h3>
         <p className={`line-clamp-2 text-sm ${questMuted}`}>{quest.description}</p>
-      </div>
+        </div>
 
-      {quest.multiplier != null && quest.multiplier > 1 && (
+        {quest.multiplier != null && quest.multiplier > 1 && (
         <div className="flex items-center gap-2 rounded-lg border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)] p-2">
           <Zap className="h-4 w-4 text-anbit-xp-accent" />
           <span className="text-sm font-medium text-anbit-xp-accent">
             {quest.multiplier}x {t('xpMultiplierWeekend')}
           </span>
         </div>
-      )}
+        )}
 
-      <div className={`flex items-center gap-2 text-sm ${questMuted}`}>
+        <div className={`flex items-center gap-2 text-sm ${questMuted}`}>
         <Clock className="h-4 w-4 shrink-0" />
         <span>
           {t('expiresInDays')} {daysNum} {t('daysLeft')}
         </span>
-      </div>
+        </div>
 
-      <div className="flex gap-2 pt-1">
+        <div className="flex gap-2 pt-1">
         <button
           type="button"
           className="flex-1 rounded-lg bg-[#e63533] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#cf2f2d]"
@@ -830,6 +829,7 @@ function OfferCard({
         >
           {t('viewRules')}
         </button>
+        </div>
       </div>
     </motion.div>
   );

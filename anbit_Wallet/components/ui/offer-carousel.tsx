@@ -1,6 +1,7 @@
 import * as React from "react";
 import { motion } from "framer-motion";
-import { ChevronLeft, ChevronRight, ArrowRight, Tag } from "lucide-react";
+import { ChevronLeft, ChevronRight, Tag } from "lucide-react";
+import { useTranslation } from "react-i18next";
 import { cn } from "@/lib/utils";
 
 export interface Offer {
@@ -10,8 +11,8 @@ export interface Offer {
   tag: string;
   title: string;
   description: string;
-  brandLogoSrc: string;
-  brandName: string;
+  brandLogoSrc?: string;
+  brandName?: string;
   promoCode?: string;
   href: string;
 }
@@ -21,48 +22,48 @@ interface OfferCardProps {
   mutedTextClassName?: string;
 }
 
-const OfferCard = React.forwardRef<HTMLAnchorElement, OfferCardProps>(
-  ({ offer, mutedTextClassName = "text-anbit-muted" }, ref) => (
-  <motion.a
-    ref={ref}
-    href={offer.href}
-    className="relative flex-shrink-0 w-[280px] sm:w-[300px] h-[360px] sm:h-[380px] rounded-2xl overflow-hidden group snap-start border border-anbit-border bg-anbit-card"
-    whileHover={{ y: -8 }}
-    transition={{ type: "spring", stiffness: 300, damping: 20 }}
-    style={{ perspective: "1000px" }}
-  >
-    <img
-      src={offer.imageSrc}
-      alt={offer.imageAlt}
-      className="absolute top-0 left-0 right-0 h-1/2 w-full object-cover transition-transform duration-500 group-hover:scale-110"
-    />
-    <div className="absolute bottom-0 left-0 right-0 h-1/2 bg-anbit-card p-5 flex flex-col justify-between border-t border-anbit-border">
-      <div className="space-y-2">
-        <div className={cn("flex items-center text-xs", mutedTextClassName)}>
-          <Tag className="w-4 h-4 mr-2 text-anbit-yellow" />
-          <span>{offer.tag}</span>
-        </div>
-        <h3 className="text-lg sm:text-xl font-bold text-anbit-text leading-tight">{offer.title}</h3>
-        <p className={cn("text-sm line-clamp-2", mutedTextClassName)}>{offer.description}</p>
+const OfferCard = React.forwardRef<HTMLDivElement, OfferCardProps>(function OfferCard(
+  { offer, mutedTextClassName = "text-anbit-muted" },
+  ref,
+) {
+  const { t } = useTranslation();
+  return (
+    <motion.div
+      ref={ref}
+      className="relative flex h-[360px] w-[280px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-anbit-border bg-anbit-card group sm:h-[380px] sm:w-[300px]"
+      whileHover={{ y: -8 }}
+      transition={{ type: "spring", stiffness: 300, damping: 20 }}
+      style={{ perspective: "1000px" }}
+    >
+      <div className="relative h-1/2 w-full shrink-0 overflow-hidden">
+        <img
+          src={offer.imageSrc}
+          alt={offer.imageAlt}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+        />
       </div>
-      <div className="flex items-center justify-between pt-4 border-t border-anbit-border">
-        <div className="flex items-center gap-3 min-w-0">
-          <img src={offer.brandLogoSrc} alt="" className="w-8 h-8 rounded-full bg-anbit-bg object-cover shrink-0" />
-          <div className="min-w-0">
-            <p className="text-xs font-semibold text-anbit-text truncate">{offer.brandName}</p>
-            {offer.promoCode && (
-              <p className={cn("text-xs truncate", mutedTextClassName)}>{offer.promoCode}</p>
-            )}
+      <div className="flex h-1/2 min-h-0 flex-col border-t border-anbit-border bg-anbit-card p-5">
+        <div className="min-h-0 flex-1 space-y-2 overflow-hidden">
+          <div className={cn("flex items-center text-xs", mutedTextClassName)}>
+            <Tag className="mr-2 h-4 w-4 shrink-0 text-anbit-yellow" />
+            <span>{offer.tag}</span>
           </div>
+          <h3 className="text-lg font-bold leading-tight text-anbit-text sm:text-xl">{offer.title}</h3>
+          <p className={cn("line-clamp-2 text-sm", mutedTextClassName)}>{offer.description}</p>
+          {offer.promoCode ? (
+            <p className={cn("truncate font-mono text-xs", mutedTextClassName)}>{offer.promoCode}</p>
+          ) : null}
         </div>
-        <div className="w-8 h-8 rounded-full bg-anbit-border flex items-center justify-center text-anbit-text shrink-0 transform transition-transform duration-300 group-hover:rotate-[-45deg] group-hover:bg-anbit-yellow group-hover:text-anbit-yellow-content">
-          <ArrowRight className="w-4 h-4" />
-        </div>
+        <a
+          href={offer.href}
+          className="mt-4 flex w-full shrink-0 items-center justify-center rounded-lg bg-[#e63533] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#cf2f2d]"
+        >
+          {t("claimOffer")}
+        </a>
       </div>
-    </div>
-  </motion.a>
-  )
-);
+    </motion.div>
+  );
+});
 OfferCard.displayName = "OfferCard";
 
 export interface OfferCarouselProps extends React.HTMLAttributes<HTMLDivElement> {

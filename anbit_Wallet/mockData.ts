@@ -96,6 +96,8 @@ export const mockDashboardData: DashboardData = {
       partnerId: "p1",
       storeName: "THE COFFEE HUB",
       storeImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1447933601403-64c6687c94d9?auto=format&fit=crop&q=80&w=1200&h=480",
       multiplier: 2
     },
     {
@@ -109,7 +111,9 @@ export const mockDashboardData: DashboardData = {
       icon: "🌧️",
       weather: "rain",
       storeName: "Anbit Partners",
-      storeImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1515694346937-94d85e41e6f0?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_003",
@@ -123,7 +127,9 @@ export const mockDashboardData: DashboardData = {
       weather: "moon",
       partnerId: "p2",
       storeName: "MEAT THE KING",
-      storeImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_004",
@@ -136,7 +142,9 @@ export const mockDashboardData: DashboardData = {
       icon: "🛵",
       partnerId: "p5",
       storeName: "BLUE CUP",
-      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1526367790999-0150786686a2?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_005",
@@ -149,6 +157,8 @@ export const mockDashboardData: DashboardData = {
       icon: "🍽️",
       storeName: "Gourmet Delights",
       storeImage: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=1200&h=480",
       multiplier: 2
     },
     {
@@ -162,7 +172,9 @@ export const mockDashboardData: DashboardData = {
       icon: "🗺️",
       weather: "partly-cloudy",
       storeName: "Anbit Network",
-      storeImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_007",
@@ -176,7 +188,9 @@ export const mockDashboardData: DashboardData = {
       weather: "sun",
       partnerId: "p1",
       storeName: "THE COFFEE HUB",
-      storeImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1533089860892-a7060c82b255?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_008",
@@ -189,7 +203,9 @@ export const mockDashboardData: DashboardData = {
       icon: "☕",
       partnerId: "p1",
       storeName: "THE COFFEE HUB",
-      storeImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1495474472287-4d71b8168dd0?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_009",
@@ -202,7 +218,9 @@ export const mockDashboardData: DashboardData = {
       icon: "🌿",
       partnerId: "p1",
       storeName: "THE COFFEE HUB",
-      storeImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1509042239860-f550ce710b93?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1461023058943-07fcbe16d735?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_010",
@@ -216,6 +234,8 @@ export const mockDashboardData: DashboardData = {
       partnerId: "p2",
       storeName: "MEAT THE KING",
       storeImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1550547660-d9560a2d572e?auto=format&fit=crop&q=80&w=1200&h=480",
       multiplier: 2
     },
     {
@@ -229,7 +249,9 @@ export const mockDashboardData: DashboardData = {
       icon: "🍔",
       partnerId: "p2",
       storeName: "MEAT THE KING",
-      storeImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_012",
@@ -242,7 +264,9 @@ export const mockDashboardData: DashboardData = {
       icon: "👨‍👩‍👧",
       partnerId: "p2",
       storeName: "MEAT THE KING",
-      storeImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1555939594-58d7cb561ad1?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_013",
@@ -256,7 +280,9 @@ export const mockDashboardData: DashboardData = {
       weather: "sun",
       partnerId: "p5",
       storeName: "BLUE CUP",
-      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1546171753-97c3f7ee9e3e?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_014",
@@ -269,7 +295,9 @@ export const mockDashboardData: DashboardData = {
       icon: "🎓",
       partnerId: "p5",
       storeName: "BLUE CUP",
-      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1544148103-0779bfbadbeb?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_015",
@@ -282,7 +310,9 @@ export const mockDashboardData: DashboardData = {
       icon: "⏰",
       partnerId: "p5",
       storeName: "BLUE CUP",
-      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1514432324607-a09d9b4aefdd?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1437418747212-8d9709afab22?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_016",
@@ -294,7 +324,9 @@ export const mockDashboardData: DashboardData = {
       expiresIn: "9",
       icon: "💸",
       storeName: "Anbit Partners",
-      storeImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_017",
@@ -306,7 +338,9 @@ export const mockDashboardData: DashboardData = {
       expiresIn: "5",
       icon: "🌅",
       storeName: "Anbit Partners",
-      storeImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1559339352-11d035aa65de?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_018",
@@ -318,7 +352,9 @@ export const mockDashboardData: DashboardData = {
       expiresIn: "3",
       icon: "🍷",
       storeName: "Gourmet Delights",
-      storeImage: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1510812431401-41d2bd2722f3?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_019",
@@ -331,6 +367,8 @@ export const mockDashboardData: DashboardData = {
       icon: "⭐",
       storeName: "Gourmet Delights",
       storeImage: "https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1551218807-94d4236c6e4b?auto=format&fit=crop&q=80&w=1200&h=480",
       multiplier: 2
     },
     {
@@ -344,7 +382,9 @@ export const mockDashboardData: DashboardData = {
       icon: "📍",
       weather: "partly-cloudy",
       storeName: "Anbit Network",
-      storeImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1555396273-367ea4eb4db5?auto=format&fit=crop&q=80&w=1200&h=480"
     },
     {
       id: "quest_021",
@@ -356,7 +396,9 @@ export const mockDashboardData: DashboardData = {
       expiresIn: "14",
       icon: "🔥",
       storeName: "Anbit Network",
-      storeImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=200"
+      storeImage: "https://images.unsplash.com/photo-1557804506-669a67965ba0?auto=format&fit=crop&q=80&w=200",
+      bannerImage:
+        "https://images.unsplash.com/photo-1552566626-52f8b828add9?auto=format&fit=crop&q=80&w=1200&h=480"
     }
   ],
   rewards: [

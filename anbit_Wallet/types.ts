@@ -69,6 +69,8 @@ export interface Quest {
   storeName?: string;
   /** Optional store profile/logo image URL */
   storeImage?: string;
+  /** Wide hero image for offer cards (quests) */
+  bannerImage?: string;
   /** Optional 2x XP multiplier label */
   multiplier?: number;
   /** Links offer to dashboard partner for grouping / filters */

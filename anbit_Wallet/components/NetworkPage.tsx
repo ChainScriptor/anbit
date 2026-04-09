@@ -191,12 +191,12 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
           className={cn(
             'h-10 min-w-[11rem] shrink-0 rounded-lg bg-anbit-card px-3 py-2 pr-9 text-sm font-medium text-anbit-text focus:outline-none focus:ring-2 sm:min-w-[14rem]',
             quickSelectionId == null &&
-              'border border-anbit-border focus:border-[#e63533] focus:ring-[#e63533]/40',
+            'border border-anbit-border focus:border-[#e63533] focus:ring-[#e63533]/40',
             quickSelectionId === RESTAURANTS_QUICK_ID &&
-              'border border-white ring-1 ring-white/30 focus:border-white focus:ring-white/35',
+            'border border-white ring-1 ring-white/30 focus:border-white focus:ring-white/35',
             quickSelectionId != null &&
-              quickSelectionId !== RESTAURANTS_QUICK_ID &&
-              'border border-[#e63533] ring-1 ring-[#e63533]/35 focus:border-[#e63533] focus:ring-[#e63533]/40',
+            quickSelectionId !== RESTAURANTS_QUICK_ID &&
+            'border border-[#e63533] ring-1 ring-[#e63533]/35 focus:border-[#e63533] focus:ring-[#e63533]/40',
           )}
           style={{
             appearance: 'none',
