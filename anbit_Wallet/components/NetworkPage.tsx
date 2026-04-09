@@ -1,6 +1,6 @@
 import React, { useRef, useState, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { MapPin, RotateCcw, Star, Truck, Zap, ChevronLeft, ChevronRight, SlidersHorizontal, X } from 'lucide-react';
+import { MapPin, RotateCcw, Star, Truck, Zap, ChevronLeft, ChevronRight, ChevronDown, SlidersHorizontal, X } from 'lucide-react';
 import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -23,27 +23,44 @@ function publicUrl(path: string): string {
   return base.endsWith('/') ? `${base}${p}` : `${base}/${p}`;
 }
 
+const MerchantIcon: React.FC<{ className?: string }> = ({ className = 'w-7 h-7' }) => {
+  return (
+    <svg
+      className={className}
+      viewBox="0 0 24 24"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path d="M3 10.5L12 3L21 10.5" stroke="#e63533" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M6 9.5V20H18V9.5" stroke="#e63533" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M10 20V14H14V20" stroke="#e63533" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M8.5 12.5H8.51M15.5 12.5H15.51" stroke="#e63533" strokeWidth="2.4" strokeLinecap="round" />
+    </svg>
+  );
+};
+
 const CATEGORY_IMAGES: Record<string, string> = {
-  All: 'https://images.unsplash.com/photo-1504674900247-0877df9cc84e?auto=format&fit=crop&q=80&w=400',
-  street_food: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&q=80&w=400',
-  sandwiches: 'https://images.unsplash.com/photo-1528735602780-2552fd46c7af?auto=format&fit=crop&q=80&w=400',
-  brunch: 'https://images.unsplash.com/photo-1525351484163-7529414344d8?auto=format&fit=crop&q=80&w=400',
-  coffee: 'https://images.unsplash.com/photo-1495474472287-4d71bcdd2085?auto=format&fit=crop&q=80&w=400',
-  bar: 'https://images.unsplash.com/photo-1514933651103-005eec06c04b?auto=format&fit=crop&q=80&w=400',
-  burger: 'https://images.unsplash.com/photo-1568901346375-23c9450c58cd?auto=format&fit=crop&q=80&w=400',
-  sweets: 'https://images.unsplash.com/photo-1551024506-0bccd828d307?auto=format&fit=crop&q=80&w=400',
-  bbq: 'https://images.unsplash.com/photo-1529694157872-4e0c0f3b238b?auto=format&fit=crop&q=80&w=400',
-  breakfast: 'https://images.unsplash.com/photo-1533089860892-a7c6f0a88666?auto=format&fit=crop&q=80&w=400',
-  italian: 'https://images.unsplash.com/photo-1544025162-d76694265947?auto=format&fit=crop&q=80&w=400',
-  asian: 'https://images.unsplash.com/photo-1579871494447-9811cf80d66c?auto=format&fit=crop&q=80&w=400',
-  pizza: 'https://images.unsplash.com/photo-1513104890138-7c749659a591?auto=format&fit=crop&q=80&w=400',
-  crepe: 'https://images.unsplash.com/photo-1556909212-d5b604d0c90d?auto=format&fit=crop&q=80&w=400',
-  healthy: 'https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&q=80&w=400',
-  pasta: 'https://images.unsplash.com/photo-1621996346565-e3dbc646d9a9?auto=format&fit=crop&q=80&w=400',
-  bougatsa: 'https://images.unsplash.com/photo-1509440159596-0249088772ff?auto=format&fit=crop&q=80&w=400',
-  salads: 'https://images.unsplash.com/photo-1512621776951-a57141f2eefd?auto=format&fit=crop&q=80&w=400',
-  souvlaki: 'https://images.unsplash.com/photo-1529006557810-274b9b2fc783?auto=format&fit=crop&q=80&w=400',
-  cooked: 'https://images.unsplash.com/photo-1414235077428-338989a2e8c0?auto=format&fit=crop&q=80&w=400',
+  All: publicUrl('svg/streetfood.svg'),
+  street_food: publicUrl('svg/streetfood.svg'),
+  sandwiches: publicUrl('svg/sandwitch.svg'),
+  brunch: publicUrl('svg/sandwitch.svg'),
+  chicken: publicUrl('svg/chicken.svg'),
+  coffee: publicUrl('svg/coffiee.svg'),
+  bar: publicUrl('svg/coffiee.svg'),
+  burger: publicUrl('svg/burger.svg'),
+  sweets: publicUrl('svg/sweets.svg'),
+  bbq: publicUrl('svg/chicken.svg'),
+  breakfast: publicUrl('svg/healthy.svg'),
+  italian: publicUrl('svg/italic.svg'),
+  asian: publicUrl('svg/asian.svg'),
+  pizza: publicUrl('svg/pizza.svg'),
+  crepe: publicUrl('svg/sweets.svg'),
+  healthy: publicUrl('svg/healthy.svg'),
+  pasta: publicUrl('svg/italic.svg'),
+  bougatsa: publicUrl('svg/sweets.svg'),
+  salads: publicUrl('svg/healthy.svg'),
+  souvlaki: publicUrl('svg/chicken.svg'),
+  cooked: publicUrl('svg/chicken.svg'),
 };
 
 interface NetworkPageProps {
@@ -88,6 +105,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
     { id: 'All', label: t('all') },
     { id: 'street_food', label: 'Street Food' },
     { id: 'burger', label: 'Burger' },
+    { id: 'bbq', label: 'Chicken' },
     { id: 'coffee', label: 'Καφέ' },
     { id: 'pizza', label: 'Pizza' },
     { id: 'italian', label: 'Ιταλικό' },
@@ -150,27 +168,37 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
 
       {/* Γρήγορες επιλογές */}
       <motion.section variants={itemVariants} className="space-y-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="section-title text-anbit-text text-lg lg:text-xl">Γρήγορες επιλογές</h2>
-            <p className={`mt-1 text-sm ${networkQuestMuted}`}>Πρόσβαση ανά τύπο υπηρεσίας — σύρε οριζόντια</p>
+        <div className="flex items-end justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl lg:text-3xl">Αναζήτηση ανά τύπο υπηρεσίας</h2>
+          </div>
+          <div className="flex shrink-0 gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => scrollStrip(quickCategoriesScrollRef.current, 'left')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-11 sm:w-11 lg:h-12 lg:w-12"
+              aria-label="Προηγούμενο"
+            >
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollStrip(quickCategoriesScrollRef.current, 'right')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-11 sm:w-11 lg:h-12 lg:w-12"
+              aria-label="Επόμενο"
+            >
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
           </div>
         </div>
-        <div className="relative w-full min-w-0 group">
-          <button
-            type="button"
-            onClick={() => scrollStrip(quickCategoriesScrollRef.current, 'left')}
-            className={dealsCarouselNavBtnLeft}
-            aria-label="Προηγούμενο"
-          >
-            <ChevronLeft className="w-6 h-6" />
-          </button>
+        <div className="w-full min-w-0">
           <div
             ref={quickCategoriesScrollRef}
             className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory scroll-smooth"
           >
             {quickCategories.map((qc) => {
               const isActive = quickSelectionId === qc.id;
+              const count = getCategoryCount(qc.mappedFilter);
               return (
                 <motion.button
                   key={qc.id}
@@ -182,17 +210,17 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                     'group relative flex-shrink-0 w-[240px] sm:w-[260px] rounded-2xl overflow-hidden snap-start bg-anbit-card text-left transition-all duration-300 outline-none focus:outline-none focus-visible:outline-none',
                     theme === 'light'
                       ? cn(
-                          'border border-anbit-border shadow-none hover:-translate-y-0.5 hover:shadow-none',
-                          isActive
-                            ? 'border-anbit-text ring-2 ring-black/[0.06]'
-                            : 'hover:border-anbit-border',
-                        )
+                        'border border-anbit-border shadow-none hover:-translate-y-0.5 hover:shadow-none',
+                        isActive
+                          ? 'border-anbit-text ring-2 ring-black/[0.06]'
+                          : 'hover:border-anbit-border',
+                      )
                       : cn(
-                          'border-2 border-transparent shadow-lg shadow-black/30',
-                          isActive
-                            ? 'border-white ring-2 ring-white/30 shadow-xl shadow-black/40'
-                            : 'hover:shadow-xl hover:shadow-black/35',
-                        ),
+                        'border-2 border-transparent shadow-lg shadow-black/30',
+                        isActive
+                          ? 'border-white ring-2 ring-white/30 shadow-xl shadow-black/40'
+                          : 'hover:shadow-xl hover:shadow-black/35',
+                      ),
                   )}
                 >
                   <div className="relative h-[158px] sm:h-[168px] w-full overflow-hidden bg-anbit-border">
@@ -209,132 +237,168 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                       theme !== 'light' && 'border-t border-anbit-border/25',
                     )}
                   >
-                    <p className="font-bold text-sm leading-tight text-anbit-text line-clamp-2 sm:text-base">{qc.label}</p>
+                    <div className="flex items-start justify-between gap-3">
+                      <p className="font-bold text-sm leading-tight text-anbit-text line-clamp-2 sm:text-base">{qc.label}</p>
+                      <div className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white/[0.08] px-2.5 py-1.5">
+                        <MerchantIcon className="h-5 w-5 opacity-95" />
+                        <span className="text-sm font-bold text-anbit-text">{count}</span>
+                      </div>
+                    </div>
                   </div>
                 </motion.button>
               );
             })}
           </div>
+        </div>
+      </motion.section>
+
+      {/* Filter pills bar */}
+      <motion.section variants={itemVariants} className="min-w-0">
+        <div className="flex items-center gap-3 overflow-x-auto py-1 no-scrollbar">
           <button
             type="button"
-            onClick={() => scrollStrip(quickCategoriesScrollRef.current, 'right')}
-            className={dealsCarouselNavBtnRight}
-            aria-label="Επόμενο"
+            className="inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/10 bg-[#262626] text-anbit-text transition-colors hover:bg-[#2c2c2c]"
+            aria-label="Φίλτρα"
           >
-            <ChevronRight className="w-6 h-6" />
+            <SlidersHorizontal className="h-5 w-5" />
+          </button>
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-[#262626] px-5 py-2.5 text-sm font-semibold text-anbit-text transition-colors hover:border-white/30"
+          >
+            Τύπος φαγητού
+            <ChevronDown className="h-4 w-4 text-anbit-muted" />
+          </button>
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-[#262626] px-5 py-2.5 text-sm font-semibold text-anbit-text transition-colors hover:border-white/30"
+          >
+            Ταξινόμηση κατά
+            <ChevronDown className="h-4 w-4 text-anbit-muted" />
+          </button>
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/10 bg-[#e63533] px-5 py-2.5 text-sm font-semibold text-white transition-opacity hover:opacity-90"
+          >
+            Anbit+
+          </button>
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-[#262626] px-5 py-2.5 text-sm font-semibold text-anbit-text transition-colors hover:border-white/30"
+          >
+            Ανοιχτά Τώρα
+          </button>
+          <button
+            type="button"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border border-white/15 bg-[#262626] px-5 py-2.5 text-sm font-semibold text-anbit-text transition-colors hover:border-white/30"
+          >
+            Τιμή
+            <ChevronDown className="h-4 w-4 text-anbit-muted" />
           </button>
         </div>
       </motion.section>
 
-      {/* Κατηγορίες — ίδιο layout με quests, μέσα σε μαύρο panel */}
-      <motion.section variants={itemVariants} className="min-w-0">
-        <div className="overflow-hidden rounded-2xl border border-white/10 bg-black shadow-2xl shadow-black sm:rounded-3xl">
-          <div className="space-y-5 px-5 py-6 sm:space-y-6 sm:px-8 sm:py-7">
-            <div className="flex flex-col gap-3 border-b border-white/10 pb-5 sm:flex-row sm:items-start sm:justify-between sm:pb-6">
-              <div className="min-w-0 space-y-2">
-                <h2 className="text-lg font-extrabold tracking-tight text-white lg:text-xl">
-                  Κατηγορίες
-                </h2>
-                <p className={`text-sm ${networkQuestMuted}`}>
-                  Διάλεξε κατηγορία — η λίστα ανανεώνεται αμέσως. Σύρε οριζόντια.
-                </p>
-                {categoriesContextLabel && (
-                  <p className={`text-xs font-bold tracking-wide ${networkQuestMuted}`}>{categoriesContextLabel}</p>
-                )}
-                {filter !== 'All' && (
-                  <p className="text-sm font-bold text-white">
-                    {getCategoryCount(filter)} {getCategoryCount(filter) === 1 ? 'κατάστημα' : 'καταστήματα'}
-                  </p>
-                )}
-              </div>
-              {filter !== 'All' && (
-                <button
-                  type="button"
-                  onClick={() => {
-                    setFilter('All');
-                    setQuickSelectionId(null);
-                  }}
-                  className="inline-flex shrink-0 items-center gap-2 self-start rounded-lg border border-white/20 bg-white/10 px-4 py-2.5 text-sm font-medium text-white transition-colors hover:bg-white/15 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:self-auto"
-                >
-                  <RotateCcw className="h-4 w-4 opacity-80" aria-hidden />
-                  Όλα τα καταστήματα
-                </button>
-              )}
-            </div>
-
-            <div className="relative w-full min-w-0 group">
-              <button
-                type="button"
-                onClick={() => scrollStrip(categoriesScrollRef.current, 'left')}
-                className={dealsCarouselNavBtnLeft}
-                aria-label="Προηγούμενο"
-              >
-                <ChevronLeft className="w-6 h-6" />
-              </button>
-              <div
-                ref={categoriesScrollRef}
-                className="flex snap-x snap-mandatory scroll-smooth gap-4 overflow-x-auto pb-4 no-scrollbar sm:gap-6"
-              >
-                {categories.map((cat) => {
-                  const count = getCategoryCount(cat.id);
-                  const isActive = filter === cat.id;
-                  const catImg = CATEGORY_IMAGES[cat.id] ?? CATEGORY_IMAGES.All;
-                  const storeWord = count === 1 ? 'κατάστημα' : 'καταστήματα';
-                  return (
-                    <motion.button
-                      key={cat.id}
-                      type="button"
-                      aria-pressed={isActive}
-                      aria-label={`${cat.label}, ${count} ${storeWord}`}
-                      onClick={() => {
-                        setQuickSelectionId(null);
-                        setFilter(cat.id);
-                      }}
-                      whileHover={{ y: -4 }}
-                      transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                      className={cn(
-                        'group relative w-[200px] shrink-0 snap-start overflow-hidden rounded-xl border-2 border-anbit-border bg-anbit-card text-left shadow-md shadow-black/25 outline-none transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50 sm:w-[220px]',
-                        isActive
-                          ? 'border-anbit-text ring-2 ring-white/25 shadow-lg shadow-black/35'
-                          : 'hover:border-anbit-yellow/30 hover:shadow-lg hover:shadow-black/30',
-                      )}
-                    >
-                      <div className="relative h-[148px] w-full overflow-hidden bg-anbit-border sm:h-[158px]">
-                        <img
-                          src={catImg}
-                          alt=""
-                          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-90" />
-                      </div>
-                      <div className="relative border-t border-anbit-border/25 bg-anbit-card p-4">
-                        <p className="line-clamp-2 font-bold text-sm leading-tight text-anbit-text sm:text-base">{cat.label}</p>
-                        <p className={`mt-1 text-xs ${networkQuestMuted}`}>
-                          {count} {storeWord}
-                        </p>
-                      </div>
-                    </motion.button>
-                  );
-                })}
-              </div>
-              <button
-                type="button"
-                onClick={() => scrollStrip(categoriesScrollRef.current, 'right')}
-                className={dealsCarouselNavBtnRight}
-                aria-label="Επόμενο"
-              >
-                <ChevronRight className="w-6 h-6" />
-              </button>
-            </div>
+      {/* Αναζήτηση ανά κατηγορία */}
+      <motion.section variants={itemVariants} className="min-w-0 space-y-4 sm:space-y-5 lg:space-y-6">
+        <div className="flex items-end justify-between gap-3 sm:gap-4">
+          <div className="min-w-0">
+            <h2 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl lg:text-3xl">Αναζήτηση ανά κατηγορία</h2>
+            {categoriesContextLabel && (
+              <p className={`mt-1 text-xs font-bold tracking-wide sm:text-sm ${networkQuestMuted}`}>{categoriesContextLabel}</p>
+            )}
+          </div>
+          <div className="flex shrink-0 gap-2 sm:gap-3">
+            <button
+              type="button"
+              onClick={() => scrollStrip(categoriesScrollRef.current, 'left')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-11 sm:w-11 lg:h-12 lg:w-12"
+              aria-label="Προηγούμενο"
+            >
+              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollStrip(categoriesScrollRef.current, 'right')}
+              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-11 sm:w-11 lg:h-12 lg:w-12"
+              aria-label="Επόμενο"
+            >
+              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+            </button>
           </div>
         </div>
+
+        <div
+          ref={categoriesScrollRef}
+          className="flex snap-x snap-mandatory gap-3 overflow-x-auto pb-4 no-scrollbar sm:gap-4 lg:gap-5"
+        >
+          {categories.map((cat) => {
+            const count = getCategoryCount(cat.id);
+            const isActive = filter === cat.id;
+            const catImg = CATEGORY_IMAGES[cat.id] ?? CATEGORY_IMAGES.All;
+            const storeWord = count === 1 ? 'κατάστημα' : 'καταστήματα';
+            return (
+              <motion.button
+                key={cat.id}
+                type="button"
+                aria-pressed={isActive}
+                aria-label={`${cat.label}, ${count} ${storeWord}`}
+                onClick={() => {
+                  setQuickSelectionId(null);
+                  setFilter(cat.id);
+                }}
+                whileHover={{ y: -3 }}
+                transition={{ type: 'spring', stiffness: 380, damping: 30 }}
+                className="group flex shrink-0 snap-start flex-col items-center gap-1.5 sm:gap-2 text-center outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e63533]/60 rounded-2xl px-0.5 py-0.5"
+              >
+                <div
+                  className={cn(
+                    'h-24 w-24 overflow-hidden transition-all duration-500 sm:h-28 sm:w-28 md:h-32 md:w-32 lg:h-36 lg:w-36',
+                    isActive ? 'scale-[1.04]' : 'group-hover:scale-[1.03]',
+                  )}
+                >
+                  <img
+                    src={catImg}
+                    alt={cat.label}
+                    className="h-full w-full object-contain transition-transform duration-500 group-hover:scale-105"
+                  />
+                </div>
+                <p className={cn('text-sm font-extrabold transition-colors sm:text-base lg:text-lg', isActive ? 'text-[#e63533]' : 'text-white group-hover:text-[#e63533]')}>
+                  {cat.label}
+                </p>
+              </motion.button>
+            );
+          })}
+        </div>
+
+        {filter !== 'All' && (
+          <div className="flex">
+            <button
+              type="button"
+              onClick={() => {
+                setFilter('All');
+                setQuickSelectionId(null);
+              }}
+              className="inline-flex items-center gap-2 rounded-lg border border-white/15 bg-white/[0.04] px-3 py-2 text-sm font-semibold text-white transition-colors hover:bg-white/[0.08]"
+            >
+              <RotateCcw className="h-4 w-4 opacity-80" aria-hidden />
+              Καθαρισμός φίλτρου
+            </button>
+          </div>
+        )}
       </motion.section>
 
       {/* Καταστήματα */}
       <motion.section variants={itemVariants} className="space-y-5">
         <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('partnerStores')}</h2>
+            <h2 className="section-title flex items-center gap-2 text-anbit-text text-lg lg:text-xl">
+              {t('partnerStores')}
+              <span
+                aria-hidden
+                className="inline-block h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: '#e63533' }}
+              />
+            </h2>
             <p className="mt-1 text-xs text-anbit-muted">
               {sortedPartners.length} {sortedPartners.length === 1 ? 'αποτέλεσμα' : 'αποτελέσματα'}
               {filter !== 'All' && (

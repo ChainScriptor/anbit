@@ -8,19 +8,27 @@ import {
   Phone,
   Globe2,
   Mail,
+  ChevronRight,
 } from 'lucide-react';
 import type { Partner, Product } from '../types';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
 import AnimatedSocialLinks, { type Social } from './ui/social-links';
-import AnbitWordmark from './AnbitWordmark';
 import ImgStack from './ui/image-stack';
 import { AwardBadge } from './ui/award-badge';
 import StoreMysteryBox from './StoreMysteryBox';
 
 interface LocationState {
   partner?: Partner;
+}
+
+interface StoreReview {
+  id: string;
+  author: string;
+  rating: number;
+  timeAgo: string;
+  comment: string;
 }
 
 const StoreProfilePage: React.FC = () => {
@@ -31,7 +39,28 @@ const StoreProfilePage: React.FC = () => {
   const { user } = useAuth();
   const { theme } = useTheme();
   const [isMenuPreviewOpen, setIsMenuPreviewOpen] = useState(false);
-
+  const [storeReviews, setStoreReviews] = useState<StoreReview[]>([
+    {
+      id: 'review-1',
+      author: 'Anna K.',
+      rating: 5,
+      timeAgo: '2 days ago',
+      comment: 'Εντυπωσιακός χώρος, άψογη εξυπηρέτηση και γρήγορο Wi‑Fi.',
+    },
+    {
+      id: 'review-2',
+      author: 'Nikos P.',
+      rating: 4,
+      timeAgo: '1 week ago',
+      comment: 'Πολύ καλός καφές και ωραία pastries. Θα ξανάρθω σίγουρα.',
+    },
+  ]);
+  const [reviewForm, setReviewForm] = useState({
+    author: '',
+    rating: 5,
+    comment: '',
+  });
+  const [reviewsPage, setReviewsPage] = useState(1);
   const partner: Partner | undefined = useMemo(() => {
     if (state?.partner) return state.partner;
     if (!partnerId) return undefined;
@@ -39,6 +68,12 @@ const StoreProfilePage: React.FC = () => {
   }, [state?.partner, partnerId, partners]);
 
   const menu: Product[] = useMemo(() => partner?.menu ?? [], [partner]);
+  const REVIEWS_PER_PAGE = 4;
+  const totalReviewPages = Math.max(1, Math.ceil(storeReviews.length / REVIEWS_PER_PAGE));
+  const paginatedStoreReviews = useMemo(() => {
+    const start = (reviewsPage - 1) * REVIEWS_PER_PAGE;
+    return storeReviews.slice(start, start + REVIEWS_PER_PAGE);
+  }, [storeReviews, reviewsPage]);
   const storeXPForPartner = useMemo(() => {
     if (!partner) return 0;
     return user?.storeXP ? user.storeXP[partner.id] ?? 0 : 0;
@@ -93,84 +128,131 @@ const StoreProfilePage: React.FC = () => {
         color: 'var(--anbit-text)',
       }}
     >
-      {/* Header */}
-      <header className="bg-[color:var(--anbit-card)] shadow-sm border-b border-[color:var(--anbit-border)]">
-        <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-4 sm:px-6">
-          <button
-            type="button"
-            onClick={() => navigate('/network')}
-            className="inline-flex h-9 items-center rounded-full border border-[#e63533] bg-[#e63533] px-3 text-xs font-medium text-white shadow-sm hover:bg-[#cf2f2d] hover:border-[#cf2f2d]"
-          >
-            ← Πίσω στα καταστήματα
-          </button>
-          <span className="flex flex-wrap items-baseline justify-end gap-2 text-slate-400">
-            <AnbitWordmark className="text-sm text-slate-500" />
-            <span className="text-xs font-semibold uppercase tracking-[0.2em]">Store Profile</span>
-          </span>
+      {/* Full-width hero */}
+      <section className="relative w-full overflow-hidden border-b border-[color:var(--anbit-border)]">
+        <div className="relative h-[260px] w-full sm:h-[320px] lg:h-[380px]">
+          <img
+            src={partner.image}
+            alt={partner.name}
+            className="h-full w-full object-cover"
+          />
+          <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/35 to-black/75" />
         </div>
-      </header>
-
-      <main className="mx-auto max-w-6xl px-4 pb-16 pt-6 sm:px-6 sm:pt-8">
-        {/* Top profile section */}
-        <section>
-          <div className="relative overflow-hidden rounded-3xl border border-[color:var(--anbit-yellow)] shadow-lg">
-            <div className="flex flex-col gap-4 rounded-[22px] bg-[color:var(--anbit-card)] p-4 sm:flex-row sm:gap-5 sm:p-6">
-              <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-2xl bg-[color:var(--anbit-input)] shadow-sm sm:h-24 sm:w-24">
+        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-4 sm:px-6 sm:pb-6">
+          <div className="flex items-end justify-between gap-3">
+            <div className="flex min-w-0 items-end gap-3 sm:gap-4">
+              <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-black/30 shadow-lg backdrop-blur-sm sm:h-20 sm:w-20">
                 <img
                   src={partner.image}
                   alt={partner.name}
                   className="h-full w-full object-cover"
                 />
               </div>
-              <div className="flex-1 space-y-2">
-                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-                  <div className="min-w-0">
-                    <h1 className="text-xl font-semibold tracking-tight sm:text-2xl">
-                      {partner.name}
-                    </h1>
-                    <p className="text-xs text-[color:var(--anbit-muted)]">
-                      {partner.location ?? 'Premium coffee & food experience'}
-                    </p>
-                  </div>
-                  <div className="w-fit rounded-2xl bg-slate-900 px-3 py-2 text-xs font-semibold text-white shadow-sm">
-                    <span className="text-amber-300">
-                      ★ {partner.rating.toFixed(1)}
-                    </span>
-                    <span className="ml-1.5 text-white/70">
-                      · {partner.reviewCount ?? 124} reviews
-                    </span>
-                  </div>
-                </div>
+              <div className="min-w-0 pb-0.5">
+                <h1 className="truncate text-2xl font-extrabold tracking-tight text-white sm:text-3xl">
+                  {partner.name}
+                </h1>
+                <p className="mt-1 text-xs text-white/80 sm:text-sm">
+                  {partner.location ?? 'Premium coffee & food experience'}
+                </p>
+              </div>
+            </div>
+            <div className="w-fit rounded-2xl bg-black/45 px-3 py-2 text-xs font-semibold text-white shadow-sm backdrop-blur-sm">
+              <span className="text-amber-300">★ {partner.rating.toFixed(1)}</span>
+              <span className="ml-1.5 text-white/75">· {partner.reviewCount ?? 124} reviews</span>
+            </div>
+          </div>
+          <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-white/85 sm:text-xs">
+            <span className="text-[#009DE0]">Επιλογή τοποθεσίας</span>
+            <span>•</span>
+            <span>Ανοιχτό μέχρι 12:00 μ.μ.</span>
+            <span>•</span>
+            <span>Ελάχιστη παραγγελία {partner.minOrder ?? '6,00 €'}</span>
+            <span>•</span>
+            <span className="text-[#009DE0]">Λεπτομέρειες εστιατορίου</span>
+          </div>
+        </div>
+      </section>
 
-                <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
-                  <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                      XP στο κατάστημα
-                    </p>
-                    <p className="mt-1 flex items-center gap-1 text-sm font-semibold">
-                      <Zap className="h-4 w-4 text-[color:var(--anbit-yellow)]" />
-                      <span>{storeXPForPartner.toLocaleString()} XP</span>
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                      Orders served
-                    </p>
-                    <p className="mt-1 text-sm font-semibold">
-                      2.4K
-                    </p>
-                  </div>
-                  <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
-                    <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                      Featured Badge
-                    </p>
-                    <div className="mt-2">
-                      <AwardBadge type="product-of-the-week" place={1} />
-                    </div>
-                  </div>
+      <main className="mx-auto max-w-6xl px-4 pb-16 pt-5 sm:px-6 sm:pt-6">
+        {/* Top profile section */}
+        <section>
+          <div className="rounded-3xl border border-[color:var(--anbit-yellow)] bg-[color:var(--anbit-card)] p-4 shadow-lg sm:p-6">
+            <div className="grid grid-cols-1 gap-2 text-xs sm:grid-cols-2 sm:text-sm lg:grid-cols-3">
+              <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
+                <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
+                  XP στο κατάστημα
+                </p>
+                <p className="mt-1 flex items-center gap-1 text-sm font-semibold">
+                  <Zap className="h-4 w-4 text-[color:var(--anbit-yellow)]" />
+                  <span>{storeXPForPartner.toLocaleString()} XP</span>
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
+                <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
+                  Orders served
+                </p>
+                <p className="mt-1 text-sm font-semibold">
+                  2.4K
+                </p>
+              </div>
+              <div className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
+                <p className="text-[11px] uppercase tracking-wide text-[color:var(--anbit-muted)]">
+                  Featured Badge
+                </p>
+                <div className="mt-2">
+                  <AwardBadge type="product-of-the-week" place={1} />
                 </div>
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Προσφορές & προνόμια */}
+        <section className="mt-6">
+          <h2 className="text-2xl font-extrabold tracking-tight">Προσφορές & προνόμια</h2>
+          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
+            <article className="relative overflow-visible rounded-2xl bg-[#0a171a] p-6 shadow-sm transition-opacity hover:opacity-95">
+              <span className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
+              <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
+              <div className="flex items-center gap-5">
+                <div className="shrink-0">
+                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="#e63533" fillOpacity="0.2" />
+                    <path d="M24 40C32.8366 40 40 32.8366 40 24C40 15.1634 32.8366 8 24 8C15.1634 8 8 15.1634 8 24C8 32.8366 15.1634 40 24 40Z" stroke="#e63533" strokeDasharray="2 2" strokeWidth="2" />
+                    <path d="M18 18L30 30M19 30C19.5523 30 20 29.5523 20 29C20 28.4477 19.5523 28 19 28C18.4477 28 18 28.4477 18 29C18 29.5523 18.4477 30 19 30ZM29 20C29.5523 20 30 19.5523 30 19C30 18.4477 29.5523 18 29 18C28.4477 18 28 18.4477 28 19C28 19.5523 28.4477 20 29 20Z" stroke="#e63533" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
+                  </svg>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold leading-tight md:text-base">
+                    -50% στις 3 πρώτες σου παραγγελίες αξίας 10€ & άνω. Μέγιστη έκπτωση 7€
+                  </h3>
+                  <div className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[#009DE0]">
+                    <span>Εμφάνιση λεπτομερειών</span>
+                    <ChevronRight className="h-4 w-4" />
+                  </div>
+                </div>
+              </div>
+            </article>
+
+            <article className="relative overflow-visible rounded-2xl bg-gradient-to-r from-[#e63533] to-[#a82422] p-6 shadow-sm transition-opacity hover:opacity-95">
+              <span className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
+              <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
+              <div className="flex items-center gap-5">
+                <div className="shrink-0 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-sm font-extrabold italic tracking-tight text-white">
+                  Anbit<span className="ml-0.5 align-top text-xs not-italic font-bold">+</span>
+                </div>
+                <div className="min-w-0">
+                  <h3 className="text-sm font-bold leading-tight text-white md:text-base">
+                    Λάβετε 0 € χρέωση παράδοσης και πολλά άλλα!
+                  </h3>
+                  <div className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-white">
+                    <span>Δοκιμάστε για 30 μέρες δωρεάν!</span>
+                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[10px]">▶</span>
+                  </div>
+                </div>
+              </div>
+            </article>
           </div>
         </section>
 
@@ -201,31 +283,117 @@ const StoreProfilePage: React.FC = () => {
 
             {/* Reviews */}
             <section className="rounded-3xl bg-[color:var(--anbit-card)] p-5 shadow-sm border border-[color:var(--anbit-border)]">
+              <form
+                className="mb-4 w-full rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm space-y-2"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  const author = reviewForm.author.trim();
+                  const comment = reviewForm.comment.trim();
+                  if (!author || !comment) return;
+
+                  const newReview: StoreReview = {
+                    id: `review-${Date.now()}`,
+                    author,
+                    rating: reviewForm.rating,
+                    timeAgo: 'Μόλις τώρα',
+                    comment,
+                  };
+                  setStoreReviews((prev) => [newReview, ...prev]);
+                  setReviewsPage(1);
+                  setReviewForm({ author: '', rating: 5, comment: '' });
+                }}
+              >
+                <p className="text-xs font-semibold text-[color:var(--anbit-muted)]">Πρόσθεσε review</p>
+                <div className="grid grid-cols-1 gap-2 sm:grid-cols-[minmax(0,1fr)_120px]">
+                  <input
+                    type="text"
+                    value={reviewForm.author}
+                    onChange={(e) => setReviewForm((prev) => ({ ...prev, author: e.target.value }))}
+                    placeholder="Το όνομά σου"
+                    className="h-9 w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-[#e63533]/30"
+                    required
+                  />
+                  <select
+                    value={reviewForm.rating}
+                    onChange={(e) => setReviewForm((prev) => ({ ...prev, rating: Number(e.target.value) }))}
+                    className="h-9 w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-[#e63533]/30"
+                    aria-label="Βαθμολογία"
+                  >
+                    {[5, 4, 3, 2, 1].map((r) => (
+                      <option key={r} value={r}>{r}★</option>
+                    ))}
+                  </select>
+                </div>
+                <textarea
+                  rows={2}
+                  value={reviewForm.comment}
+                  onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
+                  placeholder="Γράψε την εμπειρία σου..."
+                  className="w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 py-2 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-[#e63533]/30"
+                  required
+                />
+                <div className="flex justify-end">
+                  <button
+                    type="submit"
+                    className="inline-flex items-center rounded-xl bg-[#e63533] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#cf2f2d]"
+                  >
+                    Δημοσίευση
+                  </button>
+                </div>
+              </form>
               <div className="grid gap-6 md:grid-cols-2">
                 <div>
                   <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)]">
                     Store Reviews
                   </h2>
                   <ul className="mt-3 space-y-3 text-sm">
-                    <li className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
-                      <p className="font-semibold">Anna K.</p>
-                      <p className="mt-1 text-xs text-amber-500">
-                        ★★★★★ · 2 days ago
-                      </p>
-                      <p className="mt-1 text-xs text-[color:var(--anbit-muted)]">
-                        Εντυπωσιακός χώρος, άψογη εξυπηρέτηση και γρήγορο Wi‑Fi.
-                      </p>
-                    </li>
-                    <li className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
-                      <p className="font-semibold">Nikos P.</p>
-                      <p className="mt-1 text-xs text-amber-500">
-                        ★★★★☆ · 1 week ago
-                      </p>
-                      <p className="mt-1 text-xs text-[color:var(--anbit-muted)]">
-                        Πολύ καλός καφές και ωραία pastries. Θα ξανάρθω σίγουρα.
-                      </p>
-                    </li>
+                    {paginatedStoreReviews.map((review) => (
+                      <li key={review.id} className="rounded-2xl bg-[color:var(--anbit-input)] p-3 shadow-sm">
+                        <p className="font-semibold">{review.author}</p>
+                        <p className="mt-1 text-xs text-amber-500">
+                          {'★'.repeat(review.rating)}
+                          {'☆'.repeat(5 - review.rating)} · {review.timeAgo}
+                        </p>
+                        <p className="mt-1 text-xs text-[color:var(--anbit-muted)]">
+                          {review.comment}
+                        </p>
+                      </li>
+                    ))}
                   </ul>
+                  {totalReviewPages > 1 && (
+                    <div className="mt-4 flex items-center justify-end gap-2">
+                      <button
+                        type="button"
+                        onClick={() => setReviewsPage((prev) => Math.max(1, prev - 1))}
+                        disabled={reviewsPage === 1}
+                        className="rounded-lg border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] px-2.5 py-1 text-xs font-semibold text-[color:var(--anbit-text)] disabled:opacity-40"
+                      >
+                        Προηγ.
+                      </button>
+                      {Array.from({ length: totalReviewPages }, (_, i) => i + 1).map((page) => (
+                        <button
+                          key={page}
+                          type="button"
+                          onClick={() => setReviewsPage(page)}
+                          className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
+                            page === reviewsPage
+                              ? 'bg-[#e63533] text-white'
+                              : 'border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] text-[color:var(--anbit-text)]'
+                          }`}
+                        >
+                          {page}
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setReviewsPage((prev) => Math.min(totalReviewPages, prev + 1))}
+                        disabled={reviewsPage === totalReviewPages}
+                        className="rounded-lg border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] px-2.5 py-1 text-xs font-semibold text-[color:var(--anbit-text)] disabled:opacity-40"
+                      >
+                        Επόμ.
+                      </button>
+                    </div>
+                  )}
                 </div>
 
                 <div>

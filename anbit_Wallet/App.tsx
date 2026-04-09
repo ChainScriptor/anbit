@@ -301,6 +301,7 @@ const App: React.FC = () => {
 
   const isStoreOrderLink =
     location.pathname.startsWith('/store/') || location.pathname === '/scan';
+  const isStoreProfileRoute = location.pathname.startsWith('/store-profile/');
   const hideChrome = isStoreOrderLink || isLoginRoute;
 
   if (!splashDone) {
@@ -341,7 +342,12 @@ const App: React.FC = () => {
                 onOpenRegister={!userData ? openRegister : undefined}
               />
             )}
-            <main className={hideChrome ? 'flex-1 min-h-screen w-full p-0' : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}>
+            <main className={hideChrome
+              ? 'flex-1 min-h-screen w-full p-0'
+              : isStoreProfileRoute
+                ? 'flex-1 min-h-screen w-full p-0'
+                : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}
+            >
               <Routes>
                 <Route path="/" element={<Navigate to="/dashboard" replace />} />
                 <Route path="/login" element={<CustomerLoginPage />} />

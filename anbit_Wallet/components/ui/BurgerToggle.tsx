@@ -15,7 +15,7 @@ export function BurgerToggle({ open, onOpenChange, className }: BurgerToggleProp
       className={[
         "group",
         // Overrides so it works with the anbit_Wallet Tailwind theme (uses anbit-* colors).
-        "bg-white/[0.03] border border-anbit-border text-anbit-muted hover:text-anbit-yellow hover:bg-anbit-border/40",
+        "bg-white/[0.03] border border-anbit-border text-white hover:text-white hover:bg-anbit-border/40",
         className,
       ]
         .filter(Boolean)

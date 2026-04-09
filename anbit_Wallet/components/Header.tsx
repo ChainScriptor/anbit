@@ -30,6 +30,7 @@ const navPaths: { path: string; labelKey: string; icon: typeof Home }[] = [
 
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0, onOpenLogin, onOpenRegister }) => {
   const location = useLocation();
+  const isStoreProfileRoute = location.pathname.startsWith('/store-profile/');
   const [isScrolled, setIsScrolled] = useState(false);
   const [cityModalOpen, setCityModalOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -70,7 +71,13 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
 
   return (
     <>
-      <header className={`fixed top-0 left-0 right-0 z-50 w-full px-3 lg:px-5 py-3 lg:py-4 transition-colors duration-300 glass-nav ${isScrolled ? 'navbar-scrolled' : ''}`}>
+      <header
+        className={`fixed top-0 left-0 right-0 z-50 w-full px-3 lg:px-5 py-3 lg:py-4 transition-colors duration-300 ${
+          isStoreProfileRoute
+            ? (isScrolled ? 'glass-nav navbar-scrolled' : 'bg-transparent border-transparent shadow-none')
+            : `glass-nav ${isScrolled ? 'navbar-scrolled' : ''}`
+        }`}
+      >
         <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3">
 
           <div className="flex items-center gap-3 shrink-0">
@@ -91,7 +98,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
 
                       const itemClass = `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-colors ${isActive
                           ? "bg-anbit-text text-anbit-bg"
-                          : "text-anbit-muted hover:bg-anbit-border/40 hover:text-anbit-text"
+                          : "text-white hover:bg-anbit-border/40 hover:text-white"
                         }`;
 
                       if (isProfileAsGuest) {
@@ -142,7 +149,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                         toggleTheme();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-anbit-card border border-anbit-border text-anbit-muted hover:text-anbit-yellow hover:bg-anbit-border/40 transition-colors"
+                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-anbit-card border border-anbit-border text-white hover:text-white hover:bg-anbit-border/40 transition-colors"
                       aria-label={theme === "dark" ? "Light mode" : "Dark mode"}
                     >
                       {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -223,7 +230,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
                 const isProfileAsGuest = item.path === '/profile' && !isAuthenticated && onOpenLogin;
-                const baseClass = `relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all ${isActive ? 'bg-anbit-text text-anbit-bg shadow-sm' : 'text-anbit-muted hover:bg-anbit-border/40 hover:text-anbit-text'
+                const baseClass = `relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all ${isActive ? 'bg-anbit-text text-anbit-bg shadow-sm' : 'text-white hover:bg-anbit-border/40 hover:text-white'
                   }`;
                 const hoverCardContent = (
                   <div
@@ -288,7 +295,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 </div>
                 <button
                   onClick={toggleTheme}
-                  className="w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-anbit-muted hover:text-anbit-yellow transition-colors"
+                  className="w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-white hover:text-white transition-colors"
                   aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -314,7 +321,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               <>
                 <button
                   onClick={toggleTheme}
-                  className="w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-anbit-muted hover:text-anbit-yellow transition-colors"
+                  className="w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-white/[0.05] border border-anbit-border flex items-center justify-center text-white hover:text-white transition-colors"
                   aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
