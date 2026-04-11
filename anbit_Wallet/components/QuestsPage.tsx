@@ -603,7 +603,14 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
               const count = quickQuestCounts.get(qc.id) ?? 0;
               const selectQuickCategory = () => {
                 setQuickSelectionId(qc.id);
-                if (qc.id === 'q-shopping' || qc.id === 'q-market' || qc.id === 'q-health') {
+                if (
+                  qc.id === 'q-shopping' ||
+                  qc.id === 'q-market' ||
+                  qc.id === 'q-health' ||
+                  qc.id === 'q-beauty' ||
+                  qc.id === 'q-drinks' ||
+                  qc.id === 'q-pets'
+                ) {
                   setPartnerCategoryFilter('All');
                 } else {
                   setPartnerCategoryFilter(qc.categoryId);
@@ -778,33 +785,40 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
         />
       )}
 
-      <section className="space-y-4">
-        <h2 className="section-title text-anbit-text text-lg lg:text-xl">{t('dealsOfTheDay')}</h2>
+      <section className="min-w-0 space-y-4">
+        <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+          {t('dealsOfTheDay')}
+        </h2>
         <OfferCarousel offers={GREEK_OFFERS} mutedTextClassName={questMuted} />
       </section>
 
-      <div className="space-y-12">
-        <AnimatePresence mode="popLayout">
-          {visibleMerchantSections.length === 0 ? (
-            <p className={`text-center text-sm ${questMuted}`}>Δεν υπάρχουν προσφορές για αυτό το φίλτρο.</p>
-          ) : (
-            visibleMerchantSections.map(({ partner, quests: mq, representative }) => (
-              <motion.section
-                key={partner?.id ?? representative.storeName ?? representative.id}
-                layout
-                initial={{ opacity: 0, y: 12 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-stretch gap-3"
-              >
-                <div className="self-start">
-                  <QuestMerchantBanner partner={partner} representativeQuest={representative} quests={mq} />
-                </div>
-                <MerchantOffersRow quests={mq} t={t} />
-              </motion.section>
-            ))
-          )}
-        </AnimatePresence>
+      <div className="min-w-0 space-y-4">
+        <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+          {t('quests')}
+        </h2>
+        <div className="space-y-12">
+          <AnimatePresence mode="popLayout">
+            {visibleMerchantSections.length === 0 ? (
+              <p className={`text-center text-sm ${questMuted}`}>Δεν υπάρχουν προσφορές για αυτό το φίλτρο.</p>
+            ) : (
+              visibleMerchantSections.map(({ partner, quests: mq, representative }) => (
+                <motion.section
+                  key={partner?.id ?? representative.storeName ?? representative.id}
+                  layout
+                  initial={{ opacity: 0, y: 12 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0 }}
+                  className="flex flex-col items-stretch gap-3"
+                >
+                  <div className="self-start">
+                    <QuestMerchantBanner partner={partner} representativeQuest={representative} quests={mq} />
+                  </div>
+                  <MerchantOffersRow quests={mq} t={t} />
+                </motion.section>
+              ))
+            )}
+          </AnimatePresence>
+        </div>
       </div>
 
       <QuickCategoryStoresModal

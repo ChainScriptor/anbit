@@ -1,9 +1,17 @@
 /**
  * Καρτέλες «Αναζήτηση ανά κατηγορία» στο Quests: open/close SVG από `public/categoriessvg/`
- * ανά επιλεγμένο quick category (Εστιατόρια, Ψώνια, Διαμονή, Υγεία & Ευεξία).
+ * ανά επιλεγμένο quick category (Εστιατόρια, Ψώνια, Διαμονή, Υγεία, Ομορφιά, Ποτά, Κατοικίδια).
  */
 
-export type CategoryStripBundle = 'food' | 'shopping' | 'airbnb' | 'health' | 'legacy';
+export type CategoryStripBundle =
+  | 'food'
+  | 'shopping'
+  | 'airbnb'
+  | 'health'
+  | 'beauty'
+  | 'drinks'
+  | 'pets'
+  | 'legacy';
 
 export type QuestPartnerCategoryTab = {
   id: string;
@@ -32,6 +40,21 @@ export const PLACEHOLDER_CATEGORY_IDS = new Set<string>([
   'well_3',
   'well_4',
   'well_5',
+  'beauty_1',
+  'beauty_2',
+  'beauty_3',
+  'beauty_4',
+  'beauty_5',
+  'drink_1',
+  'drink_2',
+  'drink_3',
+  'drink_4',
+  'drink_5',
+  'drink_6',
+  'pet_1',
+  'pet_2',
+  'pet_3',
+  'pet_4',
 ]);
 
 export function categoryStripBundleFromQuickId(quickId: string | null): CategoryStripBundle {
@@ -39,6 +62,9 @@ export function categoryStripBundleFromQuickId(quickId: string | null): Category
   if (quickId === 'q-shopping') return 'shopping';
   if (quickId === 'q-market') return 'airbnb';
   if (quickId === 'q-health') return 'health';
+  if (quickId === 'q-beauty') return 'beauty';
+  if (quickId === 'q-drinks') return 'drinks';
+  if (quickId === 'q-pets') return 'pets';
   return 'legacy';
 }
 
@@ -154,6 +180,84 @@ export function buildHealthCategoryTabs(pu: (p: string) => string, allLabel: str
   ];
 }
 
+/** Ομορφιά — `beauty/` (open 63–67, close 69–73). Το «Όλα» χρησιμοποιεί `beautyClose/all.svg` (δεν υπάρχει ακόμα open variant). */
+export function buildBeautyCategoryTabs(pu: (p: string) => string, allLabel: string): QuestPartnerCategoryTab[] {
+  const pairs: [string, string, string, string][] = [
+    ['beauty_1', 'Φροντίδα Μαλλιών', '63.svg', '69.svg'],
+    ['beauty_2', 'Μπαρμπεράδικο', '64.svg', '70.svg'],
+    ['beauty_3', 'Νυχια & μανικιούρ', '65.svg', '71.svg'],
+    ['beauty_4', 'Αρώματα', '66.svg', '72.svg'],
+    ['beauty_5', 'Lazer & Περιποίηση', '67.svg', '73.svg'],
+  ];
+  const allClose = pu('categoriessvg/beauty/beautyClose/all.svg');
+  return [
+    {
+      id: 'All',
+      label: allLabel,
+      openSrc: allClose,
+      closeSrc: allClose,
+    },
+    ...pairs.map(([id, label, o, c]) => ({
+      id,
+      label,
+      openSrc: pu(`categoriessvg/beauty/beautyOpen/${o}`),
+      closeSrc: pu(`categoriessvg/beauty/beautyClose/${c}`),
+    })),
+  ];
+}
+
+/** Ποτά — `drinks/` (open 74–79, close 80–84· τα `drink_5` & `drink_6` μοιράζονται το `84.svg`). Το «Όλα»: `drinksClose/all.svg` (και για open μέχρι να υπάρξει `drinksOpen/all.svg`). */
+export function buildDrinksCategoryTabs(pu: (p: string) => string, allLabel: string): QuestPartnerCategoryTab[] {
+  const pairs: [string, string, string, string][] = [
+    ['drink_1', 'Ποτό', '74.svg', '80.svg'],
+    ['drink_2', 'Κρασί', '75.svg', '81.svg'],
+    ['drink_3', 'Μπύρες', '76.svg', '82.svg'],
+    ['drink_4', 'Club', '77.svg', '83.svg'],
+    ['drink_5', 'Beach Bar', '78.svg', '84.svg'],
+    ['drink_6', 'Cocktails', '79.svg', '84.svg'],
+  ];
+  const drinksAll = pu('categoriessvg/drinks/drinksClose/all.svg');
+  return [
+    {
+      id: 'All',
+      label: allLabel,
+      openSrc: drinksAll,
+      closeSrc: drinksAll,
+    },
+    ...pairs.map(([id, label, o, c]) => ({
+      id,
+      label,
+      openSrc: pu(`categoriessvg/drinks/drinksOpen/${o}`),
+      closeSrc: pu(`categoriessvg/drinks/drinksClose/${c}`),
+    })),
+  ];
+}
+
+/** Κατοικίδια — `pets/` (open 85–88, close 89–92). Το «Όλα»: `petsClose/all.svg` (και για open μέχρι να υπάρξει `petsOpen/all.svg`). */
+export function buildPetsCategoryTabs(pu: (p: string) => string, allLabel: string): QuestPartnerCategoryTab[] {
+  const pairs: [string, string, string, string][] = [
+    ['pet_1', 'Τροφές', '85.svg', '89.svg'],
+    ['pet_2', 'Αξεσουάρ', '86.svg', '90.svg'],
+    ['pet_3', 'Φροντίδα', '87.svg', '91.svg'],
+    ['pet_4', 'Παιχνίδια', '88.svg', '92.svg'],
+  ];
+  const petsAll = pu('categoriessvg/pets/petsClose/all.svg');
+  return [
+    {
+      id: 'All',
+      label: allLabel,
+      openSrc: petsAll,
+      closeSrc: petsAll,
+    },
+    ...pairs.map(([id, label, o, c]) => ({
+      id,
+      label,
+      openSrc: pu(`categoriessvg/pets/petsOpen/${o}`),
+      closeSrc: pu(`categoriessvg/pets/petsClose/${c}`),
+    })),
+  ];
+}
+
 /** Παλιά `svg/` + `svgclose/` (ίδια λίστα ids με food). */
 export function buildLegacyCategoryTabs(pu: (p: string) => string, allLabel: string): QuestPartnerCategoryTab[] {
   const legacy: [string, string, string, string][] = [
@@ -192,6 +296,12 @@ export function buildPartnerCategoryTabsForBundle(
       return buildAirbnbCategoryTabs(pu, allLabel);
     case 'health':
       return buildHealthCategoryTabs(pu, allLabel);
+    case 'beauty':
+      return buildBeautyCategoryTabs(pu, allLabel);
+    case 'drinks':
+      return buildDrinksCategoryTabs(pu, allLabel);
+    case 'pets':
+      return buildPetsCategoryTabs(pu, allLabel);
     default:
       return buildLegacyCategoryTabs(pu, allLabel);
   }
