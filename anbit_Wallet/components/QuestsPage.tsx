@@ -1,5 +1,5 @@
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
+import React, { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -7,8 +7,14 @@ import { Quest, Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
 import { OfferCarousel, offerCarouselNavButtonClass } from './ui/offer-carousel';
+import { OfferFilterSelect } from './ui/offer-filter-select';
 import { GREEK_OFFERS } from '../data/greekOffers';
 import { cn } from '@/lib/utils';
+import {
+  loadFavoriteMerchantIds,
+  subscribeFavoriteMerchantsChanged,
+  toggleFavoriteMerchantId,
+} from '@/lib/favoriteStores';
 import { QuickCategories } from './QuickCategories';
 import { QuickCategoriesWaveBackdrop } from './QuickCategoriesWaveBackdrop';
 import { QuestOfferCard } from './QuestOfferCard';
@@ -24,6 +30,10 @@ import {
 } from './questCategoryStrip';
 
 const questMuted = 'text-[color:var(--anbit-muted)]';
+
+/** Strip «Αναζήτηση ανά κατηγορία»: βελάκια ορατά στο mobile (το κοινό `offerCarouselNavButtonClass` είναι `hidden` κάτω από `sm`). */
+const partnerCategoryNavButtonClass =
+  'absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-anbit-border bg-anbit-card/95 text-anbit-text shadow-sm backdrop-blur-sm transition-opacity hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content sm:h-10 sm:w-10 opacity-90 md:opacity-0 md:group-hover:opacity-100';
 
 function publicUrl(path: string): string {
   const base = import.meta.env.BASE_URL || '/';
@@ -45,7 +55,7 @@ const QuestQuickMerchantIcon: React.FC<{ className?: string }> = ({ className = 
   </svg>
 );
 
-type FilterValue = '' | 'highest-xp' | 'expiring-soon';
+type FilterValue = '' | 'highest-xp' | 'expiring-soon' | 'favorite-stores';
 
 function resolveQuestPartner(quest: Quest, partners: Partner[]): Partner | undefined {
   if (quest.partnerId) return partners.find((p) => p.id === quest.partnerId);
@@ -62,21 +72,105 @@ function questMatchesPartnerCategory(quest: Quest, partners: Partner[], category
 }
 
 /** Ίδιες γρήγορες κατηγορίες με το NetworkPage· `categoryId` = id καρτέλας Network (partner.category). */
-const QUEST_QUICK_CATEGORIES: { id: string; label: string; categoryId: string; image: string }[] = [
-  { id: 'q-restaurants', label: 'Εστιατόρια', categoryId: 'street_food', image: publicUrl('categories/restaurant.gif') },
-  { id: 'q-shopping', label: 'Ψώνια', categoryId: 'sandwiches', image: publicUrl('categories/shop.gif') },
-  { id: 'q-market', label: 'Διαμονή', categoryId: 'All', image: publicUrl('categories/airbnb.gif') },
-  { id: 'q-health', label: 'Υγεία & Ευεξία', categoryId: 'healthy', image: publicUrl('categories/gym.gif') },
-  { id: 'q-beauty', label: 'Ομορφιά', categoryId: 'sweets', image: publicUrl('categories/beauty.gif') },
-  { id: 'q-drinks', label: 'Ποτά', categoryId: 'bar', image: publicUrl('categories/drinks.gif') },
-  { id: 'q-pets', label: 'Κατοικίδια', categoryId: 'All', image: publicUrl('categories/pets.gif') },
-  { id: 'q-electronics', label: 'Ηλεκτρονικά', categoryId: 'All', image: publicUrl('categories/electronics.gif') },
-  { id: 'q-baby', label: 'Παιδικά', categoryId: 'All', image: publicUrl('categories/baby.gif') },
-  { id: 'q-home', label: 'Σπίτι & DIY', categoryId: 'All', image: publicUrl('categories/home.gif') },
-  { id: 'q-flowers', label: 'Ανθοπωλεία', categoryId: 'All', image: publicUrl('categories/flowers.gif') },
-  { id: 'q-hobbies', label: 'Χόμπι & Αθλητισμός', categoryId: 'All', image: publicUrl('categories/hobbie.gif') },
-  { id: 'q-clothes', label: 'Ένδυση', categoryId: 'All', image: publicUrl('categories/clothes.gif') },
-  { id: 'q-gifts', label: 'Δώρα', categoryId: 'All', image: publicUrl('categories/gifts.gif') },
+const QUEST_QUICK_CATEGORIES: { id: string; label: string; subtitle: string; categoryId: string; image: string }[] = [
+  {
+    id: 'q-restaurants',
+    label: 'Εστιατόρια',
+    subtitle: 'Ξεκλειδώστε VIP προνόμια σε κάθε σας γεύμα.',
+    categoryId: 'street_food',
+    image: publicUrl('categories/restaurant.gif'),
+  },
+  {
+    id: 'q-shopping',
+    label: 'Ψώνια',
+    subtitle: 'Καθημερινές αγορές με το πλεονέκτημα της Anbit.',
+    categoryId: 'sandwiches',
+    image: publicUrl('categories/shop.gif'),
+  },
+  {
+    id: 'q-market',
+    label: 'Διαμονή',
+    subtitle: 'Exclusive rates και προνόμια για VIP αποδράσεις.',
+    categoryId: 'All',
+    image: publicUrl('categories/airbnb.gif'),
+  },
+  {
+    id: 'q-health',
+    label: 'Υγεία & Ευεξία',
+    subtitle: 'Επενδύστε στην ευεξία με κορυφαίες ανταμοιβές.',
+    categoryId: 'healthy',
+    image: publicUrl('categories/gym.gif'),
+  },
+  {
+    id: 'q-beauty',
+    label: 'Ομορφιά',
+    subtitle: 'Premium περιποίηση με exclusive Noir προσφορές.',
+    categoryId: 'sweets',
+    image: publicUrl('categories/beauty.gif'),
+  },
+  {
+    id: 'q-drinks',
+    label: 'Ποτά',
+    subtitle: 'High-stakes γεύσεις με τα προνόμια του νικητή.',
+    categoryId: 'bar',
+    image: publicUrl('categories/drinks.gif'),
+  },
+  {
+    id: 'q-pets',
+    label: 'Κατοικίδια',
+    subtitle: 'Ανταμοιβές που αξίζουν οι πιο πιστοί σας φίλοι.',
+    categoryId: 'All',
+    image: publicUrl('categories/pets.gif'),
+  },
+  {
+    id: 'q-electronics',
+    label: 'Ηλεκτρονικά',
+    subtitle: 'Tech gadgets επόμενης γενιάς με προνόμια μέλους.',
+    categoryId: 'All',
+    image: publicUrl('categories/electronics.gif'),
+  },
+  {
+    id: 'q-baby',
+    label: 'Παιδικά',
+    subtitle: 'Ο κόσμος των παιδιών με τις καλύτερες ανταμοιβές.',
+    categoryId: 'All',
+    image: publicUrl('categories/baby.gif'),
+  },
+  {
+    id: 'q-home',
+    label: 'Σπίτι & DIY',
+    subtitle: 'Design και εργαλεία με πρόσβαση σε exclusive deals.',
+    categoryId: 'All',
+    image: publicUrl('categories/home.gif'),
+  },
+  {
+    id: 'q-flowers',
+    label: 'Ανθοπωλεία',
+    subtitle: 'Η κομψότητα της φύσης με ειδικά προνόμια Anbit.',
+    categoryId: 'All',
+    image: publicUrl('categories/flowers.gif'),
+  },
+  {
+    id: 'q-hobbies',
+    label: 'Χόμπι & Αθλητισμός',
+    subtitle: 'Κορυφαίος εξοπλισμός με το πλεονέκτημα του κέρδους.',
+    categoryId: 'All',
+    image: publicUrl('categories/hobbie.gif'),
+  },
+  {
+    id: 'q-clothes',
+    label: 'Ένδυση',
+    subtitle: 'Το απόλυτο στυλ που ανταμείβει κάθε σας επιλογή.',
+    categoryId: 'All',
+    image: publicUrl('categories/clothes.gif'),
+  },
+  {
+    id: 'q-gifts',
+    label: 'Δώρα',
+    subtitle: 'Επιλεγμένα δώρα με το "Jackpot" των προνομίων μας.',
+    categoryId: 'All',
+    image: publicUrl('categories/gifts.gif'),
+  },
 ];
 
 /** Προεπιλογή στο /quests: γρήγορη κάρτα + strip φαγητού (`food` bundle). */
@@ -128,6 +222,9 @@ function QuestMerchantBanner({
   selectable = false,
   selected = false,
   onSelect,
+  favoriteMerchantId,
+  isFavorite,
+  onToggleFavorite,
 }: {
   partner?: Partner;
   representativeQuest: Quest;
@@ -136,9 +233,12 @@ function QuestMerchantBanner({
   selectable?: boolean;
   selected?: boolean;
   onSelect?: () => void;
+  /** Κλειδί ίδιο με `groupKeyFromSection` / `merchantGroupKey` για localStorage αγαπημένων. */
+  favoriteMerchantId: string;
+  isFavorite: boolean;
+  onToggleFavorite: (merchantKey: string) => void;
 }) {
   const navigate = useNavigate();
-  const [favorite, setFavorite] = useState(false);
   const name = partner?.name ?? representativeQuest.storeName ?? 'Merchant';
   const img = partner?.image ?? representativeQuest.storeImage ?? '';
   const rating = partner?.rating ?? 9.2;
@@ -245,17 +345,17 @@ function QuestMerchantBanner({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            setFavorite((v) => !v);
+            onToggleFavorite(favoriteMerchantId);
           }}
           className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-anbit-brand',
-            favorite && 'bg-anbit-brand',
+            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-[#e63533]/90',
+            isFavorite && 'bg-[#e63533]',
           )}
-          aria-label={favorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
+          aria-label={isFavorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
         >
           <span
             className="material-symbols-outlined text-[16px]"
-            style={favorite ? { fontVariationSettings: "'FILL' 1" } : undefined}
+            style={isFavorite ? { fontVariationSettings: "'FILL' 1" } : undefined}
           >
             favorite
           </span>
@@ -371,10 +471,14 @@ function QuestsMerchantStrip({
   sections,
   selectedKey,
   onSelect,
+  favoriteMerchantIds,
+  onToggleFavoriteMerchant,
 }: {
   sections: MerchantSectionGroup[];
   selectedKey: string | null;
   onSelect: (key: string | null) => void;
+  favoriteMerchantIds: Set<string>;
+  onToggleFavoriteMerchant: (merchantKey: string) => void;
 }) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -423,6 +527,9 @@ function QuestsMerchantStrip({
                   selectable
                   selected={selectedKey === key}
                   onSelect={() => onSelect(key)}
+                  favoriteMerchantId={key}
+                  isFavorite={favoriteMerchantIds.has(key)}
+                  onToggleFavorite={onToggleFavoriteMerchant}
                 />
               </div>
             );
@@ -452,8 +559,19 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
   const [quickSelectionId, setQuickSelectionId] = useState<string | null>(DEFAULT_QUESTS_QUICK_ID);
   const [selectedMerchantKey, setSelectedMerchantKey] = useState<string | null>(null);
   const [quickStoresModalQuickId, setQuickStoresModalQuickId] = useState<string | null>(null);
+  const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
   const quickCategoriesScrollRef = useRef<HTMLDivElement | null>(null);
   const partnerCategoryScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    return subscribeFavoriteMerchantsChanged(() => {
+      setFavoriteMerchantIds(loadFavoriteMerchantIds());
+    });
+  }, []);
+
+  const handleToggleFavoriteMerchant = useCallback((merchantKey: string) => {
+    setFavoriteMerchantIds(toggleFavoriteMerchantId(merchantKey));
+  }, []);
 
   useEffect(() => {
     const prev = prevPathnameRef.current;
@@ -518,6 +636,9 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
         return storeName.includes(q) || title.includes(q) || description.includes(q);
       });
     }
+    if (offerFilter === 'favorite-stores') {
+      list = list.filter((quest) => favoriteMerchantIds.has(merchantGroupKey(quest, partners)));
+    }
     if (offerFilter === 'highest-xp') list.sort((a, b) => b.reward - a.reward);
     else if (offerFilter === 'expiring-soon') {
       list.sort((a, b) => {
@@ -527,7 +648,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       });
     }
     return list;
-  }, [quests, partners, offerFilter, searchQuery, partnerCategoryFilter]);
+  }, [quests, partners, offerFilter, searchQuery, partnerCategoryFilter, favoriteMerchantIds]);
 
   useEffect(() => {
     setSelectedMerchantKey(null);
@@ -573,6 +694,24 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
     if (selectedMerchantKey == null) return merchantSections;
     return merchantSections.filter((g) => groupKeyFromSection(g) === selectedMerchantKey);
   }, [merchantSections, selectedMerchantKey]);
+
+  const emptyQuestsMessage = useMemo(() => {
+    if (offerFilter === 'favorite-stores') {
+      if (favoriteMerchantIds.size === 0) return t('favoriteStoresAddSome');
+      return t('favoriteStoresNoOffers');
+    }
+    return t('questsFilterEmpty');
+  }, [offerFilter, favoriteMerchantIds.size, t]);
+
+  const offerFilterOptions = useMemo(
+    () => [
+      { value: '', label: t('allOffers') },
+      { value: 'favorite-stores', label: t('favoriteStoresFilter') },
+      { value: 'highest-xp', label: t('highestXP') },
+      { value: 'expiring-soon', label: t('expiringSoon') },
+    ],
+    [t],
+  );
 
   return (
     <motion.div
@@ -648,9 +787,12 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                       <button
                         type="button"
                         onClick={selectQuickCategory}
-                        className="min-w-0 flex-1 px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-anbit-brand/55 sm:px-3 sm:py-3"
+                        className="min-w-0 flex-1 px-2.5 py-2 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-anbit-brand/55 sm:px-3 sm:py-2.5"
                       >
                         <p className="line-clamp-2 text-xs font-bold leading-tight text-white sm:text-sm">{qc.label}</p>
+                        <p className="mt-1 line-clamp-3 text-[9px] font-medium leading-snug text-[#8f8f8f] sm:line-clamp-4 sm:text-[10px]">
+                          {qc.subtitle}
+                        </p>
                       </button>
                       <button
                         type="button"
@@ -681,39 +823,41 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
             </div>
           </div>
         </div>
-        <h2 className="playpen-sans text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
-          Αναζήτηση ανά κατηγορία
-        </h2>
       </motion.section>
 
-      <div className="flex min-w-0 flex-row items-center gap-2 pb-1 sm:gap-3 md:gap-4">
-        <div className="flex shrink-0 flex-row items-center gap-2 sm:gap-3">
-          <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questMuted}`}>{t('filterBy')}</span>
-          <select
-            value={offerFilter}
-            onChange={(e) => setOfferFilter(e.target.value as FilterValue)}
-            className="h-10 min-w-[9.5rem] shrink-0 rounded-lg border border-anbit-border bg-anbit-card px-3 text-sm font-medium text-anbit-text focus:outline-none focus:ring-2 focus:ring-anbit-yellow/50 sm:min-w-[160px]"
-          >
-            <option value="">{t('allOffers')}</option>
-            <option value="highest-xp">{t('highestXP')}</option>
-            <option value="expiring-soon">{t('expiringSoon')}</option>
-          </select>
-          <label className="relative w-44 shrink-0 sm:w-56 sm:max-w-[min(100%,20rem)]">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search store or offer..."
-              className="h-10 w-full rounded-lg border border-anbit-border bg-anbit-card pl-9 pr-3 text-sm text-anbit-text placeholder:text-[#8a8a8a] focus:border-anbit-brand focus:outline-none focus:ring-2 focus:ring-anbit-brand/45"
-            />
-          </label>
+      <motion.div variants={itemVariants} className="min-w-0 space-y-3 pb-1">
+        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+          <h2 className="playpen-sans min-w-0 text-[28px] font-extrabold leading-tight tracking-tight text-anbit-text sm:text-[36px] md:min-w-0 md:flex-1 md:pr-4">
+            Αναζήτηση ανά κατηγορία
+          </h2>
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 md:w-auto md:shrink-0 md:justify-end md:gap-3">
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+              <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questMuted}`}>{t('filterBy')}</span>
+              <OfferFilterSelect
+                value={offerFilter}
+                onChange={(v) => setOfferFilter(v as FilterValue)}
+                options={offerFilterOptions}
+                aria-label={t('filterBy')}
+              />
+            </div>
+            <label className="relative block w-full min-w-0 sm:min-w-[12rem] sm:flex-1 sm:max-w-[20rem] md:w-56 md:max-w-none md:shrink-0 md:flex-none">
+              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search store or offer..."
+                className="h-10 w-full rounded-lg border border-anbit-border bg-anbit-card pl-9 pr-3 text-sm text-anbit-text placeholder:text-[#8a8a8a] focus:border-[#e63533] focus:outline-none focus:ring-2 focus:ring-[#e63533]/40"
+              />
+            </label>
+          </div>
         </div>
-        <div className="group relative min-h-0 min-w-0 flex-1 py-1">
+
+        <div className="group relative w-full min-w-0 py-1">
           <button
             type="button"
             onClick={() => scrollPartnerCategoryStrip(partnerCategoryScrollRef.current, 'left')}
-            className={cn(offerCarouselNavButtonClass, 'left-0')}
+            className={cn(partnerCategoryNavButtonClass, 'left-0')}
             aria-label="Προηγούμενη κατηγορία"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -769,19 +913,21 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
           <button
             type="button"
             onClick={() => scrollPartnerCategoryStrip(partnerCategoryScrollRef.current, 'right')}
-            className={cn(offerCarouselNavButtonClass, 'right-0')}
+            className={cn(partnerCategoryNavButtonClass, 'right-0')}
             aria-label="Επόμενη κατηγορία"
           >
             <ChevronRight className="h-6 w-6" />
           </button>
         </div>
-      </div>
+      </motion.div>
 
       {merchantSections.length > 0 && (
         <QuestsMerchantStrip
           sections={merchantSections}
           selectedKey={selectedMerchantKey}
           onSelect={setSelectedMerchantKey}
+          favoriteMerchantIds={favoriteMerchantIds}
+          onToggleFavoriteMerchant={handleToggleFavoriteMerchant}
         />
       )}
 
@@ -799,9 +945,11 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
         <div className="space-y-12">
           <AnimatePresence mode="popLayout">
             {visibleMerchantSections.length === 0 ? (
-              <p className={`text-center text-sm ${questMuted}`}>Δεν υπάρχουν προσφορές για αυτό το φίλτρο.</p>
+              <p className={`text-center text-sm ${questMuted}`}>{emptyQuestsMessage}</p>
             ) : (
-              visibleMerchantSections.map(({ partner, quests: mq, representative }) => (
+              visibleMerchantSections.map(({ partner, quests: mq, representative }) => {
+                const merchantKey = groupKeyFromSection({ partner, representative });
+                return (
                 <motion.section
                   key={partner?.id ?? representative.storeName ?? representative.id}
                   layout
@@ -811,11 +959,19 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                   className="flex flex-col items-stretch gap-3"
                 >
                   <div className="self-start">
-                    <QuestMerchantBanner partner={partner} representativeQuest={representative} quests={mq} />
+                    <QuestMerchantBanner
+                      partner={partner}
+                      representativeQuest={representative}
+                      quests={mq}
+                      favoriteMerchantId={merchantKey}
+                      isFavorite={favoriteMerchantIds.has(merchantKey)}
+                      onToggleFavorite={handleToggleFavoriteMerchant}
+                    />
                   </div>
                   <MerchantOffersRow quests={mq} t={t} />
                 </motion.section>
-              ))
+              );
+              })
             )}
           </AnimatePresence>
         </div>

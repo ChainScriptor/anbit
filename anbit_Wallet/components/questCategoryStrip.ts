@@ -236,10 +236,10 @@ export function buildDrinksCategoryTabs(pu: (p: string) => string, allLabel: str
 /** Κατοικίδια — `pets/` (open 85–88, close 89–92). Το «Όλα»: `petsClose/all.svg` (και για open μέχρι να υπάρξει `petsOpen/all.svg`). */
 export function buildPetsCategoryTabs(pu: (p: string) => string, allLabel: string): QuestPartnerCategoryTab[] {
   const pairs: [string, string, string, string][] = [
-    ['pet_1', 'Τροφές', '85.svg', '89.svg'],
-    ['pet_2', 'Αξεσουάρ', '86.svg', '90.svg'],
-    ['pet_3', 'Φροντίδα', '87.svg', '91.svg'],
-    ['pet_4', 'Παιχνίδια', '88.svg', '92.svg'],
+    ['pet_1', 'Pet Shop', '85.svg', '89.svg'],
+    ['pet_2', 'Vet', '86.svg', '90.svg'],
+    ['pet_3', 'Grooming', '87.svg', '91.svg'],
+    ['pet_4', 'Pet boutique', '88.svg', '92.svg'],
   ];
   const petsAll = pu('categoriessvg/pets/petsClose/all.svg');
   return [

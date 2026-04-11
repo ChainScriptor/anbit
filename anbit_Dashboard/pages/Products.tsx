@@ -129,6 +129,8 @@ const Products: React.FC = () => {
   const detailFileInputRef = useRef<HTMLInputElement | null>(null);
   const [detailImageBusy, setDetailImageBusy] = useState(false);
   const [detailImageError, setDetailImageError] = useState<string | null>(null);
+  const [detailSaveBusy, setDetailSaveBusy] = useState(false);
+  const [detailSaveError, setDetailSaveError] = useState<string | null>(null);
 
   const loadProducts = async (): Promise<Product[]> => {
     setIsLoading(true);
@@ -351,25 +353,33 @@ const Products: React.FC = () => {
     }
 
     if (editingProductId) {
-      setItems((prev) =>
-        prev.map((p) =>
-          p.id === editingProductId
-            ? {
-                ...p,
-                name: newProduct.name?.trim() || p.name,
-                description: newProduct.description?.trim() || p.description,
-                category: newProduct.category || p.category,
-                price,
-                pointsReward: xp > 0 ? xp : 1,
-                image: newProduct.image || p.image,
-                allergens: newProduct.allergens ?? [],
-              }
-            : p,
-        ),
-      );
-      setIsAddOpen(false);
-      resetForm();
-      setSaveSuccess('Το προϊόν ενημερώθηκε επιτυχώς!');
+      try {
+        setIsSaving(true);
+        const description = newProduct.description?.trim() || 'N/A';
+        await api.updateProduct(editingProductId, {
+          name: newProduct.name.trim(),
+          description,
+          category: newProduct.category || 'Menu',
+          price,
+          xp,
+          allergens: newProduct.allergens ?? [],
+        });
+        setIsAddOpen(false);
+        resetForm();
+        await loadProducts();
+        setSaveSuccess('Το προϊόν ενημερώθηκε επιτυχώς!');
+      } catch (e: unknown) {
+        console.error(e);
+        const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
+        const message =
+          err.response?.data?.error ??
+          err.response?.data?.Error ??
+          err.response?.data?.message ??
+          'Αποτυχία ενημέρωσης προϊόντος. Ελέγξτε κατηγορία και πεδία.';
+        setSaveError(typeof message === 'string' ? message : 'Αποτυχία ενημέρωσης προϊόντος.');
+      } finally {
+        setIsSaving(false);
+      }
       return;
     }
     try {
@@ -609,29 +619,65 @@ const Products: React.FC = () => {
     setNewOptionText('');
     setDetailImageError(null);
     setDetailImageBusy(false);
+    setDetailSaveError(null);
+    setDetailSaveBusy(false);
   };
 
-  const saveDetailChanges = () => {
+  const saveDetailChanges = async () => {
     if (!detailProductId || !detailDraft) return;
+    setDetailSaveError(null);
+    const name = detailDraft.name.trim();
+    if (!name) {
+      setDetailSaveError('Συμπλήρωσε όνομα προϊόντος.');
+      return;
+    }
     const price = Number(detailDraft.price.replace(',', '.'));
     const pointsReward = Number(detailDraft.pointsReward.replace(',', '.'));
-    if (Number.isNaN(price) || price <= 0) return;
-    if (Number.isNaN(pointsReward) || pointsReward < 0) return;
-    setItems((prev) =>
-      prev.map((p) =>
-        p.id === detailProductId
-          ? {
-              ...p,
-              name: detailDraft.name.trim() || p.name,
-              description: detailDraft.description.trim(),
-              category: detailDraft.category.trim() || p.category,
-              price,
-              pointsReward: Math.trunc(pointsReward),
-              isActive: detailDraft.isActive,
-            }
-          : p,
-      ),
-    );
+    if (Number.isNaN(price) || price <= 0) {
+      setDetailSaveError('Η τιμή πρέπει να είναι μεγαλύτερη από 0.');
+      return;
+    }
+    if (Number.isNaN(pointsReward) || pointsReward < 0) {
+      setDetailSaveError('Τα points δεν μπορούν να είναι αρνητικά.');
+      return;
+    }
+    const xp = Math.trunc(pointsReward);
+    const description = detailDraft.description.trim() || 'N/A';
+    const category = detailDraft.category.trim() || 'Menu';
+    try {
+      setDetailSaveBusy(true);
+      await api.updateProduct(detailProductId, {
+        name,
+        description,
+        category,
+        price,
+        xp,
+        allergens: [],
+      });
+      const list = await loadProducts();
+      const row = list.find((p) => p.id === detailProductId);
+      if (row) {
+        setDetailDraft({
+          name: row.name,
+          description: row.description ?? '',
+          category: row.category,
+          price: String(row.price),
+          pointsReward: String(row.pointsReward ?? 0),
+          isActive: detailDraft.isActive,
+        });
+      }
+    } catch (e: unknown) {
+      console.error(e);
+      const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
+      const message =
+        err.response?.data?.error ??
+        err.response?.data?.Error ??
+        err.response?.data?.message ??
+        'Αποτυχία αποθήκευσης.';
+      setDetailSaveError(typeof message === 'string' ? message : 'Αποτυχία αποθήκευσης.');
+    } finally {
+      setDetailSaveBusy(false);
+    }
   };
 
   const addProductOption = () => {
@@ -1075,12 +1121,23 @@ const Products: React.FC = () => {
               </div>
             </div>
 
+            {detailSaveError && (
+              <p className="mt-4 text-sm text-red-600" role="alert">
+                {detailSaveError}
+              </p>
+            )}
             <div className="mt-5 flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={closeProductDetailModal}>
+              <Button variant="outline" size="sm" onClick={closeProductDetailModal} disabled={detailSaveBusy}>
                 Cancel
               </Button>
-              <Button size="sm" onClick={saveDetailChanges} style={{ backgroundColor: ACCENT }} className="text-white">
-                Save changes
+              <Button
+                size="sm"
+                onClick={() => void saveDetailChanges()}
+                disabled={detailSaveBusy}
+                style={{ backgroundColor: ACCENT }}
+                className="text-white"
+              >
+                {detailSaveBusy ? 'Saving...' : 'Save changes'}
               </Button>
             </div>
           </div>

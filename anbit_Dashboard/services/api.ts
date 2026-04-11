@@ -333,6 +333,31 @@ export const api = {
     });
   },
 
+  /**
+   * `PUT /Products/{productId}` — JSON σώμα όπως `UpdateProductRequest` (camelCase).
+   * Η εικόνα ενημερώνεται χωριστά με `uploadProductImage` / `deleteProductImage`.
+   */
+  async updateProduct(
+    productId: string,
+    payload: {
+      name: string;
+      description: string;
+      category: string;
+      price: number;
+      xp: number;
+      allergens?: string[] | null;
+    },
+  ): Promise<void> {
+    await apiClient.put(`/Products/${encodeURIComponent(productId)}`, {
+      name: payload.name,
+      description: payload.description,
+      category: payload.category,
+      price: payload.price,
+      xp: payload.xp,
+      allergens: payload.allergens ?? null,
+    });
+  },
+
   async uploadProductImage(productId: string, file: File): Promise<void> {
     const formData = new FormData();
     formData.append('image', file);

@@ -4,6 +4,7 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { cn } from '@/lib/utils';
+import { useFavoriteMerchant } from '@/lib/favoriteStores';
 import { offerCarouselNavButtonClass } from './ui/offer-carousel';
 
 const networkMuted = 'text-[#b0b0b0]';
@@ -51,7 +52,7 @@ function NetworkStoreCard({
   xp: number;
   onOpen: () => void;
 }) {
-  const [favorite, setFavorite] = useState(false);
+  const [favorite, toggleFavorite] = useFavoriteMerchant(partner.id);
   const img = partner.image;
   const rating = partner.rating ?? 9.2;
 
@@ -115,11 +116,11 @@ function NetworkStoreCard({
           type="button"
           onClick={(e) => {
             e.stopPropagation();
-            setFavorite((v) => !v);
+            toggleFavorite();
           }}
           className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-anbit-brand',
-            favorite && 'bg-anbit-brand',
+            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-[#e63533]/90',
+            favorite && 'bg-[#e63533]',
           )}
           aria-label={favorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
         >
