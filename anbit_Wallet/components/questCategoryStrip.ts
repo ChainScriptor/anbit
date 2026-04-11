@@ -92,8 +92,8 @@ export function buildShoppingCategoryTabs(pu: (p: string) => string, allLabel: s
     {
       id: 'All',
       label: allLabel,
-      openSrc: pu('categoriessvg/food/foodOpen/all.svg'),
-      closeSrc: pu('categoriessvg/food/foodClose/allclose.svg'),
+      openSrc: pu('categoriessvg/psonia/pswniaOpen/all.svg'),
+      closeSrc: pu('categoriessvg/psonia/pswniaClose/all.svg'),
     },
     ...pairs.map(([id, label, o, c]) => ({
       id,
@@ -117,8 +117,8 @@ export function buildAirbnbCategoryTabs(pu: (p: string) => string, allLabel: str
     {
       id: 'All',
       label: allLabel,
-      openSrc: pu('categoriessvg/food/foodOpen/all.svg'),
-      closeSrc: pu('categoriessvg/food/foodClose/allclose.svg'),
+      openSrc: pu('categoriessvg/airbnb/airbnbOpen/all.svg'),
+      closeSrc: pu('categoriessvg/airbnb/airbnbClose/all.svg'),
     },
     ...pairs.map(([id, label, o, c]) => ({
       id,
@@ -142,8 +142,8 @@ export function buildHealthCategoryTabs(pu: (p: string) => string, allLabel: str
     {
       id: 'All',
       label: allLabel,
-      openSrc: pu('categoriessvg/food/foodOpen/all.svg'),
-      closeSrc: pu('categoriessvg/food/foodClose/allclose.svg'),
+      openSrc: pu('categoriessvg/health/HealthOpen/all.svg'),
+      closeSrc: pu('categoriessvg/health/HealthClose/all.svg'),
     },
     ...pairs.map(([id, label, o, c]) => ({
       id,

@@ -37,7 +37,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
 
   return (
     <div
-      className="w-full text-[#e5e5e5] selection:bg-anbit-brand/30"
+      className="w-full text-[color:var(--anbit-text)] selection:bg-anbit-brand/30"
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
       <header className="mb-8 flex w-full flex-col items-start justify-between gap-6 px-1 py-6 sm:px-2 md:flex-row md:items-end md:py-10">
@@ -141,7 +141,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
               </div>
             </div>
             <div className="relative z-10 mt-10 flex items-center gap-4 rounded-xl border border-white/5 bg-white/5 p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-anbit-brand">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-anbit-brand text-anbit-brand-foreground">
                 <span className="material-symbols-outlined text-xl text-white">trending_up</span>
               </div>
               <div>

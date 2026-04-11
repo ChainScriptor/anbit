@@ -117,7 +117,7 @@ const ProductDetailModal: React.FC<ProductDetailModalProps> = ({ product, onClos
             </div>
             <button 
               onClick={() => { onAddToCart(product); onClose(); }}
-              className="flex-1 bg-anbit-yellow text-anbit-yellow-content h-16 rounded-[28px] font-bold italic tracking-tighter flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-95 shadow-[0_20px_40px_rgba(230,53,51,0.35)]"
+              className="flex-1 bg-anbit-yellow text-anbit-yellow-content h-16 rounded-[28px] font-bold italic tracking-tighter flex items-center justify-center gap-3 transition-all hover:opacity-90 active:scale-95 shadow-[0_20px_40px_rgba(0,0,0,0.25)]"
             >
               ΠΡΟΣΘΗΚΗ <ChevronRight className="w-5 h-5" />
             </button>

@@ -253,14 +253,14 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
 
               <div className="space-y-4 text-[15px] leading-relaxed text-white/95">
                 <div className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-anbit-brand text-sm font-bold">1</span>
+                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-anbit-brand text-sm font-bold text-anbit-brand-foreground">1</span>
                   <p>
                     Οι φίλοι σου θα κερδίσουν 3,00 € σε Anbit κουπόνια όταν χρησιμοποιήσουν τον κωδικό σου για κάθε μία από τις
                     πρώτες τους 3 παραγγελίες.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-anbit-brand text-sm font-bold">2</span>
+                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-anbit-brand text-sm font-bold text-anbit-brand-foreground">2</span>
                   <p>
                     Θα κερδίσεις 3,00 € σε Anbit κουπόνια για κάθε μία από τις πρώτες 3 παραγγελίες των φίλων σου. Μπορείς να
                     κερδίσεις έναν μέγιστο αριθμό 15,00 € μονάδων πίστωσης προσκαλώντας τους φίλους σας να γίνουν μέλη της Anbit.

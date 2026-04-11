@@ -129,7 +129,7 @@ const OrderDeliveredScreen: React.FC<OrderDeliveredScreenProps> = ({
 
             <div className="relative z-10 flex flex-col items-center gap-3">
               <div
-                className="flex h-10 w-10 items-center justify-center rounded-full border-4 border-[#ffffff] shadow-[0_0_15px_rgba(230,53,51,0.45)]"
+                className="flex h-10 w-10 items-center justify-center rounded-full border-4 border-[color:var(--anbit-card)] shadow-[0_0_15px_rgba(0,0,0,0.35)]"
                 style={{ backgroundColor: BRAND_RED }}
               >
                 <UtensilsCrossed className="h-4 w-4 text-white" strokeWidth={2.5} />

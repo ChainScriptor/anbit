@@ -615,7 +615,7 @@ function StoreProfilePanel({
 
           <button
             type="button"
-            className="w-full h-14 bg-anbit-brand text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-[0_18px_40px_-18px_rgba(230,53,51,0.85)] active:scale-95 transition-all"
+            className="w-full h-14 bg-anbit-brand text-anbit-brand-foreground font-bold rounded-2xl flex items-center justify-center gap-2 shadow-[0_18px_40px_-18px_rgba(0,0,0,0.35)] active:scale-95 transition-all"
           >
             <Headphones className="h-5 w-5" strokeWidth={2.4} />
             Contact Support
@@ -779,7 +779,7 @@ function StoreProfilePanel({
                 logout();
                 onBackToMenu();
               }}
-              className="w-full py-4 bg-anbit-brand rounded-2xl text-white font-bold tracking-tight active:scale-95 transition-all shadow-[0_18px_40px_-18px_rgba(230,53,51,0.85)]"
+              className="w-full py-4 bg-anbit-brand rounded-2xl text-anbit-brand-foreground font-bold tracking-tight active:scale-95 transition-all shadow-[0_18px_40px_-18px_rgba(0,0,0,0.35)]"
             >
               <div className="flex items-center justify-center gap-2">
                 <LogOut className="h-5 w-5" strokeWidth={2.4} />
@@ -1374,11 +1374,11 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
               aria-label={t('totalXp')}
             >
               <Star
-                className="h-6 w-6 shrink-0 fill-anbit-brand text-anbit-brand drop-shadow-[0_0_10px_rgba(230,53,51,0.55)] sm:h-7 sm:w-7"
+                className="h-6 w-6 shrink-0 fill-anbit-brand text-anbit-brand drop-shadow-[0_0_10px_rgba(0,0,0,0.35)] sm:h-7 sm:w-7"
                 strokeWidth={2}
               />
               <span
-                className={`anbit-wordmark truncate ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(230,53,51,0.45),0_1px_0_rgba(0,0,0,0.25)]`}
+                className={`anbit-wordmark truncate ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(0,0,0,0.2),0_1px_0_rgba(0,0,0,0.15)]`}
               >
                 {topStoreXp.toLocaleString()} XP
               </span>
@@ -1392,11 +1392,11 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
               aria-label={t('storeHeaderLogin')}
             >
               <LogIn
-                className="h-6 w-6 shrink-0 text-anbit-brand drop-shadow-[0_0_10px_rgba(230,53,51,0.55)] sm:h-7 sm:w-7"
+                className="h-6 w-6 shrink-0 text-anbit-brand drop-shadow-[0_0_10px_rgba(0,0,0,0.35)] sm:h-7 sm:w-7"
                 strokeWidth={2.25}
               />
               <span
-                className={`anbit-wordmark ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(230,53,51,0.45),0_1px_0_rgba(0,0,0,0.25)]`}
+                className={`anbit-wordmark ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(0,0,0,0.2),0_1px_0_rgba(0,0,0,0.15)]`}
               >
                 {t('storeHeaderLogin')}
               </span>
