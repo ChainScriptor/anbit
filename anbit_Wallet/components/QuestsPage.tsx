@@ -2,7 +2,7 @@
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Star, Clock, Zap, ChevronLeft, ChevronRight, Search } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { Quest, Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
@@ -10,7 +10,13 @@ import { getWeatherIcon } from './ui/AnimatedWeatherIcons';
 import { OfferCarousel, offerCarouselNavButtonClass } from './ui/offer-carousel';
 import { GREEK_OFFERS } from '../data/greekOffers';
 import { cn } from '@/lib/utils';
-import { QuickCategories, QuickCategoryRoofSlot } from './QuickCategories';
+import { QuickCategories } from './QuickCategories';
+import {
+  PLACEHOLDER_CATEGORY_IDS,
+  buildPartnerCategoryTabsForBundle,
+  categoryStripBundleFromQuickId,
+  partnerCategoryTabImageSrc as stripCategoryTabImageSrc,
+} from './questCategoryStrip';
 
 const questMuted = 'text-[#b0b0b0]';
 
@@ -31,54 +37,6 @@ const QuestQuickMerchantIcon: React.FC<{ className?: string }> = ({ className = 
 
 type FilterValue = '' | 'highest-xp' | 'expiring-soon';
 
-/** Ίδια assets με το NetworkPage («Αναζήτηση ανά κατηγορία»). */
-const CATEGORY_IMAGES: Record<string, string> = {
-  All: publicUrl('svg/all.svg'),
-  street_food: publicUrl('svg/streetfood.svg'),
-  sandwiches: publicUrl('svg/sandwitch.svg'),
-  brunch: publicUrl('svg/sandwitch.svg'),
-  chicken: publicUrl('svg/chicken.svg'),
-  coffee: publicUrl('svg/coffiee.svg'),
-  bar: publicUrl('svg/coffiee.svg'),
-  burger: publicUrl('svg/burger.svg'),
-  sweets: publicUrl('svg/sweets.svg'),
-  bbq: publicUrl('svg/chicken.svg'),
-  breakfast: publicUrl('svg/healthy.svg'),
-  italian: publicUrl('svg/italic.svg'),
-  asian: publicUrl('svg/asian.svg'),
-  pizza: publicUrl('svg/pizza.svg'),
-  crepe: publicUrl('svg/sweets.svg'),
-  healthy: publicUrl('svg/healthy.svg'),
-  pasta: publicUrl('svg/italic.svg'),
-  bougatsa: publicUrl('svg/sweets.svg'),
-  salads: publicUrl('svg/healthy.svg'),
-  souvlaki: publicUrl('svg/chicken.svg'),
-  cooked: publicUrl('svg/chicken.svg'),
-};
-
-/** Tab id → «κλειστό» asset στο svgclose/· στο click εμφανίζεται το αντίστοιχο CATEGORY_IMAGES (svg/). */
-const PARTNER_CATEGORY_CLOSE_SRC: Partial<Record<string, string>> = {
-  All: publicUrl('svgclose/allclose.svg'),
-  street_food: publicUrl('svgclose/streetfoodclose.svg'),
-  burger: publicUrl('svgclose/burgerclose.svg'),
-  sandwiches: publicUrl('svgclose/sandwitchclose.svg'),
-  brunch: publicUrl('svgclose/brucnhclose.svg'),
-  bbq: publicUrl('svgclose/chickenclose.svg'),
-  pizza: publicUrl('svgclose/pizzaclose.svg'),
-  italian: publicUrl('svgclose/italianclose.svg'),
-  sweets: publicUrl('svgclose/sweetsclose.svg'),
-  pasta: publicUrl('svgclose/pastaclose.svg'),
-  healthy: publicUrl('svgclose/healthyclose.svg'),
-  asian: publicUrl('svgclose/asianclose.svg'),
-};
-
-function partnerCategoryTabImageSrc(categoryId: string, active: boolean): string {
-  const openSrc = CATEGORY_IMAGES[categoryId] ?? CATEGORY_IMAGES.All;
-  const closeSrc = PARTNER_CATEGORY_CLOSE_SRC[categoryId];
-  if (!closeSrc) return openSrc;
-  return active ? openSrc : closeSrc;
-}
-
 function resolveQuestPartner(quest: Quest, partners: Partner[]): Partner | undefined {
   if (quest.partnerId) return partners.find((p) => p.id === quest.partnerId);
   if (quest.storeName) return partners.find((p) => p.name === quest.storeName);
@@ -87,6 +45,7 @@ function resolveQuestPartner(quest: Quest, partners: Partner[]): Partner | undef
 
 function questMatchesPartnerCategory(quest: Quest, partners: Partner[], categoryId: string): boolean {
   if (categoryId === 'All') return true;
+  if (PLACEHOLDER_CATEGORY_IDS.has(categoryId)) return true;
   const p = resolveQuestPartner(quest, partners);
   if (!p) return false;
   return p.category === categoryId;
@@ -109,6 +68,9 @@ const QUEST_QUICK_CATEGORIES: { id: string; label: string; categoryId: string; i
   { id: 'q-clothes', label: 'Ένδυση', categoryId: 'All', image: publicUrl('categories/clothes.gif') },
   { id: 'q-gifts', label: 'Δώρα', categoryId: 'All', image: publicUrl('categories/gifts.gif') },
 ];
+
+/** Προεπιλογή στο /quests: γρήγορη κάρτα + strip φαγητού (`food` bundle). */
+const DEFAULT_QUESTS_QUICK_ID = 'q-restaurants';
 
 function scrollQuestQuickStrip(el: HTMLDivElement | null, dir: 'left' | 'right') {
   if (!el) return;
@@ -471,31 +433,39 @@ function QuestsMerchantStrip({
 
 const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests, partners }) => {
   const { t } = useLanguage();
+  const location = useLocation();
+  const prevPathnameRef = useRef<string | undefined>(undefined);
   const [offerFilter, setOfferFilter] = useState<FilterValue>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [partnerCategoryFilter, setPartnerCategoryFilter] = useState<string>('All');
-  const [quickSelectionId, setQuickSelectionId] = useState<string | null>(null);
+  const [quickSelectionId, setQuickSelectionId] = useState<string | null>(DEFAULT_QUESTS_QUICK_ID);
   const [selectedMerchantKey, setSelectedMerchantKey] = useState<string | null>(null);
   const quickCategoriesScrollRef = useRef<HTMLDivElement | null>(null);
   const partnerCategoryScrollRef = useRef<HTMLDivElement | null>(null);
 
+  useEffect(() => {
+    const prev = prevPathnameRef.current;
+    prevPathnameRef.current = location.pathname;
+    if (location.pathname !== '/quests') return;
+    if (prev !== undefined && prev !== '/quests') {
+      setQuickSelectionId(DEFAULT_QUESTS_QUICK_ID);
+      setPartnerCategoryFilter('All');
+    }
+  }, [location.pathname]);
+
+  const categoryStripBundle = categoryStripBundleFromQuickId(quickSelectionId);
+
   const partnerCategoryTabs = useMemo(
-    () => [
-      { id: 'All', label: t('all') },
-      { id: 'street_food', label: 'Street Food' },
-      { id: 'burger', label: 'Burger' },
-      { id: 'bbq', label: 'Chicken' },
-      { id: 'pizza', label: 'Pizza' },
-      { id: 'italian', label: 'Ιταλικό' },
-      { id: 'sweets', label: 'Γλυκά' },
-      { id: 'brunch', label: 'Brunch' },
-      { id: 'pasta', label: 'Ζυμαρικά' },
-      { id: 'healthy', label: 'Healthy' },
-      { id: 'asian', label: 'Asian' },
-      { id: 'sandwiches', label: 'Sandwiches' },
-    ],
-    [t],
+    () => buildPartnerCategoryTabsForBundle(categoryStripBundle, publicUrl, t('all')),
+    [categoryStripBundle, t],
   );
+
+  useEffect(() => {
+    const ids = new Set(partnerCategoryTabs.map((x) => x.id));
+    if (!ids.has(partnerCategoryFilter)) {
+      setPartnerCategoryFilter('All');
+    }
+  }, [partnerCategoryTabs, partnerCategoryFilter]);
 
   const quickQuestCounts = useMemo(() => {
     const map = new Map<string, number>();
@@ -609,12 +579,15 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                   data-quick-cat={qc.id}
                   className="flex w-[200px] shrink-0 snap-start flex-col gap-0 sm:w-[218px]"
                 >
-                  <QuickCategoryRoofSlot visible={isActive} />
                   <button
                     type="button"
                     onClick={() => {
                       setQuickSelectionId(qc.id);
-                      setPartnerCategoryFilter(qc.categoryId);
+                      if (qc.id === 'q-shopping' || qc.id === 'q-market' || qc.id === 'q-health') {
+                        setPartnerCategoryFilter('All');
+                      } else {
+                        setPartnerCategoryFilter(qc.categoryId);
+                      }
                     }}
                     className={cn(
                       'group flex w-full flex-col overflow-hidden rounded-lg border bg-[#131313] text-left shadow-md outline-none transition-all duration-300 hover:bg-[#191919] focus:outline-none focus-visible:outline-none',
@@ -701,14 +674,13 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
             <div className="flex w-max snap-x snap-mandatory flex-row items-center gap-4 sm:gap-5 md:gap-6 pr-1">
               {partnerCategoryTabs.map((cat) => {
                 const active = partnerCategoryFilter === cat.id;
-                const src = partnerCategoryTabImageSrc(cat.id, active);
+                const src = stripCategoryTabImageSrc(cat, active);
                 return (
                   <button
                     key={cat.id}
                     type="button"
                     onClick={() => {
                       setPartnerCategoryFilter(cat.id);
-                      setQuickSelectionId(null);
                     }}
                     className={cn(
                       'group/cat flex w-40 shrink-0 snap-start flex-col items-center justify-start gap-0 border-0 bg-transparent p-0 text-center outline-none transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e63533]/55 sm:w-44 md:w-48 lg:w-52',
