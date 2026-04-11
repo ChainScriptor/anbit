@@ -153,7 +153,7 @@ function StoreBottomNav({
         }`}
       >
         <Star
-          className={`h-7 w-7 sm:h-8 sm:w-8 ${activeTab === 'xp' ? 'fill-[#e63533] text-[#e63533]' : 'fill-none text-zinc-400'}`}
+          className={`h-7 w-7 sm:h-8 sm:w-8 ${activeTab === 'xp' ? 'fill-anbit-brand text-anbit-brand' : 'fill-none text-zinc-400'}`}
           strokeWidth={2}
         />
         <span className="text-base font-anbit font-normal not-italic normal-case tracking-tight leading-none [font-synthesis:none] sm:text-lg">
@@ -540,7 +540,7 @@ function StoreProfilePanel({
         <main className="pt-8 pb-[calc(8.35rem+env(safe-area-inset-bottom))] px-6 max-w-2xl mx-auto space-y-8">
           <section className="mt-8 mb-2">
             <h2 className="text-4xl font-extrabold tracking-tight text-[#0a0a0a] leading-tight">
-              How can we <span className="text-[#e63533]">help?</span>
+              How can we <span className="text-anbit-brand">help?</span>
             </h2>
 
             <div className="relative mt-6">
@@ -550,15 +550,15 @@ function StoreProfilePanel({
               <input
                 type="text"
                 placeholder="Search for FAQs..."
-                className="w-full h-14 pl-12 pr-4 bg-[#0a0a0a]/[0.04] border border-[#0a0a0a]/10 rounded-2xl text-[#0a0a0a] focus:ring-2 focus:ring-[#e63533]/30 outline-none placeholder:text-[#0a0a0a]/40"
+                className="w-full h-14 pl-12 pr-4 bg-[#0a0a0a]/[0.04] border border-[#0a0a0a]/10 rounded-2xl text-[#0a0a0a] focus:ring-2 focus:ring-anbit-brand/30 outline-none placeholder:text-[#0a0a0a]/40"
               />
             </div>
           </section>
 
           <section className="grid grid-cols-2 gap-4">
             <div className="p-6 rounded-2xl bg-[#0a0a0a]/[0.03] border border-[#0a0a0a]/10 hover:bg-[#0a0a0a]/[0.06] transition-colors">
-              <div className="w-12 h-12 rounded-full bg-[#e63533]/[0.10] flex items-center justify-center mb-4">
-                <ShoppingBasket className="h-6 w-6 text-[#e63533]" strokeWidth={2} />
+              <div className="w-12 h-12 rounded-full bg-anbit-brand/10 flex items-center justify-center mb-4">
+                <ShoppingBasket className="h-6 w-6 text-anbit-brand" strokeWidth={2} />
               </div>
               <h3 className="text-base font-bold text-[#0a0a0a] mb-1">Ordering</h3>
               <p className="text-xs text-[#0a0a0a]/50 font-medium">Tracking, issues &amp; more</p>
@@ -615,7 +615,7 @@ function StoreProfilePanel({
 
           <button
             type="button"
-            className="w-full h-14 bg-[#e63533] text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-[0_18px_40px_-18px_rgba(230,53,51,0.85)] active:scale-95 transition-all"
+            className="w-full h-14 bg-anbit-brand text-white font-bold rounded-2xl flex items-center justify-center gap-2 shadow-[0_18px_40px_-18px_rgba(230,53,51,0.85)] active:scale-95 transition-all"
           >
             <Headphones className="h-5 w-5" strokeWidth={2.4} />
             Contact Support
@@ -629,7 +629,7 @@ function StoreProfilePanel({
     const Toggle: React.FC<{ checked: boolean }> = ({ checked }) => (
       <div
         className={`relative flex h-6 w-11 items-center rounded-full p-1 transition-colors ${
-          checked ? 'bg-[#e63533]' : 'bg-white/15 border border-white/10'
+          checked ? 'bg-anbit-brand' : 'bg-white/15 border border-white/10'
         }`}
       >
         <div
@@ -669,7 +669,7 @@ function StoreProfilePanel({
                     <img src={user.avatar} alt="" className="h-full w-full object-cover" />
                   ) : null}
                 </div>
-                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-[#e63533] border border-[#0a0a0a]">
+                <div className="absolute -bottom-1 -right-1 flex h-7 w-7 items-center justify-center rounded-full bg-anbit-brand border border-[#0a0a0a]">
                   <BadgeCheck className="h-4 w-4 text-white" strokeWidth={2.4} />
                 </div>
               </div>
@@ -678,8 +678,8 @@ function StoreProfilePanel({
                 <h2 className="text-2xl font-extrabold tracking-tight text-white truncate">
                   {user?.name ?? ''}
                 </h2>
-                <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-[#e63533]/15 border border-[#e63533]/25 px-4 py-2">
-                  <span className="text-xs font-bold uppercase tracking-widest text-[#e63533]">
+                <div className="mt-2 inline-flex items-center gap-2 rounded-full bg-anbit-brand/15 border border-anbit-brand/25 px-4 py-2">
+                  <span className="text-xs font-bold uppercase tracking-widest text-anbit-brand">
                     {memberLabel}
                   </span>
                 </div>
@@ -695,7 +695,7 @@ function StoreProfilePanel({
               <div className="space-y-2">
                 <button className="w-full flex items-center justify-between p-4 bg-[#0a0a0a] rounded-2xl border border-white/10 active:opacity-95 transition-colors">
                   <div className="flex items-center gap-4">
-                    <User className="h-5 w-5 text-[#e63533]" strokeWidth={2.2} />
+                    <User className="h-5 w-5 text-anbit-brand" strokeWidth={2.2} />
                     <span className="font-medium text-white">Personal Information</span>
                   </div>
                   <ChevronRight className="h-5 w-5 text-white/35" strokeWidth={2.2} />
@@ -710,14 +710,14 @@ function StoreProfilePanel({
               <div className="bg-[#0a0a0a] rounded-2xl overflow-hidden border border-white/10">
                 <div className="flex items-center justify-between p-4 border-b border-white/10">
                   <div className="flex items-center gap-4">
-                    <Bell className="h-5 w-5 text-[#e63533]" strokeWidth={2.2} />
+                    <Bell className="h-5 w-5 text-anbit-brand" strokeWidth={2.2} />
                     <span className="font-medium text-white">Push Notifications</span>
                   </div>
                   <Toggle checked />
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
-                    <Mail className="h-5 w-5 text-[#e63533]" strokeWidth={2.2} />
+                    <Mail className="h-5 w-5 text-anbit-brand" strokeWidth={2.2} />
                     <span className="font-medium text-white">Email Updates</span>
                   </div>
                   <Toggle checked={false} />
@@ -732,21 +732,21 @@ function StoreProfilePanel({
               <div className="bg-[#0a0a0a] rounded-2xl overflow-hidden border border-white/10">
                 <button className="w-full flex items-center justify-between p-4 border-b border-white/10 active:bg-[#0a0a0a] transition-colors">
                   <div className="flex items-center gap-4">
-                    <Lock className="h-5 w-5 text-[#e63533]" strokeWidth={2.2} />
+                    <Lock className="h-5 w-5 text-anbit-brand" strokeWidth={2.2} />
                     <span className="font-medium text-white">Password &amp; 2FA</span>
                   </div>
                   <ChevronRight className="h-5 w-5 text-white/35" strokeWidth={2.2} />
                 </button>
                 <button className="w-full flex items-center justify-between p-4 border-b border-white/10 active:bg-[#0a0a0a] transition-colors">
                   <div className="flex items-center gap-4">
-                    <Fingerprint className="h-5 w-5 text-[#e63533]" strokeWidth={2.2} />
+                    <Fingerprint className="h-5 w-5 text-anbit-brand" strokeWidth={2.2} />
                     <span className="font-medium text-white">Biometric Login</span>
                   </div>
                   <ChevronRight className="h-5 w-5 text-white/35" strokeWidth={2.2} />
                 </button>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-4">
-                    <EyeOff className="h-5 w-5 text-[#e63533]" strokeWidth={2.2} />
+                    <EyeOff className="h-5 w-5 text-anbit-brand" strokeWidth={2.2} />
                     <span className="font-medium text-white">Private Profile</span>
                   </div>
                   <Toggle checked={false} />
@@ -764,7 +764,7 @@ function StoreProfilePanel({
                 onClick={() => setProfileView('help')}
               >
                 <div className="flex items-center gap-4">
-                  <HelpCircle className="h-5 w-5 text-[#e63533]" strokeWidth={2.2} />
+                  <HelpCircle className="h-5 w-5 text-anbit-brand" strokeWidth={2.2} />
                   <span className="font-medium text-white">Help &amp; Support Center</span>
                 </div>
                 <ChevronRight className="h-5 w-5 text-white/35" strokeWidth={2.2} />
@@ -779,7 +779,7 @@ function StoreProfilePanel({
                 logout();
                 onBackToMenu();
               }}
-              className="w-full py-4 bg-[#e63533] rounded-2xl text-white font-bold tracking-tight active:scale-95 transition-all shadow-[0_18px_40px_-18px_rgba(230,53,51,0.85)]"
+              className="w-full py-4 bg-anbit-brand rounded-2xl text-white font-bold tracking-tight active:scale-95 transition-all shadow-[0_18px_40px_-18px_rgba(230,53,51,0.85)]"
             >
               <div className="flex items-center justify-center gap-2">
                 <LogOut className="h-5 w-5" strokeWidth={2.4} />
@@ -831,7 +831,7 @@ function StoreProfilePanel({
           <>
             <section className="flex flex-col items-center py-2 text-center">
               <div className="relative mb-4">
-                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-[#e63533]/40 to-[#0a0a0a]/30 blur-lg opacity-60" />
+                <div className="absolute -inset-1 rounded-full bg-gradient-to-tr from-anbit-brand/40 to-[#0a0a0a]/30 blur-lg opacity-60" />
                 <div className="relative h-24 w-24 overflow-hidden rounded-full border-2 border-[#0a0a0a]/10 bg-[#0a0a0a]/5">
                   <img src={user.avatar} alt="" className="h-full w-full object-cover" />
                 </div>
@@ -1374,11 +1374,11 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
               aria-label={t('totalXp')}
             >
               <Star
-                className="h-6 w-6 shrink-0 fill-[#e63533] text-[#e63533] drop-shadow-[0_0_10px_rgba(230,53,51,0.55)] sm:h-7 sm:w-7"
+                className="h-6 w-6 shrink-0 fill-anbit-brand text-anbit-brand drop-shadow-[0_0_10px_rgba(230,53,51,0.55)] sm:h-7 sm:w-7"
                 strokeWidth={2}
               />
               <span
-                className={`anbit-wordmark truncate ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-[#e63533] sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(230,53,51,0.45),0_1px_0_rgba(0,0,0,0.25)]`}
+                className={`anbit-wordmark truncate ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(230,53,51,0.45),0_1px_0_rgba(0,0,0,0.25)]`}
               >
                 {topStoreXp.toLocaleString()} XP
               </span>
@@ -1392,11 +1392,11 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
               aria-label={t('storeHeaderLogin')}
             >
               <LogIn
-                className="h-6 w-6 shrink-0 text-[#e63533] drop-shadow-[0_0_10px_rgba(230,53,51,0.55)] sm:h-7 sm:w-7"
+                className="h-6 w-6 shrink-0 text-anbit-brand drop-shadow-[0_0_10px_rgba(230,53,51,0.55)] sm:h-7 sm:w-7"
                 strokeWidth={2.25}
               />
               <span
-                className={`anbit-wordmark ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-[#e63533] sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(230,53,51,0.45),0_1px_0_rgba(0,0,0,0.25)]`}
+                className={`anbit-wordmark ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(230,53,51,0.45),0_1px_0_rgba(0,0,0,0.25)]`}
               >
                 {t('storeHeaderLogin')}
               </span>
@@ -1632,8 +1632,8 @@ function ProductCard({
       >
         <img src={product.image} alt={product.name} className="w-full h-full object-cover" />
         {product.xpReward > 0 && (
-          <div className="absolute left-2 top-2 rounded-lg border border-[#e63533]/45 bg-black/80 px-2.5 py-1 backdrop-blur-sm sm:left-2.5 sm:top-2.5 sm:px-3 sm:py-1.5">
-            <span className="xp-badge text-[11px] font-extrabold uppercase tracking-wide text-[#e63533] sm:text-sm">
+          <div className="absolute left-2 top-2 rounded-lg border border-anbit-brand/45 bg-black/80 px-2.5 py-1 backdrop-blur-sm sm:left-2.5 sm:top-2.5 sm:px-3 sm:py-1.5">
+            <span className="xp-badge text-[11px] font-extrabold uppercase tracking-wide text-anbit-brand sm:text-sm">
               +{product.xpReward} XP
             </span>
           </div>

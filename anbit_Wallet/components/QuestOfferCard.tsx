@@ -33,7 +33,7 @@ export const QuestOfferCard: React.FC<QuestOfferCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="flex h-full flex-col overflow-hidden rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] transition-colors hover:border-[#e63533]/40"
+      className="flex h-full flex-col overflow-hidden rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] transition-colors hover:border-anbit-brand/40"
     >
       <div className="relative h-36 w-full shrink-0 bg-white/5 sm:h-40">
         <img src={bannerSrc} alt="" className="h-full w-full object-cover" />
@@ -77,7 +77,7 @@ export const QuestOfferCard: React.FC<QuestOfferCardProps> = ({
         <div className="flex gap-2 pt-1">
           <button
             type="button"
-            className="flex-1 rounded-lg bg-[#e63533] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#cf2f2d]"
+            className="flex-1 rounded-lg bg-anbit-brand py-2.5 text-sm font-bold text-anbit-brand-foreground transition-colors hover:bg-anbit-brand-hover"
           >
             {t('claimOffer')}
           </button>

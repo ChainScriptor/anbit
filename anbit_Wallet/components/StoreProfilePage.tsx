@@ -118,7 +118,7 @@ const StoreProfilePage: React.FC = () => {
           <button
             type="button"
             onClick={() => navigate('/quests')}
-            className="mt-2 inline-flex items-center justify-center rounded-xl bg-[#e63533] px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#cf2f2d]"
+            className="mt-2 inline-flex items-center justify-center rounded-xl bg-anbit-brand px-4 py-2.5 text-xs font-semibold text-anbit-brand-foreground shadow-sm hover:bg-anbit-brand-hover"
           >
             Επιστροφή στα καταστήματα
           </button>
@@ -241,7 +241,7 @@ const StoreProfilePage: React.FC = () => {
             {partnerQuests.length > 0 ? (
               <Link
                 to="/quests"
-                className="text-sm font-semibold text-[#e63533] transition-colors hover:text-[#cf2f2d]"
+                className="text-sm font-semibold text-anbit-brand transition-colors hover:text-anbit-brand-hover"
               >
                 Όλες οι προσφορές Anbit →
               </Link>
@@ -250,7 +250,7 @@ const StoreProfilePage: React.FC = () => {
           {partnerQuests.length === 0 ? (
             <p className="mt-4 rounded-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] px-4 py-8 text-center text-sm text-[color:var(--anbit-muted)]">
               Δεν υπάρχουν ενεργές προσφορές για αυτό το κατάστημα αυτή τη στιγμή.{' '}
-              <Link to="/quests" className="font-semibold text-[#e63533] hover:underline">
+              <Link to="/quests" className="font-semibold text-anbit-brand hover:underline">
                 Δες το Anbit Quests
               </Link>
             </p>
@@ -343,13 +343,13 @@ const StoreProfilePage: React.FC = () => {
                     value={reviewForm.author}
                     onChange={(e) => setReviewForm((prev) => ({ ...prev, author: e.target.value }))}
                     placeholder="Το όνομά σου"
-                    className="h-9 w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-[#e63533]/30"
+                    className="h-9 w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-anbit-brand/30"
                     required
                   />
                   <select
                     value={reviewForm.rating}
                     onChange={(e) => setReviewForm((prev) => ({ ...prev, rating: Number(e.target.value) }))}
-                    className="h-9 w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-[#e63533]/30"
+                    className="h-9 w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-anbit-brand/30"
                     aria-label="Βαθμολογία"
                   >
                     {[5, 4, 3, 2, 1].map((r) => (
@@ -362,13 +362,13 @@ const StoreProfilePage: React.FC = () => {
                   value={reviewForm.comment}
                   onChange={(e) => setReviewForm((prev) => ({ ...prev, comment: e.target.value }))}
                   placeholder="Γράψε την εμπειρία σου..."
-                  className="w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 py-2 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-[#e63533]/30"
+                  className="w-full rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] px-3 py-2 text-xs text-[color:var(--anbit-text)] focus:outline-none focus:ring-2 focus:ring-anbit-brand/30"
                   required
                 />
                 <div className="flex justify-end">
                   <button
                     type="submit"
-                    className="inline-flex items-center rounded-xl bg-[#e63533] px-3 py-2 text-xs font-semibold text-white transition-colors hover:bg-[#cf2f2d]"
+                    className="inline-flex items-center rounded-xl bg-anbit-brand px-3 py-2 text-xs font-semibold text-anbit-brand-foreground transition-colors hover:bg-anbit-brand-hover"
                   >
                     Δημοσίευση
                   </button>
@@ -410,7 +410,7 @@ const StoreProfilePage: React.FC = () => {
                           onClick={() => setReviewsPage(page)}
                           className={`rounded-lg px-2.5 py-1 text-xs font-semibold transition-colors ${
                             page === reviewsPage
-                              ? 'bg-[#e63533] text-white'
+                              ? 'bg-anbit-brand text-anbit-brand-foreground'
                               : 'border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] text-[color:var(--anbit-text)]'
                           }`}
                         >
@@ -533,7 +533,7 @@ const StoreProfilePage: React.FC = () => {
                 <div className="sm:col-span-2 flex justify-end pt-1">
                   <button
                     type="submit"
-                    className="inline-flex items-center gap-2 rounded-2xl bg-[#e63533] px-4 py-2.5 text-xs font-semibold text-white shadow-md transition hover:bg-[#cf2f2d]"
+                    className="inline-flex items-center gap-2 rounded-2xl bg-anbit-brand px-4 py-2.5 text-xs font-semibold text-anbit-brand-foreground shadow-md transition hover:bg-anbit-brand-hover"
                   >
                     Επιβεβαίωση κράτησης
                   </button>

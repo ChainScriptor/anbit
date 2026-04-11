@@ -10,7 +10,7 @@ import {
 import { useLanguage } from '../context/LanguageContext';
 import AnbitWordmark, { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
 
-const BRAND_RED = '#e63533';
+const BRAND_RED = 'var(--anbit-brand)';
 const XP_GOLD = '#ca8a04';
 
 /** Typography: global --font-primary (Omnes Latin + Inter Greek). */

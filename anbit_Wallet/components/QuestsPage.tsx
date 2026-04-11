@@ -23,7 +23,7 @@ import {
   partnerCategoryTabImageSrc as stripCategoryTabImageSrc,
 } from './questCategoryStrip';
 
-const questMuted = 'text-[#b0b0b0]';
+const questMuted = 'text-[color:var(--anbit-muted)]';
 
 function publicUrl(path: string): string {
   const base = import.meta.env.BASE_URL || '/';
@@ -32,11 +32,16 @@ function publicUrl(path: string): string {
 }
 
 const QuestQuickMerchantIcon: React.FC<{ className?: string }> = ({ className = 'w-7 h-7' }) => (
-  <svg className={className} viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 10.5L12 3L21 10.5" stroke="#e63533" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M6 9.5V20H18V9.5" stroke="#e63533" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M10 20V14H14V20" stroke="#e63533" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-    <path d="M8.5 12.5H8.51M15.5 12.5H15.51" stroke="#e63533" strokeWidth="2.4" strokeLinecap="round" />
+  <svg
+    className={cn('text-anbit-brand', className)}
+    viewBox="0 0 24 24"
+    fill="none"
+    xmlns="http://www.w3.org/2000/svg"
+  >
+    <path d="M3 10.5L12 3L21 10.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M6 9.5V20H18V9.5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M10 20V14H14V20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d="M8.5 12.5H8.51M15.5 12.5H15.51" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round" />
   </svg>
 );
 
@@ -165,7 +170,7 @@ function QuestMerchantBanner({
     <div
       className={cn(
         'group relative inline-flex max-w-[min(100%,17rem)] shrink-0 items-stretch overflow-hidden rounded-lg border bg-[#131313] shadow-md transition-all duration-300 hover:bg-[#191919]',
-        selected ? 'border-[#e63533] ring-1 ring-[#e63533]/40' : 'border-white/10 hover:border-white/15',
+        selected ? 'border-anbit-brand ring-1 ring-anbit-brand/40' : 'border-white/10 hover:border-white/15',
         isInteractive && 'cursor-pointer',
       )}
       onClick={handleCardActivate}
@@ -196,7 +201,7 @@ function QuestMerchantBanner({
       <div className="min-w-0 flex-1 py-2.5 pl-2.5 pr-9 text-[#e5e5e5]">
         <div className="flex items-center gap-1.5">
           <h2 className="truncate text-sm font-bold leading-tight tracking-tight text-white">{name}</h2>
-          <span className="shrink-0 rounded-sm bg-[#e63533] px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-white">
+          <span className="shrink-0 rounded-sm bg-anbit-brand px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-anbit-brand-foreground">
             Anbit+
           </span>
         </div>
@@ -228,7 +233,7 @@ function QuestMerchantBanner({
                   navigate(`/store-profile/${profilePartnerId}`);
                 }
               }}
-              className="shrink-0 text-[10px] font-bold tracking-wide text-[#ababab] underline-offset-2 transition-colors hover:text-[#e63533] hover:underline"
+              className="shrink-0 text-[10px] font-bold tracking-wide text-[#ababab] underline-offset-2 transition-colors hover:text-anbit-brand hover:underline"
             >
               Προφίλ
             </button>
@@ -243,8 +248,8 @@ function QuestMerchantBanner({
             setFavorite((v) => !v);
           }}
           className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-[#e63533]',
-            favorite && 'bg-[#e63533]',
+            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-anbit-brand',
+            favorite && 'bg-anbit-brand',
           )}
           aria-label={favorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
         >
@@ -336,7 +341,7 @@ function AllMerchantsStripCard({
       }}
       className={cn(
         'group relative inline-flex max-w-[min(100%,17rem)] shrink-0 cursor-pointer items-stretch overflow-hidden rounded-lg border bg-[#131313] shadow-md transition-all duration-300 hover:bg-[#191919]',
-        selected ? 'border-[#e63533] ring-1 ring-[#e63533]/40' : 'border-white/10 hover:border-white/15',
+        selected ? 'border-anbit-brand ring-1 ring-anbit-brand/40' : 'border-white/10 hover:border-white/15',
       )}
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
@@ -347,7 +352,7 @@ function AllMerchantsStripCard({
       <div className="min-w-0 flex-1 py-2.5 pl-2.5 pr-3 text-[#e5e5e5]">
         <div className="flex items-center gap-1.5">
           <h2 className="truncate text-sm font-bold leading-tight tracking-tight text-white">Όλα τα καταστήματα</h2>
-          <span className="shrink-0 rounded-sm bg-[#e63533] px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-white">
+          <span className="shrink-0 rounded-sm bg-anbit-brand px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-anbit-brand-foreground">
             Anbit+
           </span>
         </div>
@@ -623,7 +628,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                     <button
                       type="button"
                       onClick={selectQuickCategory}
-                      className="group relative h-[128px] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#1f1f1f] text-left outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e63533]/55 sm:h-[138px]"
+                      className="group relative h-[128px] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#1f1f1f] text-left outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-brand/55 sm:h-[138px]"
                     >
                       <img
                         src={qc.image}
@@ -636,7 +641,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                       <button
                         type="button"
                         onClick={selectQuickCategory}
-                        className="min-w-0 flex-1 px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e63533]/55 sm:px-3 sm:py-3"
+                        className="min-w-0 flex-1 px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-anbit-brand/55 sm:px-3 sm:py-3"
                       >
                         <p className="line-clamp-2 text-xs font-bold leading-tight text-white sm:text-sm">{qc.label}</p>
                       </button>
@@ -646,7 +651,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                           e.stopPropagation();
                           setQuickStoresModalQuickId(qc.id);
                         }}
-                        className="inline-flex shrink-0 flex-col items-center justify-center gap-0.5 border-l border-white/10 px-2.5 py-2 outline-none transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e63533]/55 sm:px-3"
+                        className="inline-flex shrink-0 flex-col items-center justify-center gap-0.5 border-l border-white/10 px-2.5 py-2 outline-none transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-anbit-brand/55 sm:px-3"
                         aria-label={`Καταστήματα — ${qc.label} (${count})`}
                       >
                         <QuestQuickMerchantIcon className="h-4 w-4 opacity-95" />
@@ -693,7 +698,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Search store or offer..."
-              className="h-10 w-full rounded-lg border border-anbit-border bg-anbit-card pl-9 pr-3 text-sm text-anbit-text placeholder:text-[#8a8a8a] focus:border-[#e63533] focus:outline-none focus:ring-2 focus:ring-[#e63533]/45"
+              className="h-10 w-full rounded-lg border border-anbit-border bg-anbit-card pl-9 pr-3 text-sm text-anbit-text placeholder:text-[#8a8a8a] focus:border-anbit-brand focus:outline-none focus:ring-2 focus:ring-anbit-brand/45"
             />
           </label>
         </div>
@@ -724,7 +729,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                       setPartnerCategoryFilter(cat.id);
                     }}
                     className={cn(
-                      'group/cat flex w-40 shrink-0 snap-start flex-col items-center justify-start gap-0 border-0 bg-transparent p-0 text-center outline-none transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e63533]/55 sm:w-44 md:w-48 lg:w-52',
+                      'group/cat flex w-40 shrink-0 snap-start flex-col items-center justify-start gap-0 border-0 bg-transparent p-0 text-center outline-none transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-brand/55 sm:w-44 md:w-48 lg:w-52',
                       active && 'scale-[1.02]',
                     )}
                   >
@@ -744,7 +749,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                     <p
                       className={cn(
                         'mt-0 line-clamp-2 w-full px-0.5 text-xs font-extrabold leading-tight tracking-tight sm:text-sm',
-                        active ? 'text-[#e63533]' : 'text-white group-hover/cat:text-[#e63533]',
+                        active ? 'text-anbit-brand' : 'text-[color:var(--anbit-text)] group-hover/cat:text-anbit-brand',
                       )}
                     >
                       {cat.label}

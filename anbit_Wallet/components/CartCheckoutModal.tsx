@@ -17,7 +17,7 @@ import { useLanguage } from '../context/LanguageContext';
 import type { CartItemData } from '../types';
 import AnbitWordmark, { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
 
-const BRAND_RED = '#e63533';
+const BRAND_RED = 'var(--anbit-brand)';
 const BRAND_BLACK = '#0a0a0a';
 
 function CheckoutFooterWave() {
@@ -151,7 +151,7 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
               <>
                 <div className="mb-6 rounded-2xl border border-white/10 bg-[#0a0a0a] p-5 text-white shadow-[0_16px_40px_-12px_rgba(10,10,10,0.35)]">
                   <div className="mb-4 flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-[#e63533]" strokeWidth={2} />
+                    <Zap className="h-5 w-5 text-anbit-brand" strokeWidth={2} />
                     <h3 className="text-base font-bold text-white">{t('earnXpTitle')}</h3>
                   </div>
                   <p className="mb-4 text-sm text-white/65">{t('xpEarnShort', { count: totalXp })}</p>
@@ -245,19 +245,19 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
 
                 {totalXp > 0 && (
                   <section className="mb-10">
-                    <div className="group relative overflow-hidden rounded-xl border border-[#e63533]/35 bg-[#0a0a0a] p-5 shadow-[0_16px_40px_-12px_rgba(10,10,10,0.4)] sm:p-6">
-                      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-[#e63533]/15 blur-3xl" aria-hidden />
+                    <div className="group relative overflow-hidden rounded-xl border border-anbit-brand/35 bg-[#0a0a0a] p-5 shadow-[0_16px_40px_-12px_rgba(10,10,10,0.4)] sm:p-6">
+                      <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-anbit-brand/15 blur-3xl" aria-hidden />
                       <div className="relative flex flex-col items-stretch justify-between gap-4 sm:flex-row sm:items-center">
                         <div className="min-w-0 space-y-1">
                           <div className="flex items-center gap-2">
-                            <Star className="h-5 w-5 shrink-0 fill-[#e63533] text-[#e63533] sm:h-6 sm:w-6" strokeWidth={2} />
+                            <Star className="h-5 w-5 shrink-0 fill-anbit-brand text-anbit-brand sm:h-6 sm:w-6" strokeWidth={2} />
                             <span className="flex flex-wrap items-baseline gap-1.5 font-extrabold uppercase tracking-tight text-white">
                               <AnbitWordmark className="text-sm text-white sm:text-base" /> Loyalty
                             </span>
                           </div>
                           <p className="text-base font-medium text-white/85 sm:text-lg">
                             Apply your {totalXp} XP for a{' '}
-                            <span className="font-bold text-[#e63533] underline decoration-[#e63533]/80">
+                            <span className="font-bold text-anbit-brand underline decoration-anbit-brand/80">
                               €{redeemableDiscount.toFixed(0)} discount
                             </span>
                           </p>
@@ -285,8 +285,8 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                         checked={paymentMethod === 'xp'}
                         onChange={() => setPaymentMethod('xp')}
                       />
-                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-[#e63533] peer-checked:ring-1 peer-checked:ring-[#e63533]/40 peer-checked:[&>span]:text-white sm:h-28">
-                        <Star className="h-9 w-9 fill-[#e63533] text-[#e63533]" strokeWidth={2} />
+                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-anbit-brand peer-checked:ring-1 peer-checked:ring-anbit-brand/40 peer-checked:[&>span]:text-white sm:h-28">
+                        <Star className="h-9 w-9 fill-anbit-brand text-anbit-brand" strokeWidth={2} />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/45">XP</span>
                       </div>
                     </label>
@@ -298,7 +298,7 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                         checked={paymentMethod === 'card'}
                         onChange={() => setPaymentMethod('card')}
                       />
-                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-[#e63533] peer-checked:ring-1 peer-checked:ring-[#e63533]/40 peer-checked:[&>span]:text-white sm:h-28">
+                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-anbit-brand peer-checked:ring-1 peer-checked:ring-anbit-brand/40 peer-checked:[&>span]:text-white sm:h-28">
                         <CreditCard className="h-9 w-9 text-white" strokeWidth={1.75} />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/45">Card</span>
                       </div>
@@ -311,7 +311,7 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                         checked={paymentMethod === 'cash'}
                         onChange={() => setPaymentMethod('cash')}
                       />
-                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-[#e63533] peer-checked:ring-1 peer-checked:ring-[#e63533]/40 peer-checked:[&>span]:text-white sm:h-28">
+                      <div className="flex h-24 flex-col items-center justify-center gap-2 rounded-xl border border-white/10 bg-[#0a0a0a] transition-all peer-checked:border-anbit-brand peer-checked:ring-1 peer-checked:ring-anbit-brand/40 peer-checked:[&>span]:text-white sm:h-28">
                         <Wallet className="h-9 w-9 text-white" strokeWidth={1.75} />
                         <span className="text-[10px] font-bold uppercase tracking-widest text-white/45">Wallet</span>
                       </div>
@@ -349,8 +349,8 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                     <span className="text-3xl font-black tracking-tight text-white">€{grandTotal.toFixed(2)}</span>
                   </div>
                   {totalXp > 0 && (
-                    <div className="flex items-center justify-end gap-1.5 text-xs font-bold uppercase tracking-wider text-[#e63533]">
-                      <Star className="h-4 w-4 fill-[#e63533] text-[#e63533]" strokeWidth={2} />
+                    <div className="flex items-center justify-end gap-1.5 text-xs font-bold uppercase tracking-wider text-anbit-brand">
+                      <Star className="h-4 w-4 fill-anbit-brand text-anbit-brand" strokeWidth={2} />
                       <span>+{totalXp} XP earned with this order</span>
                     </div>
                   )}

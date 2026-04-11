@@ -221,7 +221,7 @@ const App: React.FC = () => {
                   {userData.name}, {t('watchingProgress')}
                 </p>
               </div>
-              <button onClick={() => navigate('/quests')} className="w-full bg-[#e63533] border border-[#e63533] text-white py-3 lg:py-4 rounded-xl font-semibold text-xs lg:text-sm tracking-wide hover:bg-[#cf2f2d] hover:border-[#cf2f2d] transition-all">
+              <button onClick={() => navigate('/quests')} className="w-full bg-anbit-brand border border-anbit-brand text-anbit-brand-foreground py-3 lg:py-4 rounded-xl font-semibold text-xs lg:text-sm tracking-wide hover:bg-anbit-brand-hover hover:border-anbit-brand-hover transition-all">
                 {t('commandCenter')}
               </button>
             </div>
@@ -272,7 +272,7 @@ const App: React.FC = () => {
                 <h2 className="section-title-lg text-anbit-text leading-tight">{t('masterLegacy')}</h2>
                 <p className="text-anbit-muted text-xs lg:text-sm font-medium leading-relaxed max-w-[200px]">Συνδέσου για να ξεκλειδώσεις το κέντρο επιβράβευσης.</p>
               </div>
-              <button onClick={openRegister} className="w-full bg-[#e63533] border border-[#e63533] text-white py-3 lg:py-4 rounded-xl font-semibold text-xs lg:text-sm hover:bg-[#cf2f2d] hover:border-[#cf2f2d] transition-all">Εγγραφή</button>
+              <button onClick={openRegister} className="w-full bg-anbit-brand border border-anbit-brand text-anbit-brand-foreground py-3 lg:py-4 rounded-xl font-semibold text-xs lg:text-sm hover:bg-anbit-brand-hover hover:border-anbit-brand-hover transition-all">Εγγραφή</button>
             </div>
           </div>
           <RewardSection rewards={dashboardFeed.rewards} onViewAll={openRegister} />

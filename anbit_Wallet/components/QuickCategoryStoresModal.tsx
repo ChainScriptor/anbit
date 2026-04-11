@@ -157,7 +157,7 @@ export const QuickCategoryStoresModal: React.FC<QuickCategoryStoresModalProps> =
                             <MapPin className="h-3.5 w-3.5 shrink-0" />
                             {e.location}
                           </p>
-                          <p className="mt-1 text-xs font-medium text-[#e63533]">
+                          <p className="mt-1 text-xs font-medium text-anbit-brand">
                             {e.questCount === 1 ? '1 προσφορά' : `${e.questCount} προσφορές`}
                           </p>
                         </div>

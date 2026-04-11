@@ -41,6 +41,9 @@
             'anbit-text': 'var(--anbit-text)',
             'anbit-xp-accent': 'var(--anbit-xp-accent)',
             'anbit-xp-bar': 'var(--anbit-xp-bar)',
+            'anbit-brand': 'var(--anbit-brand)',
+            'anbit-brand-hover': 'var(--anbit-brand-hover)',
+            'anbit-brand-foreground': 'var(--anbit-brand-foreground)',
             'brand-red': '#0a0a0a',
             'brand-black': '#333333',
           },
@@ -71,7 +74,7 @@
       --store-soft-bg: #F8F9FA;
     }
 
-    /* Dark theme (default) – brand red accent #E63533 (ίδιο με light) */
+    /* Dark theme (default) – brand accent κόκκινο #e63533 */
     :root,
     [data-theme="dark"] {
       --anbit-bg: #0a0a0a;
@@ -83,6 +86,9 @@
       --anbit-text: #ffffff;
       --anbit-nav-bg: #000000;
       --anbit-input: rgba(255, 255, 255, 0.04);
+      --anbit-brand: #e63533;
+      --anbit-brand-hover: #cf2f2d;
+      --anbit-brand-foreground: #ffffff;
       /* XP / πόντοι: το --anbit-yellow είναι #0a0a0a (κουμπιά) — ξεχωριστό accent για αριθμούς XP */
       --anbit-xp-accent: #ffffff;
       --anbit-xp-bar: #f0f0f0;
@@ -90,21 +96,24 @@
       --anbit-xp-surface-border: rgba(255, 255, 255, 0.2);
     }
 
-    /* Light theme – Pax Burgers style: pure white, brand red, urban typography */
+    /* Light: μαύρο αντί για κόκκινο· κείμενο κυρίως μαύρο */
     [data-theme="light"] {
       --anbit-bg: #FFFFFF;
       --anbit-card: #FFFFFF;
       --anbit-border: rgba(0, 0, 0, 0.08);
-      --anbit-yellow: #0a0a0a;
+      --anbit-yellow: #000000;
       --anbit-yellow-content: #ffffff;
-      --anbit-muted: #666666;
-      --anbit-text: #333333;
+      --anbit-muted: #3a3a3a;
+      --anbit-text: #000000;
       --anbit-nav-bg: rgba(255, 255, 255, 0.95);
       --anbit-input: #f5f5f5;
-      --anbit-xp-accent: #0a0a0a;
-      --anbit-xp-bar: #0a0a0a;
-      --anbit-xp-surface: rgba(10, 10, 10, 0.06);
-      --anbit-xp-surface-border: rgba(10, 10, 10, 0.12);
+      --anbit-brand: #000000;
+      --anbit-brand-hover: #262626;
+      --anbit-brand-foreground: #ffffff;
+      --anbit-xp-accent: #000000;
+      --anbit-xp-bar: #000000;
+      --anbit-xp-surface: rgba(0, 0, 0, 0.06);
+      --anbit-xp-surface-border: rgba(0, 0, 0, 0.12);
     }
 
     .playpen-sans {
@@ -161,16 +170,16 @@
       color: #000000 !important;
     }
 
-    /* Fixed navbar: solid red background on scroll only in light mode (Pax-style) */
+    /* Light + scroll: ανοιχτό φόντο, μαύρο κείμενο (όχι κόκκινο/λευκό) */
     [data-theme="light"] .glass-nav.navbar-scrolled {
-      background: #0a0a0a;
-      border-bottom-color: rgba(255, 255, 255, 0.2);
-      color: #fff;
+      background: #ffffff;
+      border-bottom-color: rgba(0, 0, 0, 0.08);
+      color: #000000;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-text,
     [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-muted {
-      color: #fff !important;
+      color: #000000 !important;
     }
 
     /* Mobile burger dropdown: override scroll navbar text colors so it stays readable. */
@@ -192,16 +201,15 @@
       color: var(--anbit-yellow) !important;
     }
 
-    /* Language selector: άσπρο στο scroll όπως το κουμπί theme (φεγγάρι) */
     [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button {
-      color: #fff !important;
-      background: rgba(255, 255, 255, 0.05) !important;
-      border-color: rgba(255, 255, 255, 0.25) !important;
+      color: #000000 !important;
+      background: rgba(0, 0, 0, 0.04) !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button:hover {
-      color: rgba(255, 255, 255, 0.9) !important;
-      background: rgba(255, 255, 255, 0.08) !important;
+      color: #000000 !important;
+      background: rgba(0, 0, 0, 0.06) !important;
     }
 
     /* Hover card στο nav: πάντα ορατό κείμενο (δεν κληρονομεί το άσπρο του navbar) */
@@ -211,7 +219,7 @@
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card .nav-hover-card-text {
-      color: #333333 !important;
+      color: #000000 !important;
     }
 
     /* Popover ειδοποιήσεων: λευκό card — τα παραπάνω !important (#fff) για .text-anbit-* θα έκρυβαν το κείμενο */
@@ -246,34 +254,34 @@
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled button:not([class*="rounded-lg overflow-hidden"]) {
-      color: #fff;
+      color: #000000;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled nav {
-      border-color: rgba(255, 255, 255, 0.25);
-      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(0, 0, 0, 0.1);
+      background: rgba(0, 0, 0, 0.04);
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled nav button.bg-anbit-border {
-      background: rgba(255, 255, 255, 0.2);
-      color: #fff;
+      background: rgba(0, 0, 0, 0.06);
+      color: #000000;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-yellow:not(.fill-anbit-yellow) {
-      color: #fff !important;
+      color: #000000 !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .fill-anbit-yellow {
-      fill: #fff;
+      fill: #000000;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled [class*="border-anbit"] {
-      border-color: rgba(255, 255, 255, 0.25);
+      border-color: rgba(0, 0, 0, 0.12);
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled h1,
     [data-theme="light"] .glass-nav.navbar-scrolled .font-black {
-      color: #fff !important;
+      color: #000000 !important;
     }
 
     /* Dark mode: on scroll keep same dark nav background (no red) */
@@ -302,19 +310,19 @@
     }
 
     [data-theme="light"] .logo-anbit {
-      color: #333333;
+      color: #000000;
     }
 
     [data-theme="light"] .logo-anbit:hover {
-      color: var(--anbit-yellow);
+      color: #262626;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit {
-      color: #ffffff;
+      color: #000000;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit:hover {
-      color: rgba(255, 255, 255, 0.9);
+      color: #262626;
     }
 
     .anbit-wordmark {

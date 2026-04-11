@@ -56,7 +56,7 @@ const OfferCard = React.forwardRef<HTMLDivElement, OfferCardProps>(function Offe
         </div>
         <a
           href={offer.href}
-          className="mt-4 flex w-full shrink-0 items-center justify-center rounded-lg bg-[#e63533] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#cf2f2d]"
+          className="mt-4 flex w-full shrink-0 items-center justify-center rounded-lg bg-anbit-brand py-2.5 text-sm font-bold text-anbit-brand-foreground transition-colors hover:bg-anbit-brand-hover"
         >
           {t("claimOffer")}
         </a>

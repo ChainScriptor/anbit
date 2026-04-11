@@ -205,7 +205,7 @@ const CustomerLoginPage: React.FC = () => {
                 <button
                   type="submit"
                   disabled={loading}
-                  className="w-full rounded-lg bg-[#e63533] py-3 font-bold text-white transition-opacity hover:opacity-90 disabled:opacity-55"
+                  className="w-full rounded-lg bg-anbit-brand py-3 font-bold text-anbit-brand-foreground transition-opacity hover:opacity-90 disabled:opacity-55"
                 >
                   {loading ? 'Περιμένετε…' : 'Σύνδεση'}
                 </button>

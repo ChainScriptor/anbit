@@ -44,3 +44,9 @@ export function useTheme() {
   if (ctx === undefined) throw new Error('useTheme must be used within ThemeProvider');
   return ctx;
 }
+
+/** Όταν δεν υπάρχει provider, επιστρέφει `dark` (π.χ. pulse effects). */
+export function useThemeMode(): 'light' | 'dark' {
+  const ctx = useContext(ThemeContext);
+  return ctx?.theme ?? 'dark';
+}

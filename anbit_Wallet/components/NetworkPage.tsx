@@ -89,7 +89,7 @@ function NetworkStoreCard({
       <div className="min-w-0 flex-1 py-2.5 pl-2.5 pr-10 text-[#e5e5e5] sm:pr-11">
         <div className="flex items-center gap-1.5">
           <h2 className="truncate text-sm font-bold uppercase leading-tight tracking-tight text-white">{partner.name}</h2>
-          <span className="shrink-0 rounded-sm bg-[#e63533] px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-white">
+          <span className="shrink-0 rounded-sm bg-anbit-brand px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-anbit-brand-foreground">
             Anbit+
           </span>
         </div>
@@ -118,8 +118,8 @@ function NetworkStoreCard({
             setFavorite((v) => !v);
           }}
           className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-[#e63533]',
-            favorite && 'bg-[#e63533]',
+            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-anbit-brand',
+            favorite && 'bg-anbit-brand',
           )}
           aria-label={favorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
         >
@@ -201,12 +201,12 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
           className={cn(
             'h-10 min-w-[11rem] shrink-0 rounded-lg bg-anbit-card px-3 py-2 pr-9 text-sm font-medium text-anbit-text focus:outline-none focus:ring-2 sm:min-w-[14rem]',
             quickSelectionId == null &&
-            'border border-anbit-border focus:border-[#e63533] focus:ring-[#e63533]/40',
+            'border border-anbit-border focus:border-anbit-brand focus:ring-anbit-brand/40',
             quickSelectionId === RESTAURANTS_QUICK_ID &&
             'border border-white ring-1 ring-white/30 focus:border-white focus:ring-white/35',
             quickSelectionId != null &&
             quickSelectionId !== RESTAURANTS_QUICK_ID &&
-            'border border-[#e63533] ring-1 ring-[#e63533]/35 focus:border-[#e63533] focus:ring-[#e63533]/40',
+            'border border-anbit-brand ring-1 ring-anbit-brand/35 focus:border-anbit-brand focus:ring-anbit-brand/40',
           )}
           style={{
             appearance: 'none',

@@ -156,7 +156,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                     onClick={() => setOrderHistoryFilter(pill.id)}
                     className={
                       active
-                        ? 'shrink-0 rounded-full bg-[#e63533] px-8 py-3 text-sm font-bold text-white shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all hover:brightness-110 active:scale-95'
+                        ? 'shrink-0 rounded-full bg-anbit-brand px-8 py-3 text-sm font-bold text-anbit-brand-foreground shadow-[0_4px_30px_rgba(0,0,0,0.5)] transition-all hover:brightness-110 active:scale-95'
                         : 'shrink-0 whitespace-nowrap rounded-full border border-white/5 bg-[#131313] px-8 py-3 text-sm font-bold text-[#ababab] transition-all hover:bg-[#1f1f1f]'
                     }
                   >
@@ -172,7 +172,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                 return (
                   <div
                     key={order.id}
-                    className={`group relative rounded-xl border p-6 sm:p-8 transition-all hover:ring-1 hover:ring-white/10 ${isCancelled ? 'border-[#e63533]/20' : 'border-white/5'} bg-[linear-gradient(145deg,#131313_0%,#0e0e0e_100%)] shadow-[0_4px_30px_rgba(0,0,0,0.5)]`}
+                    className={`group relative rounded-xl border p-6 sm:p-8 transition-all hover:ring-1 hover:ring-white/10 ${isCancelled ? 'border-anbit-brand/20' : 'border-white/5'} bg-[linear-gradient(145deg,#131313_0%,#0e0e0e_100%)] shadow-[0_4px_30px_rgba(0,0,0,0.5)]`}
                   >
                     <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                       <div className="flex gap-4 sm:gap-5">
@@ -187,7 +187,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                         <div className="min-w-0">
                           <h3 className="mb-1 text-xl font-extrabold text-white sm:text-2xl">{order.storeName}</h3>
                           {isCancelled ? (
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-[#e63533]">
+                            <p className="text-[10px] font-semibold uppercase tracking-wide text-anbit-brand">
                               {order.dateTime} • Ακυρώθηκε
                             </p>
                           ) : (
@@ -209,7 +209,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                     <div className="mb-6 flex flex-col gap-3 rounded-lg border border-white/5 bg-black/40 px-4 py-3 sm:mb-8 sm:flex-row sm:items-center sm:justify-between sm:px-5 sm:py-4">
                       <p className="text-sm font-medium italic text-[#ababab]">{order.itemsSummary}</p>
                       {!isCancelled && order.xp != null ? (
-                        <div className="flex shrink-0 items-center gap-1.5 self-start rounded-full border border-[#e63533]/20 bg-[#e63533]/10 px-3 py-1.5 sm:self-auto">
+                        <div className="flex shrink-0 items-center gap-1.5 self-start rounded-full border border-anbit-brand/20 bg-anbit-brand/10 px-3 py-1.5 sm:self-auto">
                           <Trophy className="h-4 w-4 text-white" aria-hidden />
                           <span className="text-xs font-bold tracking-widest text-white">+{order.xp} XP</span>
                         </div>
@@ -227,7 +227,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                       ) : (
                         <button
                           type="button"
-                          className="w-full rounded-lg bg-[#e63533] py-4 text-xs font-extrabold tracking-wider text-white transition-all duration-300 hover:bg-[#ff3d3b] active:scale-[0.99]"
+                          className="w-full rounded-lg bg-anbit-brand py-4 text-xs font-extrabold tracking-wider text-anbit-brand-foreground transition-all duration-300 hover:bg-anbit-brand-hover active:scale-[0.99]"
                         >
                           ΛΕΠΤΟΜΕΡΕΙΕΣ
                         </button>
@@ -253,14 +253,14 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
 
               <div className="space-y-4 text-[15px] leading-relaxed text-white/95">
                 <div className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e63533] text-sm font-bold">1</span>
+                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-anbit-brand text-sm font-bold">1</span>
                   <p>
                     Οι φίλοι σου θα κερδίσουν 3,00 € σε Anbit κουπόνια όταν χρησιμοποιήσουν τον κωδικό σου για κάθε μία από τις
                     πρώτες τους 3 παραγγελίες.
                   </p>
                 </div>
                 <div className="flex items-start gap-3">
-                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#e63533] text-sm font-bold">2</span>
+                  <span className="mt-1 inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-anbit-brand text-sm font-bold">2</span>
                   <p>
                     Θα κερδίσεις 3,00 € σε Anbit κουπόνια για κάθε μία από τις πρώτες 3 παραγγελίες των φίλων σου. Μπορείς να
                     κερδίσεις έναν μέγιστο αριθμό 15,00 € μονάδων πίστωσης προσκαλώντας τους φίλους σας να γίνουν μέλη της Anbit.
@@ -269,7 +269,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
               </div>
 
               <div className="pt-1 text-center">
-                <button type="button" className="text-[#e63533] hover:text-[#cf2f2d] transition-colors">
+                <button type="button" className="text-anbit-brand hover:text-anbit-brand-hover transition-colors">
                   Πώς λειτουργούν τα κουπόνια Anbit;
                 </button>
               </div>
@@ -336,11 +336,11 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                 <input
                   type="text"
                   placeholder="Εισάγετε τον κωδικό..."
-                  className="h-12 flex-1 rounded-2xl border border-white/20 bg-black/40 px-4 text-white outline-none placeholder:text-white/45 focus:border-[#e63533] focus:ring-2 focus:ring-[#e63533]/20"
+                  className="h-12 flex-1 rounded-2xl border border-white/20 bg-black/40 px-4 text-white outline-none placeholder:text-white/45 focus:border-anbit-brand focus:ring-2 focus:ring-anbit-brand/20"
                 />
                 <button
                   type="button"
-                  className="h-12 rounded-2xl bg-[#e63533] px-7 font-bold text-white transition-colors hover:bg-[#cf2f2d]"
+                  className="h-12 rounded-2xl bg-anbit-brand px-7 font-bold text-anbit-brand-foreground transition-colors hover:bg-anbit-brand-hover"
                 >
                   Εξαργύρωση
                 </button>

@@ -37,7 +37,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
 
   return (
     <div
-      className="w-full text-[#e5e5e5] selection:bg-[#e63533]/30"
+      className="w-full text-[#e5e5e5] selection:bg-anbit-brand/30"
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
       <header className="mb-8 flex w-full flex-col items-start justify-between gap-6 px-1 py-6 sm:px-2 md:flex-row md:items-end md:py-10">
@@ -49,7 +49,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
         </div>
         <div className="flex items-center gap-4">
           <div className="flex flex-col items-end">
-            <span className="text-xs font-bold uppercase tracking-widest text-[#e63533]">Current Balance</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-anbit-brand">Current Balance</span>
             <span className="text-2xl font-bold tracking-tight text-white">$ 12,450.00</span>
           </div>
           <button
@@ -72,7 +72,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
               </div>
               <div className="text-left sm:text-right">
                 <span className="block text-3xl font-extrabold tracking-tighter text-white">$3,240</span>
-                <p className="text-xs font-bold text-[#e63533]">+12% from last month</p>
+                <p className="text-xs font-bold text-anbit-brand">+12% from last month</p>
               </div>
             </div>
 
@@ -81,14 +81,14 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                 <div key={m.label} className="group flex flex-1 flex-col items-center">
                   <div
                     className={`relative flex h-full w-full flex-col justify-end overflow-hidden rounded-t-lg ${
-                      m.highlight ? 'bg-[#e63533]' : 'bg-[#191919]'
+                      m.highlight ? 'bg-anbit-brand' : 'bg-[#191919]'
                     }`}
                   >
                     <div
                       className={`w-full transition-all duration-1000 ${
                         m.highlight
-                          ? 'bg-[#e63533]/80'
-                          : 'bg-[#e63533]/20 group-hover:bg-[#e63533]/40'
+                          ? 'bg-anbit-brand/80'
+                          : 'bg-anbit-brand/20 group-hover:bg-anbit-brand/40'
                       }`}
                       style={{ height: `${m.pct}%` }}
                     />
@@ -104,12 +104,12 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
           </section>
 
           <section className="relative flex flex-col justify-between overflow-hidden rounded-lg border border-white/5 bg-[#242424] p-6 sm:p-8 md:col-span-4">
-            <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-[#e63533]/10 blur-3xl" />
+            <div className="pointer-events-none absolute -right-12 -top-12 h-48 w-48 rounded-full bg-anbit-brand/10 blur-3xl" />
             <div className="relative z-10">
               <div className="mb-8 flex items-center justify-between">
-                <span className="text-xs font-bold uppercase tracking-widest text-[#e63533]">Reward Status</span>
+                <span className="text-xs font-bold uppercase tracking-widest text-anbit-brand">Reward Status</span>
                 <span
-                  className="material-symbols-outlined text-[#e63533]"
+                  className="material-symbols-outlined text-anbit-brand"
                   style={{ fontVariationSettings: "'FILL' 1" }}
                 >
                   military_tech
@@ -121,7 +121,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                   <span className="text-5xl font-black tracking-tight text-white">
                     {user.totalXP.toLocaleString()}
                   </span>
-                  <span className="text-lg font-bold text-[#e63533]">XP</span>
+                  <span className="text-lg font-bold text-anbit-brand">XP</span>
                 </div>
               </div>
               <div className="space-y-6">
@@ -135,13 +135,13 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                     </span>
                   </div>
                   <div className="h-2 w-full overflow-hidden rounded-full bg-[#262626]">
-                    <div className="h-full bg-[#e63533]" style={{ width: `${levelProgress}%` }} />
+                    <div className="h-full bg-anbit-brand" style={{ width: `${levelProgress}%` }} />
                   </div>
                 </div>
               </div>
             </div>
             <div className="relative z-10 mt-10 flex items-center gap-4 rounded-xl border border-white/5 bg-white/5 p-4">
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#e63533]">
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-anbit-brand">
                 <span className="material-symbols-outlined text-xl text-white">trending_up</span>
               </div>
               <div>
@@ -174,7 +174,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
 
             <div
               ref={carouselRef}
-              className="flex w-full gap-6 overflow-x-auto pb-6 pl-10 pr-10 [scrollbar-width:thin] [scrollbar-color:#e63533_#131313] sm:pl-12 sm:pr-12 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#131313] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-[#e63533]"
+              className="flex w-full gap-6 overflow-x-auto pb-6 pl-10 pr-10 [scrollbar-width:thin] [scrollbar-color:var(--anbit-brand)_#131313] sm:pl-12 sm:pr-12 [&::-webkit-scrollbar]:h-1 [&::-webkit-scrollbar-track]:rounded-full [&::-webkit-scrollbar-track]:bg-[#131313] [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-anbit-brand"
             >
               {partnersWithPoints.length === 0 ? (
                 <p className="w-full py-12 text-center text-sm font-medium text-[#ababab]">
@@ -203,7 +203,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                       <div className="mb-8 flex items-start gap-4">
                         <div
                           className={`h-14 w-14 shrink-0 overflow-hidden rounded-full border-2 ${
-                            idx === 0 ? 'border-[#e63533]/20' : 'border-white/10'
+                            idx === 0 ? 'border-anbit-brand/20' : 'border-white/10'
                           }`}
                         >
                           <img
@@ -249,7 +249,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                               strokeWidth="8"
                             />
                             <circle
-                              className={`stroke-current ${isSilver ? 'text-white' : 'text-[#e63533]'}`}
+                              className={`stroke-current ${isSilver ? 'text-white' : 'text-anbit-brand'}`}
                               cx="50"
                               cy="50"
                               fill="transparent"
@@ -273,7 +273,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                       <Link
                         to={`/store-profile/${partner.id}`}
                         state={{ partner }}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e63533] py-3 text-xs font-extrabold uppercase tracking-widest text-white transition-all group-hover/card:bg-[#ff3d3b]"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-anbit-brand py-3 text-xs font-extrabold uppercase tracking-widest text-anbit-brand-foreground transition-all group-hover/card:bg-anbit-brand-hover"
                       >
                         Explore Store
                         <span className="material-symbols-outlined text-sm">open_in_new</span>
@@ -306,7 +306,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
           ).map((stat) => (
             <div
               key={stat.label}
-              className="group rounded-lg border border-white/5 bg-[#242424] p-5 transition-colors hover:border-[#e63533]/30 md:p-6"
+              className="group rounded-lg border border-white/5 bg-[#242424] p-5 transition-colors hover:border-anbit-brand/30 md:p-6"
             >
               <p className="mb-2 text-xs font-bold uppercase tracking-widest text-[#ababab]">{stat.label}</p>
               <p className="text-2xl font-bold text-white">{stat.value}</p>
