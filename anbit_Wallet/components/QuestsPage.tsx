@@ -1,16 +1,21 @@
 
 import React, { useState, useMemo, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Star, Clock, Zap, ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { Quest, Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
-import { getWeatherIcon } from './ui/AnimatedWeatherIcons';
 import { OfferCarousel, offerCarouselNavButtonClass } from './ui/offer-carousel';
 import { GREEK_OFFERS } from '../data/greekOffers';
 import { cn } from '@/lib/utils';
 import { QuickCategories } from './QuickCategories';
+import { QuickCategoriesWaveBackdrop } from './QuickCategoriesWaveBackdrop';
+import { QuestOfferCard } from './QuestOfferCard';
+import {
+  QuickCategoryStoresModal,
+  buildQuickCategoryStoreEntries,
+} from './QuickCategoryStoresModal';
 import {
   PLACEHOLDER_CATEGORY_IDS,
   buildPartnerCategoryTabsForBundle,
@@ -285,7 +290,7 @@ function MerchantOffersRow({ quests, t }: { quests: Quest[]; t: (key: string) =>
               key={quest.id}
               className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
             >
-              <OfferCard quest={quest} index={index} t={t} />
+              <QuestOfferCard quest={quest} index={index} t={t} mutedTextClassName={questMuted} />
             </div>
           ))}
         </div>
@@ -433,6 +438,7 @@ function QuestsMerchantStrip({
 
 const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests, partners }) => {
   const { t } = useLanguage();
+  const navigate = useNavigate();
   const location = useLocation();
   const prevPathnameRef = useRef<string | undefined>(undefined);
   const [offerFilter, setOfferFilter] = useState<FilterValue>('');
@@ -440,6 +446,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
   const [partnerCategoryFilter, setPartnerCategoryFilter] = useState<string>('All');
   const [quickSelectionId, setQuickSelectionId] = useState<string | null>(DEFAULT_QUESTS_QUICK_ID);
   const [selectedMerchantKey, setSelectedMerchantKey] = useState<string | null>(null);
+  const [quickStoresModalQuickId, setQuickStoresModalQuickId] = useState<string | null>(null);
   const quickCategoriesScrollRef = useRef<HTMLDivElement | null>(null);
   const partnerCategoryScrollRef = useRef<HTMLDivElement | null>(null);
 
@@ -475,6 +482,19 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
     }
     return map;
   }, [quests, partners]);
+
+  const quickModalCategory = useMemo(
+    () =>
+      quickStoresModalQuickId
+        ? QUEST_QUICK_CATEGORIES.find((q) => q.id === quickStoresModalQuickId)
+        : undefined,
+    [quickStoresModalQuickId],
+  );
+
+  const quickModalStoreEntries = useMemo(() => {
+    if (!quickModalCategory) return [];
+    return buildQuickCategoryStoreEntries(quests, partners, quickModalCategory.categoryId);
+  }, [quickModalCategory, quests, partners]);
 
   /** Όταν δεν έχει γίνει κλικ σε quick κάρτα, η «επιλεγμένη» quick κάρτα = πρώτη που ταιριάζει στο φίλτρο (για σκεπή + περίγραμμα). */
   const primaryQuickCardIdForFilter = useMemo(() => {
@@ -558,75 +578,96 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
       <motion.section variants={itemVariants} className="-mt-2 space-y-2 sm:-mt-3 sm:space-y-3">
-        <div className="group relative w-full min-w-0">
-          <button
-            type="button"
-            onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'left')}
-            className={cn(offerCarouselNavButtonClass, 'left-0')}
-            aria-label="Προηγούμενο"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </button>
-          <QuickCategories scrollRef={quickCategoriesScrollRef}>
+        <div className="relative overflow-visible py-5 sm:py-8">
+          <QuickCategoriesWaveBackdrop />
+          <div className="relative z-[1] min-w-0">
+            <div className="group relative w-full min-w-0">
+              <button
+                type="button"
+                onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'left')}
+                className={cn(offerCarouselNavButtonClass, 'left-0')}
+                aria-label="Προηγούμενο"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <QuickCategories scrollRef={quickCategoriesScrollRef}>
             {QUEST_QUICK_CATEGORIES.map((qc) => {
               const isActive =
                 quickSelectionId === qc.id ||
                 (quickSelectionId === null && primaryQuickCardIdForFilter === qc.id);
               const count = quickQuestCounts.get(qc.id) ?? 0;
+              const selectQuickCategory = () => {
+                setQuickSelectionId(qc.id);
+                if (qc.id === 'q-shopping' || qc.id === 'q-market' || qc.id === 'q-health') {
+                  setPartnerCategoryFilter('All');
+                } else {
+                  setPartnerCategoryFilter(qc.categoryId);
+                }
+              };
+
               return (
                 <div
                   key={qc.id}
                   data-quick-cat={qc.id}
                   className="flex w-[200px] shrink-0 snap-start flex-col gap-0 sm:w-[218px]"
                 >
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setQuickSelectionId(qc.id);
-                      if (qc.id === 'q-shopping' || qc.id === 'q-market' || qc.id === 'q-health') {
-                        setPartnerCategoryFilter('All');
-                      } else {
-                        setPartnerCategoryFilter(qc.categoryId);
-                      }
-                    }}
+                  <div
                     className={cn(
-                      'group flex w-full flex-col overflow-hidden rounded-lg border bg-[#131313] text-left shadow-md outline-none transition-all duration-300 hover:bg-[#191919] focus:outline-none focus-visible:outline-none',
+                      'flex w-full flex-col overflow-hidden rounded-lg border bg-[#131313] text-left shadow-md transition-colors duration-300 hover:bg-[#191919]',
                       isActive
                         ? 'border-white ring-1 ring-white/45'
                         : 'border-white/10 hover:border-white/15',
                     )}
                     style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
                   >
-                    <div className="relative h-[128px] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#1f1f1f] sm:h-[138px]">
+                    <button
+                      type="button"
+                      onClick={selectQuickCategory}
+                      className="group relative h-[128px] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#1f1f1f] text-left outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e63533]/55 sm:h-[138px]"
+                    >
                       <img
                         src={qc.image}
                         alt=""
                         className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
-                    </div>
-                    <div className="relative rounded-b-lg border-t border-white/10 bg-[#131313] p-2.5 sm:p-3">
-                      <div className="flex items-start justify-between gap-2">
+                    </button>
+                    <div className="flex min-h-0 items-stretch border-t border-white/10">
+                      <button
+                        type="button"
+                        onClick={selectQuickCategory}
+                        className="min-w-0 flex-1 px-2.5 py-2.5 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e63533]/55 sm:px-3 sm:py-3"
+                      >
                         <p className="line-clamp-2 text-xs font-bold leading-tight text-white sm:text-sm">{qc.label}</p>
-                        <div className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#262626]/80 px-2 py-1 backdrop-blur-sm">
-                          <QuestQuickMerchantIcon className="h-4 w-4 opacity-95" />
-                          <span className="text-xs font-bold text-white sm:text-sm">{count}</span>
-                        </div>
-                      </div>
+                      </button>
+                      <button
+                        type="button"
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setQuickStoresModalQuickId(qc.id);
+                        }}
+                        className="inline-flex shrink-0 flex-col items-center justify-center gap-0.5 border-l border-white/10 px-2.5 py-2 outline-none transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#e63533]/55 sm:px-3"
+                        aria-label={`Καταστήματα — ${qc.label} (${count})`}
+                      >
+                        <QuestQuickMerchantIcon className="h-4 w-4 opacity-95" />
+                        <span className="text-xs font-bold text-white sm:text-sm">{count}</span>
+                      </button>
                     </div>
-                  </button>
+                  </div>
                 </div>
               );
             })}
-          </QuickCategories>
-          <button
-            type="button"
-            onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'right')}
-            className={cn(offerCarouselNavButtonClass, 'right-0')}
-            aria-label="Επόμενο"
-          >
-            <ChevronRight className="h-6 w-6" />
-          </button>
+              </QuickCategories>
+              <button
+                type="button"
+                onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'right')}
+                className={cn(offerCarouselNavButtonClass, 'right-0')}
+                aria-label="Επόμενο"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+          </div>
         </div>
         <h2 className="playpen-sans text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
           Αναζήτηση ανά κατηγορία
@@ -760,90 +801,20 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
           )}
         </AnimatePresence>
       </div>
+
+      <QuickCategoryStoresModal
+        isOpen={quickStoresModalQuickId != null}
+        onClose={() => setQuickStoresModalQuickId(null)}
+        categoryLabel={quickModalCategory?.label ?? ''}
+        entries={quickModalStoreEntries}
+        onOpenStore={(partnerId) => {
+          const partner = partners.find((p) => p.id === partnerId);
+          navigate(`/store-profile/${partnerId}`, partner ? { state: { partner } } : undefined);
+        }}
+      />
     </motion.div>
   );
 };
 
-function OfferCard({
-  quest,
-  index,
-  t,
-}: {
-  quest: Quest;
-  index: number;
-  t: (key: string) => string;
-}) {
-  const daysNum = quest.expiresIn.replace(/\D/g, '') || '0';
-  const WeatherIcon = quest.weather ? getWeatherIcon(quest.weather) : null;
-  const bannerSrc =
-    quest.bannerImage ??
-    'https://images.unsplash.com/photo-1544025162-766942260318?auto=format&fit=crop&q=80&w=1200&h=480';
-
-  return (
-    <motion.div
-      layout
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      exit={{ opacity: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="flex flex-col overflow-hidden rounded-xl border border-anbit-border bg-anbit-card transition-colors hover:border-anbit-yellow/30"
-    >
-      <div className="relative h-36 w-full shrink-0 bg-white/5 sm:h-40">
-        <img src={bannerSrc} alt="" className="h-full w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-        {WeatherIcon ? (
-          <span className="absolute bottom-2 left-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-white backdrop-blur-sm">
-            <WeatherIcon size={22} />
-          </span>
-        ) : (
-          <span className="absolute bottom-2 left-3 flex h-9 w-9 items-center justify-center rounded-full bg-black/35 text-lg backdrop-blur-sm">
-            {quest.icon}
-          </span>
-        )}
-        <span className="absolute right-3 top-3 inline-flex items-center gap-1 rounded-md border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)]/95 px-2 py-1 text-xs font-bold text-anbit-xp-accent shadow-sm backdrop-blur-sm">
-          <Star className="h-3 w-3" />+{quest.reward} XP
-        </span>
-      </div>
-
-      <div className="flex flex-col gap-4 p-5">
-        <div>
-        <h3 className="mb-1 text-lg font-bold text-anbit-text">{quest.title}</h3>
-        <p className={`line-clamp-2 text-sm ${questMuted}`}>{quest.description}</p>
-        </div>
-
-        {quest.multiplier != null && quest.multiplier > 1 && (
-        <div className="flex items-center gap-2 rounded-lg border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)] p-2">
-          <Zap className="h-4 w-4 text-anbit-xp-accent" />
-          <span className="text-sm font-medium text-anbit-xp-accent">
-            {quest.multiplier}x {t('xpMultiplierWeekend')}
-          </span>
-        </div>
-        )}
-
-        <div className={`flex items-center gap-2 text-sm ${questMuted}`}>
-        <Clock className="h-4 w-4 shrink-0" />
-        <span>
-          {t('expiresInDays')} {daysNum} {t('daysLeft')}
-        </span>
-        </div>
-
-        <div className="flex gap-2 pt-1">
-        <button
-          type="button"
-          className="flex-1 rounded-lg bg-[#e63533] py-2.5 text-sm font-bold text-white transition-colors hover:bg-[#cf2f2d]"
-        >
-          {t('claimOffer')}
-        </button>
-        <button
-          type="button"
-          className="rounded-lg border border-anbit-border px-4 py-2.5 text-sm font-medium text-anbit-text transition-colors hover:bg-white/5"
-        >
-          {t('viewRules')}
-        </button>
-        </div>
-      </div>
-    </motion.div>
-  );
-}
 
 export default QuestsPage;

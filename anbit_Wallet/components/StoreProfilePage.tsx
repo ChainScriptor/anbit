@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from 'react';
-import { useLocation, useParams, useNavigate } from 'react-router-dom';
+import React, { useMemo, useState, useRef } from 'react';
+import { useLocation, useParams, useNavigate, Link } from 'react-router-dom';
 import {
   User,
   Zap,
@@ -9,11 +9,16 @@ import {
   Globe2,
   Mail,
   ChevronRight,
+  ChevronLeft,
 } from 'lucide-react';
-import type { Partner, Product } from '../types';
+import type { Partner, Product, Quest } from '../types';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useAuth } from '../context/AuthContext';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { QuestOfferCard } from './QuestOfferCard';
+import { offerCarouselNavButtonClass } from './ui/offer-carousel';
+import { cn } from '@/lib/utils';
 import AnimatedSocialLinks, { type Social } from './ui/social-links';
 import ImgStack from './ui/image-stack';
 import { AwardBadge } from './ui/award-badge';
@@ -31,13 +36,22 @@ interface StoreReview {
   comment: string;
 }
 
+function questBelongsToStore(quest: Quest, partner: Partner): boolean {
+  if (quest.partnerId && quest.partnerId === partner.id) return true;
+  const sn = quest.storeName?.trim().toLowerCase();
+  const pn = partner.name?.trim().toLowerCase();
+  return Boolean(sn && pn && sn === pn);
+}
+
 const StoreProfilePage: React.FC = () => {
   const { state } = useLocation() as { state?: LocationState };
   const { partnerId } = useParams<{ partnerId: string }>();
   const navigate = useNavigate();
-  const { partners } = useDashboardData(false);
+  const { t } = useLanguage();
   const { user } = useAuth();
+  const { partners, quests } = useDashboardData(!!user);
   const { theme } = useTheme();
+  const offersScrollRef = useRef<HTMLDivElement | null>(null);
   const [isMenuPreviewOpen, setIsMenuPreviewOpen] = useState(false);
   const [storeReviews, setStoreReviews] = useState<StoreReview[]>([
     {
@@ -68,6 +82,18 @@ const StoreProfilePage: React.FC = () => {
   }, [state?.partner, partnerId, partners]);
 
   const menu: Product[] = useMemo(() => partner?.menu ?? [], [partner]);
+
+  const partnerQuests = useMemo(() => {
+    if (!partner) return [];
+    return quests.filter((q) => questBelongsToStore(q, partner));
+  }, [quests, partner]);
+
+  const scrollPartnerOffers = (dir: 'left' | 'right') => {
+    const el = offersScrollRef.current;
+    if (!el) return;
+    const step = Math.min(el.clientWidth * 0.85, 360);
+    el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
+  };
   const REVIEWS_PER_PAGE = 4;
   const totalReviewPages = Math.max(1, Math.ceil(storeReviews.length / REVIEWS_PER_PAGE));
   const paginatedStoreReviews = useMemo(() => {
@@ -91,7 +117,7 @@ const StoreProfilePage: React.FC = () => {
           </p>
           <button
             type="button"
-            onClick={() => navigate('/network')}
+            onClick={() => navigate('/quests')}
             className="mt-2 inline-flex items-center justify-center rounded-xl bg-[#e63533] px-4 py-2.5 text-xs font-semibold text-white shadow-sm hover:bg-[#cf2f2d]"
           >
             Επιστροφή στα καταστήματα
@@ -208,52 +234,59 @@ const StoreProfilePage: React.FC = () => {
           </div>
         </section>
 
-        {/* Προσφορές & προνόμια */}
+        {/* Προσφορές Anbit (quests) για αυτό το κατάστημα */}
         <section className="mt-6">
-          <h2 className="text-2xl font-extrabold tracking-tight">Προσφορές & προνόμια</h2>
-          <div className="mt-4 grid grid-cols-1 gap-4 md:grid-cols-2">
-            <article className="relative overflow-visible rounded-2xl bg-[#0a171a] p-6 shadow-sm transition-opacity hover:opacity-95">
-              <span className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
-              <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
-              <div className="flex items-center gap-5">
-                <div className="shrink-0">
-                  <svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M24 44C35.0457 44 44 35.0457 44 24C44 12.9543 35.0457 4 24 4C12.9543 4 4 12.9543 4 24C4 35.0457 12.9543 44 24 44Z" fill="#e63533" fillOpacity="0.2" />
-                    <path d="M24 40C32.8366 40 40 32.8366 40 24C40 15.1634 32.8366 8 24 8C15.1634 8 8 15.1634 8 24C8 32.8366 15.1634 40 24 40Z" stroke="#e63533" strokeDasharray="2 2" strokeWidth="2" />
-                    <path d="M18 18L30 30M19 30C19.5523 30 20 29.5523 20 29C20 28.4477 19.5523 28 19 28C18.4477 28 18 28.4477 18 29C18 29.5523 18.4477 30 19 30ZM29 20C29.5523 20 30 19.5523 30 19C30 18.4477 29.5523 18 29 18C28.4477 18 28 18.4477 28 19C28 19.5523 28.4477 20 29 20Z" stroke="#e63533" strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" />
-                  </svg>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold leading-tight md:text-base">
-                    -50% στις 3 πρώτες σου παραγγελίες αξίας 10€ & άνω. Μέγιστη έκπτωση 7€
-                  </h3>
-                  <div className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-[#009DE0]">
-                    <span>Εμφάνιση λεπτομερειών</span>
-                    <ChevronRight className="h-4 w-4" />
-                  </div>
-                </div>
-              </div>
-            </article>
-
-            <article className="relative overflow-visible rounded-2xl bg-gradient-to-r from-[#e63533] to-[#a82422] p-6 shadow-sm transition-opacity hover:opacity-95">
-              <span className="absolute -left-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
-              <span className="absolute -right-2 top-1/2 h-4 w-4 -translate-y-1/2 rounded-full bg-[color:var(--anbit-bg)]" aria-hidden />
-              <div className="flex items-center gap-5">
-                <div className="shrink-0 rounded-full border border-white/30 bg-white/20 px-3 py-1 text-sm font-extrabold italic tracking-tight text-white">
-                  Anbit<span className="ml-0.5 align-top text-xs not-italic font-bold">+</span>
-                </div>
-                <div className="min-w-0">
-                  <h3 className="text-sm font-bold leading-tight text-white md:text-base">
-                    Λάβετε 0 € χρέωση παράδοσης και πολλά άλλα!
-                  </h3>
-                  <div className="mt-2 inline-flex items-center gap-1 text-sm font-bold text-white">
-                    <span>Δοκιμάστε για 30 μέρες δωρεάν!</span>
-                    <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-white/20 text-[10px]">▶</span>
-                  </div>
-                </div>
-              </div>
-            </article>
+          <div className="flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-2xl font-extrabold tracking-tight">Προσφορές καταστήματος</h2>
+            {partnerQuests.length > 0 ? (
+              <Link
+                to="/quests"
+                className="text-sm font-semibold text-[#e63533] transition-colors hover:text-[#cf2f2d]"
+              >
+                Όλες οι προσφορές Anbit →
+              </Link>
+            ) : null}
           </div>
+          {partnerQuests.length === 0 ? (
+            <p className="mt-4 rounded-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] px-4 py-8 text-center text-sm text-[color:var(--anbit-muted)]">
+              Δεν υπάρχουν ενεργές προσφορές για αυτό το κατάστημα αυτή τη στιγμή.{' '}
+              <Link to="/quests" className="font-semibold text-[#e63533] hover:underline">
+                Δες το Anbit Quests
+              </Link>
+            </p>
+          ) : (
+            <div className="group relative mt-4 w-full min-w-0">
+              <button
+                type="button"
+                onClick={() => scrollPartnerOffers('left')}
+                className={cn(offerCarouselNavButtonClass, 'left-0')}
+                aria-label="Προηγούμενες προσφορές"
+              >
+                <ChevronLeft className="h-6 w-6" />
+              </button>
+              <div
+                ref={offersScrollRef}
+                className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
+              >
+                {partnerQuests.map((quest, index) => (
+                  <div
+                    key={quest.id}
+                    className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
+                  >
+                    <QuestOfferCard quest={quest} index={index} t={t} />
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={() => scrollPartnerOffers('right')}
+                className={cn(offerCarouselNavButtonClass, 'right-0')}
+                aria-label="Επόμενες προσφορές"
+              >
+                <ChevronRight className="h-6 w-6" />
+              </button>
+            </div>
+          )}
         </section>
 
         {/* Main grid */}
@@ -427,42 +460,6 @@ const StoreProfilePage: React.FC = () => {
 
           {/* Right column: deals, reservation, social, store info */}
           <aside className="space-y-6">
-            {/* Deals of the day */}
-            <section className="rounded-3xl bg-[color:var(--anbit-card)] p-5 shadow-sm border border-[color:var(--anbit-border)]">
-              <div className="flex items-center justify-between gap-2">
-                <h2 className="text-sm font-semibold uppercase tracking-wide text-[color:var(--anbit-muted)]">
-                  Deals of the Day
-                </h2>
-                <span className="rounded-full bg-[color:var(--anbit-yellow)] px-3 py-1 text-[11px] font-semibold text-[color:var(--anbit-yellow-content)] shadow-sm">
-                  Limited time
-                </span>
-              </div>
-              <div className="mt-4 grid gap-4">
-                <div className="rounded-2xl bg-slate-900 p-4 text-white shadow-md">
-                  <p className="text-xs uppercase tracking-wide text-slate-300">
-                    Morning Combo
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    Coffee + pastry with extra XP
-                  </p>
-                  <p className="mt-3 text-xs text-slate-300">
-                    From €4.90 · +30 XP
-                  </p>
-                </div>
-                <div className="rounded-2xl bg-[color:var(--anbit-yellow)] p-4 text-[color:var(--anbit-yellow-content)] shadow-md">
-                  <p className="text-xs uppercase tracking-wide opacity-80">
-                    Squad Offer
-                  </p>
-                  <p className="mt-1 text-sm font-semibold">
-                    -15% on groups of 4+
-                  </p>
-                  <p className="mt-3 text-xs opacity-80">
-                    Applies automatically at checkout.
-                  </p>
-                </div>
-              </div>
-            </section>
-
             {!isMenuPreviewOpen && <StoreMysteryBox initialXp={storeXPForPartner} />}
 
             {/* Reservation system */}

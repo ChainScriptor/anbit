@@ -203,7 +203,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               )}
             </div>
 
-            <NavLink to="/network" className="logo-anbit cursor-pointer">
+            <NavLink to="/quests" className="logo-anbit cursor-pointer">
               <AnbitWordmark className="text-3xl sm:text-4xl lg:text-5xl" />
             </NavLink>
             <button

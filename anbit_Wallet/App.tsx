@@ -139,7 +139,7 @@ const App: React.FC = () => {
     setAuthModalMode('register');
     setAuthModalOpen(true);
   }, []);
-  /** Με `returnTo` μόνο όταν χρειάζεται ρητή επιστροφή (π.χ. scan → profile). Αλλιώς μετά τη σύνδεση → `/network`. */
+  /** Με `returnTo` μόνο όταν χρειάζεται ρητή επιστροφή (π.χ. scan → profile). Αλλιώς μετά τη σύνδεση → `/quests`. */
   const openLoginPage = useCallback((returnTo?: string) => {
     if (returnTo !== undefined) {
       navigate(`/login?returnTo=${encodeURIComponent(returnTo)}`);
@@ -353,9 +353,9 @@ const App: React.FC = () => {
                 : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}
             >
               <Routes>
-                <Route path="/" element={<Navigate to="/network" replace />} />
+                <Route path="/" element={<Navigate to="/quests" replace />} />
                 <Route path="/login" element={<CustomerLoginPage />} />
-                <Route path="/dashboard" element={<Navigate to="/network" replace />} />
+                <Route path="/dashboard" element={<Navigate to="/quests" replace />} />
                 <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
                 <Route
                   path="/scan"
@@ -434,11 +434,17 @@ const App: React.FC = () => {
                 />
                 <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/network" replace />} />
                 <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/network" replace />} />
-                <Route path="*" element={<Navigate to="/network" replace />} />
+                <Route path="*" element={<Navigate to="/quests" replace />} />
               </Routes>
             </main>
             {!hideChrome && <FooterTaped t={t} />}
-            <AuthModal isOpen={authModalOpen} onClose={closeAuthModal} mode={authModalMode} onSwitchMode={setAuthModalMode} onSuccess={authSuccessCallback ?? undefined} />
+            <AuthModal
+              isOpen={authModalOpen}
+              onClose={closeAuthModal}
+              mode={authModalMode}
+              onSwitchMode={setAuthModalMode}
+              onSuccess={authSuccessCallback ?? (() => navigate('/quests', { replace: true }))}
+            />
             {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
             <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />
       </motion.div>
