@@ -1,8 +1,10 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { cn } from '@/lib/utils';
+import { offerCarouselNavButtonClass } from './ui/offer-carousel';
 
 const networkMuted = 'text-[#b0b0b0]';
 
@@ -146,6 +148,14 @@ interface NetworkPageProps {
 const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpenStoreProfile }) => {
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [quickSelectionId, setQuickSelectionId] = useState<string | null>(null);
+  const storesScrollRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollStoresStrip = (dir: 'left' | 'right') => {
+    const el = storesScrollRef.current;
+    if (!el) return;
+    const step = el.clientWidth * 0.75;
+    el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
+  };
 
   const filteredPartners = useMemo(() => {
     if (categoryFilter === 'All') return partners;
@@ -217,34 +227,53 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
       </motion.div>
 
       <motion.section variants={itemVariants} className="space-y-4">
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h2 className="section-title flex items-center gap-2 text-anbit-text text-lg lg:text-xl">
-              Καταστήματα
-              <span aria-hidden className="inline-block h-2.5 w-2.5 rounded-full" style={{ backgroundColor: '#e63533' }} />
-            </h2>
-            <p className="mt-1 text-sm text-[#b0b0b0]">
-              <span className="font-semibold text-white/90">{filterContextLabel}</span>
-              <span className="mx-1.5 text-white/30">·</span>
-              {sortedPartners.length}{' '}
-              {sortedPartners.length === 1 ? 'κατάστημα' : 'καταστήματα'}
-            </p>
-          </div>
-        </div>
+        <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+          Καταστήματα
+        </h2>
+        <p className="text-sm text-[#b0b0b0]">
+          <span className="font-semibold text-anbit-text">{filterContextLabel}</span>
+          <span className="mx-1.5 text-anbit-muted">·</span>
+          {sortedPartners.length} {sortedPartners.length === 1 ? 'κατάστημα' : 'καταστήματα'}
+        </p>
 
         {sortedPartners.length === 0 ? (
           <p className="text-center text-sm text-[#b0b0b0]">Δεν υπάρχουν καταστήματα για αυτή την επιλογή.</p>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 xl:grid-cols-4">
-            {sortedPartners.map((partner) => (
-              <motion.div key={partner.id} variants={itemVariants} className="min-w-0">
-                <NetworkStoreCard
-                  partner={partner}
-                  xp={storeXP[partner.id] ?? 0}
-                  onOpen={() => onOpenStoreProfile(partner)}
-                />
-              </motion.div>
-            ))}
+          <div className="group relative w-full min-w-0">
+            <button
+              type="button"
+              onClick={() => scrollStoresStrip('left')}
+              className={cn(offerCarouselNavButtonClass, 'left-0')}
+              aria-label="Προηγούμενα καταστήματα"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </button>
+            <div
+              ref={storesScrollRef}
+              className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
+            >
+              {sortedPartners.map((partner) => (
+                <motion.div
+                  key={partner.id}
+                  variants={itemVariants}
+                  className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
+                >
+                  <NetworkStoreCard
+                    partner={partner}
+                    xp={storeXP[partner.id] ?? 0}
+                    onOpen={() => onOpenStoreProfile(partner)}
+                  />
+                </motion.div>
+              ))}
+            </div>
+            <button
+              type="button"
+              onClick={() => scrollStoresStrip('right')}
+              className={cn(offerCarouselNavButtonClass, 'right-0')}
+              aria-label="Επόμενα καταστήματα"
+            >
+              <ChevronRight className="h-6 w-6" />
+            </button>
           </div>
         )}
       </motion.section>

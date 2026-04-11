@@ -72,6 +72,10 @@ export interface OfferCarouselProps extends React.HTMLAttributes<HTMLDivElement>
   mutedTextClassName?: string;
 }
 
+/** Κοινό κέλυφος με το carousel «Προσφορές της ημέρας» — parent χρειάζεται `group`. Κρυφά κάτω από `sm` (mobile = μόνο swipe). */
+export const offerCarouselNavButtonClass =
+  "absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-anbit-border bg-anbit-card/80 text-anbit-text opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100 hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content sm:flex";
+
 const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
   ({ offers, className, mutedTextClassName = "text-anbit-muted", ...props }, ref) => {
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
@@ -88,14 +92,14 @@ const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
     };
 
     return (
-      <div ref={ref} className={cn("relative w-full group", className)} {...props}>
+      <div ref={ref} className={cn("group relative w-full", className)} {...props}>
         <button
           type="button"
           onClick={() => scroll("left")}
-          className="absolute top-1/2 -translate-y-1/2 left-0 z-10 w-10 h-10 rounded-full bg-anbit-card/80 backdrop-blur-sm border border-anbit-border flex items-center justify-center text-anbit-text opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow"
+          className={cn(offerCarouselNavButtonClass, "left-0")}
           aria-label="Προηγούμενη"
         >
-          <ChevronLeft className="w-6 h-6" />
+          <ChevronLeft className="h-6 w-6" />
         </button>
         <div
           ref={scrollContainerRef}
@@ -108,10 +112,10 @@ const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
         <button
           type="button"
           onClick={() => scroll("right")}
-          className="absolute top-1/2 -translate-y-1/2 right-0 z-10 w-10 h-10 rounded-full bg-anbit-card/80 backdrop-blur-sm border border-anbit-border flex items-center justify-center text-anbit-text opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-anbit-yellow hover:text-anbit-yellow-content hover:border-anbit-yellow"
+          className={cn(offerCarouselNavButtonClass, "right-0")}
           aria-label="Επόμενη"
         >
-          <ChevronRight className="w-6 h-6" />
+          <ChevronRight className="h-6 w-6" />
         </button>
       </div>
     );

@@ -6,11 +6,11 @@ import { useNavigate } from 'react-router-dom';
 import { Quest, Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
-import { useTheme } from '../context/ThemeContext';
 import { getWeatherIcon } from './ui/AnimatedWeatherIcons';
-import { OfferCarousel } from './ui/offer-carousel';
+import { OfferCarousel, offerCarouselNavButtonClass } from './ui/offer-carousel';
 import { GREEK_OFFERS } from '../data/greekOffers';
 import { cn } from '@/lib/utils';
+import { QuickCategories, QuickCategoryRoofSlot } from './QuickCategories';
 
 const questMuted = 'text-[#b0b0b0]';
 
@@ -33,7 +33,7 @@ type FilterValue = '' | 'highest-xp' | 'expiring-soon';
 
 /** Ίδια assets με το NetworkPage («Αναζήτηση ανά κατηγορία»). */
 const CATEGORY_IMAGES: Record<string, string> = {
-  All: publicUrl('svg/streetfood.svg'),
+  All: publicUrl('svg/all.svg'),
   street_food: publicUrl('svg/streetfood.svg'),
   sandwiches: publicUrl('svg/sandwitch.svg'),
   brunch: publicUrl('svg/sandwitch.svg'),
@@ -55,6 +55,29 @@ const CATEGORY_IMAGES: Record<string, string> = {
   souvlaki: publicUrl('svg/chicken.svg'),
   cooked: publicUrl('svg/chicken.svg'),
 };
+
+/** Tab id → «κλειστό» asset στο svgclose/· στο click εμφανίζεται το αντίστοιχο CATEGORY_IMAGES (svg/). */
+const PARTNER_CATEGORY_CLOSE_SRC: Partial<Record<string, string>> = {
+  All: publicUrl('svgclose/allclose.svg'),
+  street_food: publicUrl('svgclose/streetfoodclose.svg'),
+  burger: publicUrl('svgclose/burgerclose.svg'),
+  sandwiches: publicUrl('svgclose/sandwitchclose.svg'),
+  brunch: publicUrl('svgclose/brucnhclose.svg'),
+  bbq: publicUrl('svgclose/chickenclose.svg'),
+  pizza: publicUrl('svgclose/pizzaclose.svg'),
+  italian: publicUrl('svgclose/italianclose.svg'),
+  sweets: publicUrl('svgclose/sweetsclose.svg'),
+  pasta: publicUrl('svgclose/pastaclose.svg'),
+  healthy: publicUrl('svgclose/healthyclose.svg'),
+  asian: publicUrl('svgclose/asianclose.svg'),
+};
+
+function partnerCategoryTabImageSrc(categoryId: string, active: boolean): string {
+  const openSrc = CATEGORY_IMAGES[categoryId] ?? CATEGORY_IMAGES.All;
+  const closeSrc = PARTNER_CATEGORY_CLOSE_SRC[categoryId];
+  if (!closeSrc) return openSrc;
+  return active ? openSrc : closeSrc;
+}
 
 function resolveQuestPartner(quest: Quest, partners: Partner[]): Partner | undefined {
   if (quest.partnerId) return partners.find((p) => p.id === quest.partnerId);
@@ -88,6 +111,12 @@ const QUEST_QUICK_CATEGORIES: { id: string; label: string; categoryId: string; i
 ];
 
 function scrollQuestQuickStrip(el: HTMLDivElement | null, dir: 'left' | 'right') {
+  if (!el) return;
+  const step = el.clientWidth * 0.8;
+  el.scrollTo({ left: dir === 'right' ? el.scrollLeft + step : el.scrollLeft - step, behavior: 'smooth' });
+}
+
+function scrollPartnerCategoryStrip(el: HTMLDivElement | null, dir: 'left' | 'right') {
   if (!el) return;
   const step = el.clientWidth * 0.8;
   el.scrollTo({ left: dir === 'right' ? el.scrollLeft + step : el.scrollLeft - step, behavior: 'smooth' });
@@ -274,41 +303,38 @@ function MerchantOffersRow({ quests, t }: { quests: Quest[]; t: (key: string) =>
     el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
   };
 
-  const navBtnClass =
-    'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-11 sm:w-11 lg:h-12 lg:w-12';
-
   return (
     <div className="min-w-0 w-full">
-      <div className="mb-2 flex items-center justify-end gap-2 sm:gap-3">
+      <div className="group relative w-full min-w-0">
         <button
           type="button"
           onClick={() => scrollOffers('left')}
-          className={navBtnClass}
+          className={cn(offerCarouselNavButtonClass, 'left-0')}
           aria-label="Προηγούμενες προσφορές"
         >
-          <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
+          <ChevronLeft className="h-6 w-6" />
         </button>
+        <div
+          ref={scrollRef}
+          className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
+        >
+          {quests.map((quest, index) => (
+            <div
+              key={quest.id}
+              className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
+            >
+              <OfferCard quest={quest} index={index} t={t} />
+            </div>
+          ))}
+        </div>
         <button
           type="button"
           onClick={() => scrollOffers('right')}
-          className={navBtnClass}
+          className={cn(offerCarouselNavButtonClass, 'right-0')}
           aria-label="Επόμενες προσφορές"
         >
-          <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
+          <ChevronRight className="h-6 w-6" />
         </button>
-      </div>
-      <div
-        ref={scrollRef}
-        className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
-      >
-        {quests.map((quest, index) => (
-          <div
-            key={quest.id}
-            className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
-          >
-            <OfferCard quest={quest} index={index} t={t} />
-          </div>
-        ))}
       </div>
     </div>
   );
@@ -387,50 +413,57 @@ function QuestsMerchantStrip({
     el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
   };
 
-  const navBtnClass =
-    'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-10 sm:w-10';
-
   const totalOffers = sections.reduce((n, g) => n + g.quests.length, 0);
 
   return (
-    <div className="min-w-0 space-y-3">
-      <div className="flex items-center justify-between gap-3">
-        <h3 className="text-sm font-bold text-white sm:text-base">Καταστήματα</h3>
-        <div className="flex shrink-0 gap-2">
-          <button type="button" onClick={() => scrollStrip('left')} className={navBtnClass} aria-label="Προηγούμενα">
-            <ChevronLeft className="h-5 w-5" />
-          </button>
-          <button type="button" onClick={() => scrollStrip('right')} className={navBtnClass} aria-label="Επόμενα">
-            <ChevronRight className="h-5 w-5" />
-          </button>
+    <div className="min-w-0 space-y-4">
+      <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+        Καταστήματα
+      </h2>
+      <div className="group relative w-full min-w-0">
+        <button
+          type="button"
+          onClick={() => scrollStrip('left')}
+          className={cn(offerCarouselNavButtonClass, 'left-0')}
+          aria-label="Προηγούμενα καταστήματα"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </button>
+        <div
+          ref={scrollRef}
+          className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
+        >
+          <div className="shrink-0 snap-start">
+            <AllMerchantsStripCard
+              selected={selectedKey === null}
+              onSelect={() => onSelect(null)}
+              totalOffers={totalOffers}
+            />
+          </div>
+          {sections.map((g) => {
+            const key = groupKeyFromSection(g);
+            return (
+              <div key={key} className="shrink-0 snap-start">
+                <QuestMerchantBanner
+                  partner={g.partner}
+                  representativeQuest={g.representative}
+                  quests={g.quests}
+                  selectable
+                  selected={selectedKey === key}
+                  onSelect={() => onSelect(key)}
+                />
+              </div>
+            );
+          })}
         </div>
-      </div>
-      <div
-        ref={scrollRef}
-        className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
-      >
-        <div className="shrink-0 snap-start">
-          <AllMerchantsStripCard
-            selected={selectedKey === null}
-            onSelect={() => onSelect(null)}
-            totalOffers={totalOffers}
-          />
-        </div>
-        {sections.map((g) => {
-          const key = groupKeyFromSection(g);
-          return (
-            <div key={key} className="shrink-0 snap-start">
-              <QuestMerchantBanner
-                partner={g.partner}
-                representativeQuest={g.representative}
-                quests={g.quests}
-                selectable
-                selected={selectedKey === key}
-                onSelect={() => onSelect(key)}
-              />
-            </div>
-          );
-        })}
+        <button
+          type="button"
+          onClick={() => scrollStrip('right')}
+          className={cn(offerCarouselNavButtonClass, 'right-0')}
+          aria-label="Επόμενα καταστήματα"
+        >
+          <ChevronRight className="h-6 w-6" />
+        </button>
       </div>
     </div>
   );
@@ -438,13 +471,13 @@ function QuestsMerchantStrip({
 
 const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests, partners }) => {
   const { t } = useLanguage();
-  const { theme } = useTheme();
   const [offerFilter, setOfferFilter] = useState<FilterValue>('');
   const [searchQuery, setSearchQuery] = useState('');
   const [partnerCategoryFilter, setPartnerCategoryFilter] = useState<string>('All');
   const [quickSelectionId, setQuickSelectionId] = useState<string | null>(null);
   const [selectedMerchantKey, setSelectedMerchantKey] = useState<string | null>(null);
   const quickCategoriesScrollRef = useRef<HTMLDivElement | null>(null);
+  const partnerCategoryScrollRef = useRef<HTMLDivElement | null>(null);
 
   const partnerCategoryTabs = useMemo(
     () => [
@@ -452,7 +485,6 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       { id: 'street_food', label: 'Street Food' },
       { id: 'burger', label: 'Burger' },
       { id: 'bbq', label: 'Chicken' },
-      { id: 'coffee', label: 'Καφέ' },
       { id: 'pizza', label: 'Pizza' },
       { id: 'italian', label: 'Ιταλικό' },
       { id: 'sweets', label: 'Γλυκά' },
@@ -461,7 +493,6 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       { id: 'healthy', label: 'Healthy' },
       { id: 'asian', label: 'Asian' },
       { id: 'sandwiches', label: 'Sandwiches' },
-      { id: 'bar', label: 'Ποτά' },
     ],
     [t],
   );
@@ -474,6 +505,12 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
     }
     return map;
   }, [quests, partners]);
+
+  /** Όταν δεν έχει γίνει κλικ σε quick κάρτα, η «επιλεγμένη» quick κάρτα = πρώτη που ταιριάζει στο φίλτρο (για σκεπή + περίγραμμα). */
+  const primaryQuickCardIdForFilter = useMemo(() => {
+    const hit = QUEST_QUICK_CATEGORIES.find((q) => q.categoryId === partnerCategoryFilter);
+    return hit?.id ?? null;
+  }, [partnerCategoryFilter]);
 
   const sortedAndFilteredQuests = useMemo(() => {
     let list = quests.filter((quest) => questMatchesPartnerCategory(quest, partners, partnerCategoryFilter));
@@ -550,94 +587,77 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       variants={containerVariants}
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
-      <motion.section variants={itemVariants} className="space-y-4">
-        <div className="flex items-end justify-between gap-3 sm:gap-4">
-          <div className="min-w-0">
-            <h2 className="text-xl font-extrabold tracking-tight text-white sm:text-2xl lg:text-3xl">
-              Αναζήτηση ανά τύπο υπηρεσίας
-            </h2>
-          </div>
-          <div className="flex shrink-0 gap-2 sm:gap-3">
-            <button
-              type="button"
-              onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'left')}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-11 sm:w-11 lg:h-12 lg:w-12"
-              aria-label="Προηγούμενο"
-            >
-              <ChevronLeft className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
-            <button
-              type="button"
-              onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'right')}
-              className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-anbit-card text-[#e63533] transition-all duration-300 hover:bg-[#e63533] hover:text-black sm:h-11 sm:w-11 lg:h-12 lg:w-12"
-              aria-label="Επόμενο"
-            >
-              <ChevronRight className="h-5 w-5 sm:h-6 sm:w-6" />
-            </button>
-          </div>
-        </div>
-        <div className="w-full min-w-0">
-          <div
-            ref={quickCategoriesScrollRef}
-            className="flex gap-4 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory scroll-smooth sm:gap-6"
+      <motion.section variants={itemVariants} className="-mt-2 space-y-2 sm:-mt-3 sm:space-y-3">
+        <div className="group relative w-full min-w-0">
+          <button
+            type="button"
+            onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'left')}
+            className={cn(offerCarouselNavButtonClass, 'left-0')}
+            aria-label="Προηγούμενο"
           >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <QuickCategories scrollRef={quickCategoriesScrollRef}>
             {QUEST_QUICK_CATEGORIES.map((qc) => {
-              const isActive = quickSelectionId === qc.id;
+              const isActive =
+                quickSelectionId === qc.id ||
+                (quickSelectionId === null && primaryQuickCardIdForFilter === qc.id);
               const count = quickQuestCounts.get(qc.id) ?? 0;
               return (
-                <motion.button
+                <div
                   key={qc.id}
-                  type="button"
-                  onClick={() => {
-                    setQuickSelectionId(qc.id);
-                    setPartnerCategoryFilter(qc.categoryId);
-                  }}
-                  whileHover={theme === 'light' ? { y: -2 } : { y: -6 }}
-                  transition={{ type: 'spring', stiffness: 400, damping: 28 }}
-                  className={cn(
-                    'group relative w-[240px] shrink-0 snap-start overflow-hidden rounded-2xl bg-anbit-card text-left outline-none transition-all duration-300 focus:outline-none focus-visible:outline-none sm:w-[260px]',
-                    theme === 'light'
-                      ? cn(
-                          'border border-anbit-border shadow-none hover:-translate-y-0.5 hover:shadow-none',
-                          isActive
-                            ? 'border-anbit-text ring-2 ring-black/[0.06]'
-                            : 'hover:border-anbit-border',
-                        )
-                      : cn(
-                          'border-2 border-transparent shadow-lg shadow-black/30',
-                          isActive
-                            ? 'border-white ring-2 ring-white/30 shadow-xl shadow-black/40'
-                            : 'hover:shadow-xl hover:shadow-black/35',
-                        ),
-                  )}
+                  data-quick-cat={qc.id}
+                  className="flex w-[200px] shrink-0 snap-start flex-col gap-0 sm:w-[218px]"
                 >
-                  <div className="relative h-[158px] w-full overflow-hidden bg-anbit-border sm:h-[168px]">
-                    <img
-                      src={qc.image}
-                      alt=""
-                      className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/50 via-black/10 to-transparent opacity-90" />
-                  </div>
-                  <div
+                  <QuickCategoryRoofSlot visible={isActive} />
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setQuickSelectionId(qc.id);
+                      setPartnerCategoryFilter(qc.categoryId);
+                    }}
                     className={cn(
-                      'relative bg-anbit-card p-4',
-                      theme !== 'light' && 'border-t border-anbit-border/25',
+                      'group flex w-full flex-col overflow-hidden rounded-lg border bg-[#131313] text-left shadow-md outline-none transition-all duration-300 hover:bg-[#191919] focus:outline-none focus-visible:outline-none',
+                      isActive
+                        ? 'border-white ring-1 ring-white/45'
+                        : 'border-white/10 hover:border-white/15',
                     )}
+                    style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
                   >
-                    <div className="flex items-start justify-between gap-3">
-                      <p className="line-clamp-2 text-sm font-bold leading-tight text-anbit-text sm:text-base">{qc.label}</p>
-                      <div className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-white/[0.08] px-2.5 py-1.5">
-                        <QuestQuickMerchantIcon className="h-5 w-5 opacity-95" />
-                        <span className="text-sm font-bold text-anbit-text">{count}</span>
+                    <div className="relative h-[128px] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#1f1f1f] sm:h-[138px]">
+                      <img
+                        src={qc.image}
+                        alt=""
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                    </div>
+                    <div className="relative rounded-b-lg border-t border-white/10 bg-[#131313] p-2.5 sm:p-3">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="line-clamp-2 text-xs font-bold leading-tight text-white sm:text-sm">{qc.label}</p>
+                        <div className="inline-flex shrink-0 items-center gap-1.5 rounded-lg bg-[#262626]/80 px-2 py-1 backdrop-blur-sm">
+                          <QuestQuickMerchantIcon className="h-4 w-4 opacity-95" />
+                          <span className="text-xs font-bold text-white sm:text-sm">{count}</span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </motion.button>
+                  </button>
+                </div>
               );
             })}
-          </div>
+          </QuickCategories>
+          <button
+            type="button"
+            onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'right')}
+            className={cn(offerCarouselNavButtonClass, 'right-0')}
+            aria-label="Επόμενο"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
         </div>
+        <h2 className="playpen-sans text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+          Αναζήτηση ανά κατηγορία
+        </h2>
       </motion.section>
 
       <div className="flex min-w-0 flex-row items-center gap-2 pb-1 sm:gap-3 md:gap-4">
@@ -663,53 +683,72 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
             />
           </label>
         </div>
-        <div
-          role="toolbar"
-          aria-label="Κατηγορίες δικτύου"
-          className="min-h-0 min-w-0 flex-1 overflow-x-auto overscroll-x-contain py-1 no-scrollbar scroll-smooth"
-        >
-          <div className="flex w-max snap-x snap-mandatory flex-row items-center gap-4 sm:gap-5 md:gap-6 pr-1">
-            {partnerCategoryTabs.map((cat) => {
-              const active = partnerCategoryFilter === cat.id;
-              const src = CATEGORY_IMAGES[cat.id] ?? CATEGORY_IMAGES.All;
-              return (
-                <button
-                  key={cat.id}
-                  type="button"
-                  onClick={() => {
-                    setPartnerCategoryFilter(cat.id);
-                    setQuickSelectionId(null);
-                  }}
-                  className={cn(
-                    'group flex w-40 shrink-0 snap-start flex-col items-center justify-start gap-0 border-0 bg-transparent p-0 text-center outline-none transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e63533]/55 sm:w-44 md:w-48 lg:w-52',
-                    active && 'scale-[1.02]',
-                  )}
-                >
-                  <div
+        <div className="group relative min-h-0 min-w-0 flex-1 py-1">
+          <button
+            type="button"
+            onClick={() => scrollPartnerCategoryStrip(partnerCategoryScrollRef.current, 'left')}
+            className={cn(offerCarouselNavButtonClass, 'left-0')}
+            aria-label="Προηγούμενη κατηγορία"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </button>
+          <div
+            ref={partnerCategoryScrollRef}
+            role="toolbar"
+            aria-label="Κατηγορίες δικτύου"
+            className="min-h-0 min-w-0 w-full overflow-x-auto overscroll-x-contain no-scrollbar scroll-smooth"
+          >
+            <div className="flex w-max snap-x snap-mandatory flex-row items-center gap-4 sm:gap-5 md:gap-6 pr-1">
+              {partnerCategoryTabs.map((cat) => {
+                const active = partnerCategoryFilter === cat.id;
+                const src = partnerCategoryTabImageSrc(cat.id, active);
+                return (
+                  <button
+                    key={cat.id}
+                    type="button"
+                    onClick={() => {
+                      setPartnerCategoryFilter(cat.id);
+                      setQuickSelectionId(null);
+                    }}
                     className={cn(
-                      'flex w-full justify-center',
-                      active ? 'scale-[1.05]' : 'group-hover:scale-[1.03]',
+                      'group/cat flex w-40 shrink-0 snap-start flex-col items-center justify-start gap-0 border-0 bg-transparent p-0 text-center outline-none transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#e63533]/55 sm:w-44 md:w-48 lg:w-52',
+                      active && 'scale-[1.02]',
                     )}
                   >
-                    <img
-                      src={src}
-                      alt=""
-                      className="h-auto w-full max-h-52 object-contain sm:max-h-60 md:max-h-64 lg:max-h-72"
-                      draggable={false}
-                    />
-                  </div>
-                  <p
-                    className={cn(
-                      'mt-0 line-clamp-2 w-full px-0.5 text-xs font-extrabold leading-tight tracking-tight sm:text-sm',
-                      active ? 'text-[#e63533]' : 'text-white group-hover:text-[#e63533]',
-                    )}
-                  >
-                    {cat.label}
-                  </p>
-                </button>
-              );
-            })}
+                    <div
+                      className={cn(
+                        'flex w-full justify-center',
+                        active ? 'scale-[1.05]' : 'group-hover/cat:scale-[1.03]',
+                      )}
+                    >
+                      <img
+                        src={src}
+                        alt=""
+                        className="h-auto w-full max-h-52 object-contain sm:max-h-60 md:max-h-64 lg:max-h-72"
+                        draggable={false}
+                      />
+                    </div>
+                    <p
+                      className={cn(
+                        'mt-0 line-clamp-2 w-full px-0.5 text-xs font-extrabold leading-tight tracking-tight sm:text-sm',
+                        active ? 'text-[#e63533]' : 'text-white group-hover/cat:text-[#e63533]',
+                      )}
+                    >
+                      {cat.label}
+                    </p>
+                  </button>
+                );
+              })}
+            </div>
           </div>
+          <button
+            type="button"
+            onClick={() => scrollPartnerCategoryStrip(partnerCategoryScrollRef.current, 'right')}
+            className={cn(offerCarouselNavButtonClass, 'right-0')}
+            aria-label="Επόμενη κατηγορία"
+          >
+            <ChevronRight className="h-6 w-6" />
+          </button>
         </div>
       </div>
 

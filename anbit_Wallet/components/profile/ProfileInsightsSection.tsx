@@ -1,5 +1,8 @@
 import React, { useCallback, useRef } from 'react';
 import { Link } from 'react-router-dom';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { offerCarouselNavButtonClass } from '../ui/offer-carousel';
 import type { Partner, UserData } from '../../types';
 
 const SPENDING_MONTH_BARS = [
@@ -159,14 +162,14 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
             </p>
           </div>
 
-          <div className="relative flex items-center gap-4">
+          <div className="group relative flex w-full items-center">
             <button
               type="button"
               onClick={() => scrollCarousel('left')}
-              className="absolute -left-2 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/5 bg-[#1f1f1f] text-white transition-all hover:bg-[#2c2c2c] sm:-left-4"
+              className={cn(offerCarouselNavButtonClass, 'left-0')}
               aria-label="Προηγούμενα καταστήματα"
             >
-              <span className="material-symbols-outlined">chevron_left</span>
+              <ChevronLeft className="h-6 w-6" />
             </button>
 
             <div
@@ -192,9 +195,10 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                   return (
                     <div
                       key={partner.id}
-                      className={`group relative min-w-[320px] snap-center overflow-hidden rounded-2xl border border-white/5 bg-[#242424] p-6 transition-opacity ${
-                        faded ? 'opacity-80 hover:opacity-100' : ''
-                      }`}
+                      className={cn(
+                        'group/card relative min-w-[320px] snap-center overflow-hidden rounded-2xl border border-white/5 bg-[#242424] p-6 transition-opacity',
+                        faded && 'opacity-80 hover:opacity-100',
+                      )}
                     >
                       <div className="mb-8 flex items-start gap-4">
                         <div
@@ -269,7 +273,7 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
                       <Link
                         to={`/store-profile/${partner.id}`}
                         state={{ partner }}
-                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e63533] py-3 text-xs font-extrabold uppercase tracking-widest text-white transition-all group-hover:bg-[#ff3d3b]"
+                        className="flex w-full items-center justify-center gap-2 rounded-xl bg-[#e63533] py-3 text-xs font-extrabold uppercase tracking-widest text-white transition-all group-hover/card:bg-[#ff3d3b]"
                       >
                         Explore Store
                         <span className="material-symbols-outlined text-sm">open_in_new</span>
@@ -283,10 +287,10 @@ export function ProfileInsightsSection({ user, partnersWithPoints }: Props) {
             <button
               type="button"
               onClick={() => scrollCarousel('right')}
-              className="absolute -right-2 z-10 flex h-10 w-10 items-center justify-center rounded-full border border-white/5 bg-[#1f1f1f] text-white transition-all hover:bg-[#2c2c2c] sm:-right-4"
+              className={cn(offerCarouselNavButtonClass, 'right-0')}
               aria-label="Επόμενα καταστήματα"
             >
-              <span className="material-symbols-outlined">chevron_right</span>
+              <ChevronRight className="h-6 w-6" />
             </button>
           </div>
         </section>

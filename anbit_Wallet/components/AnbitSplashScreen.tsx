@@ -1,16 +1,19 @@
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
 import { motion } from 'framer-motion';
 import { ANBIT_WORDMARK_PATH_D } from './anbitWordmarkPath';
-import { playSplashDrawSfx } from './playSplashSfx';
+import { playSplashDrawSfxFromUserGesture } from './playSplashSfx';
 
 type Props = { onComplete?: () => void };
 
 const AnbitSplashScreen = ({ onComplete }: Props) => {
   const doneRef = useRef(false);
+  const sfxStartedRef = useRef(false);
 
-  useEffect(() => {
-    playSplashDrawSfx();
-  }, []);
+  const tryStartSfxOnUserGesture = () => {
+    if (sfxStartedRef.current) return;
+    sfxStartedRef.current = true;
+    playSplashDrawSfxFromUserGesture();
+  };
 
   const handleAnimationComplete = () => {
     if (doneRef.current) return;
@@ -20,6 +23,8 @@ const AnbitSplashScreen = ({ onComplete }: Props) => {
 
   return (
     <motion.div
+      role="presentation"
+      onPointerDownCapture={tryStartSfxOnUserGesture}
       initial={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.5 }}

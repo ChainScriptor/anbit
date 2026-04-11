@@ -22,6 +22,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=Eczar:wght@700&family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Manrope:wght@400;500;600;700;800&family=STIX+Two+Text:ital,wght@0,400..700;1,400..700&display=swap"
     rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playpen+Sans:wght@100..800&display=swap" rel="stylesheet" />
 
   <script src="https://cdn.tailwindcss.com"></script>
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap"
@@ -48,6 +49,7 @@
             anbit: ['Omnes', 'Inter', 'sans-serif'],
             eczar: ['Eczar', 'serif'],
             stix: ['"STIX Two Text"', 'ui-serif', 'Georgia', 'serif'],
+            playpen: ['"Playpen Sans"', 'cursive'],
           },
         },
       },
@@ -62,6 +64,7 @@
       --font-primary: 'Omnes', 'Inter', system-ui, sans-serif;
       --font-inter: 'Inter', system-ui, sans-serif;
       --font-greek-stix: 'STIX Two Text', ui-serif, Georgia, serif;
+      --font-playpen: 'Playpen Sans', cursive;
       --font-body: var(--font-primary);
       --brand-red: #0a0a0a;
       --xp-gold: #CA8A04;
@@ -102,6 +105,12 @@
       --anbit-xp-bar: #0a0a0a;
       --anbit-xp-surface: rgba(10, 10, 10, 0.06);
       --anbit-xp-surface-border: rgba(10, 10, 10, 0.12);
+    }
+
+    .playpen-sans {
+      font-family: var(--font-playpen);
+      font-optical-sizing: auto;
+      font-style: normal;
     }
 
     body {
