@@ -31,6 +31,7 @@ export const PLACEHOLDER_CATEGORY_IDS = new Set<string>([
   'well_2',
   'well_3',
   'well_4',
+  'well_5',
 ]);
 
 export function categoryStripBundleFromQuickId(quickId: string | null): CategoryStripBundle {
@@ -128,13 +129,14 @@ export function buildAirbnbCategoryTabs(pu: (p: string) => string, allLabel: str
   ];
 }
 
-/** Υγεία & ευεξία — `health/` (HealthOpen 33–41, HealthClose 34–40). */
+/** Υγεία & ευεξία — `health/` (open 33–41, close 34–40· το `well_5` μοιράζεται προσωρινά το `40.svg`). */
 export function buildHealthCategoryTabs(pu: (p: string) => string, allLabel: string): QuestPartnerCategoryTab[] {
   const pairs: [string, string, string, string][] = [
-    ['well_1', 'Γυμναστήρια & fitness', '33.svg', '34.svg'],
-    ['well_2', 'Yoga & pilates', '35.svg', '36.svg'],
-    ['well_3', 'Κολύμβηση & πισίνα', '37.svg', '38.svg'],
-    ['well_4', 'Ευεξία, spa & ευ ζην', '39.svg', '40.svg'],
+    ['well_1', 'Φαρμακείο', '33.svg', '34.svg'],
+    ['well_2', 'Γυμναστήριο & Διατροφή', '35.svg', '36.svg'],
+    ['well_3', 'Οπτικά', '37.svg', '38.svg'],
+    ['well_4', 'Massage & Spa', '39.svg', '40.svg'],
+    ['well_5', 'Οδοντιατρική Φροντίδα', '41.svg', '40.svg'],
   ];
   return [
     {
