@@ -20,17 +20,22 @@ export interface Offer {
 interface OfferCardProps {
   offer: Offer;
   mutedTextClassName?: string;
+  /** Shell + κάτω πάνελ (προεπιλογή: bg-anbit-card) */
+  cardClassName?: string;
 }
 
 const OfferCard = React.forwardRef<HTMLDivElement, OfferCardProps>(function OfferCard(
-  { offer, mutedTextClassName = "text-anbit-muted" },
+  { offer, mutedTextClassName = "text-anbit-muted", cardClassName = "bg-anbit-card" },
   ref,
 ) {
   const { t } = useTranslation();
   return (
     <motion.div
       ref={ref}
-      className="relative flex h-[360px] w-[280px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-anbit-border bg-anbit-card group sm:h-[380px] sm:w-[300px]"
+      className={cn(
+        "relative flex h-[360px] w-[280px] shrink-0 snap-start flex-col overflow-hidden rounded-2xl border border-anbit-border group sm:h-[380px] sm:w-[300px]",
+        cardClassName,
+      )}
       whileHover={{ y: -8 }}
       transition={{ type: "spring", stiffness: 300, damping: 20 }}
       style={{ perspective: "1000px" }}
@@ -42,7 +47,7 @@ const OfferCard = React.forwardRef<HTMLDivElement, OfferCardProps>(function Offe
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
       </div>
-      <div className="flex h-1/2 min-h-0 flex-col border-t border-anbit-border bg-anbit-card p-5">
+      <div className={cn("flex h-1/2 min-h-0 flex-col border-t border-anbit-border p-5", cardClassName)}>
         <div className="min-h-0 flex-1 space-y-2 overflow-hidden">
           <div className={cn("flex items-center text-xs", mutedTextClassName)}>
             <Tag className="mr-2 h-4 w-4 shrink-0 text-anbit-yellow" />
@@ -70,6 +75,8 @@ export interface OfferCarouselProps extends React.HTMLAttributes<HTMLDivElement>
   offers: Offer[];
   /** Small secondary text (default: text-anbit-muted / #71717a) */
   mutedTextClassName?: string;
+  /** Πέρασμα σε κάθε OfferCard (π.χ. bg-[#131313] στο /quests) */
+  cardClassName?: string;
 }
 
 /** Κοινό κέλυφος με το carousel «Προσφορές της ημέρας» — parent χρειάζεται `group`. Κρυφά κάτω από `sm` (mobile = μόνο swipe). */
@@ -77,7 +84,7 @@ export const offerCarouselNavButtonClass =
   "absolute top-1/2 z-10 hidden h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full border border-anbit-border bg-anbit-card/80 text-anbit-text opacity-0 backdrop-blur-sm transition-opacity duration-300 group-hover:opacity-100 hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content sm:flex";
 
 const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
-  ({ offers, className, mutedTextClassName = "text-anbit-muted", ...props }, ref) => {
+  ({ offers, className, mutedTextClassName = "text-anbit-muted", cardClassName, ...props }, ref) => {
     const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
     const scroll = (direction: "left" | "right") => {
@@ -106,7 +113,12 @@ const OfferCarousel = React.forwardRef<HTMLDivElement, OfferCarouselProps>(
           className="flex gap-4 sm:gap-6 overflow-x-auto pb-4 no-scrollbar snap-x snap-mandatory scroll-smooth"
         >
           {offers.map((offer) => (
-            <OfferCard key={offer.id} offer={offer} mutedTextClassName={mutedTextClassName} />
+            <OfferCard
+              key={offer.id}
+              offer={offer}
+              mutedTextClassName={mutedTextClassName}
+              cardClassName={cardClassName}
+            />
           ))}
         </div>
         <button

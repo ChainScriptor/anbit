@@ -13,6 +13,8 @@ type QuestOfferCardProps = {
   index?: number;
   t: (key: string) => string;
   mutedTextClassName?: string;
+  /** Φόντο κάρτας (προεπιλογή: --anbit-card) */
+  cardClassName?: string;
 };
 
 /** Κάρτα προσφοράς (quest) — κοινή εμφάνιση Quests & προφίλ καταστήματος. */
@@ -21,6 +23,7 @@ export const QuestOfferCard: React.FC<QuestOfferCardProps> = ({
   index = 0,
   t,
   mutedTextClassName = 'text-[color:var(--anbit-muted)]',
+  cardClassName = 'bg-[color:var(--anbit-card)]',
 }) => {
   const daysNum = quest.expiresIn.replace(/\D/g, '') || '0';
   const WeatherIcon = quest.weather ? getWeatherIcon(quest.weather) : null;
@@ -33,7 +36,10 @@ export const QuestOfferCard: React.FC<QuestOfferCardProps> = ({
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0 }}
       transition={{ delay: index * 0.05 }}
-      className="flex h-full flex-col overflow-hidden rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] transition-colors hover:border-anbit-brand/40"
+      className={cn(
+        'flex h-full flex-col overflow-hidden rounded-xl border border-[color:var(--anbit-border)] transition-colors hover:border-anbit-brand/40',
+        cardClassName,
+      )}
     >
       <div className="relative h-36 w-full shrink-0 bg-white/5 sm:h-40">
         <img src={bannerSrc} alt="" className="h-full w-full object-cover" />

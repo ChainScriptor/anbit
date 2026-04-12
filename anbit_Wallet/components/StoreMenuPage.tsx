@@ -965,7 +965,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     const saved = localStorage.getItem('anbit_store_theme');
     if (saved === 'dark') return true;
     if (saved === 'light') return false;
-    return window.matchMedia?.('(prefers-color-scheme: dark)').matches ?? true;
+    return true;
   });
   const [storeTab, setStoreTab] = useState<StoreNavTab>('menu');
   const [storeBalanceXp, setStoreBalanceXp] = useState<number | null>(null);

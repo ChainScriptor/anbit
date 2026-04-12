@@ -31,6 +31,9 @@ import {
 
 const questMuted = 'text-[color:var(--anbit-muted)]';
 
+/** Φόντο καρτών deals + προσφορών quest μόνο στη σελίδα /quests */
+const QUESTS_OFFER_CARD_BG = 'bg-[#131313]';
+
 /** Strip «Αναζήτηση ανά κατηγορία»: βελάκια ορατά στο mobile (το κοινό `offerCarouselNavButtonClass` είναι `hidden` κάτω από `sm`). */
 const partnerCategoryNavButtonClass =
   'absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-anbit-border bg-anbit-card/95 text-anbit-text shadow-sm backdrop-blur-sm transition-opacity hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content sm:h-10 sm:w-10 opacity-90 md:opacity-0 md:group-hover:opacity-100';
@@ -365,7 +368,15 @@ function QuestMerchantBanner({
   );
 }
 
-function MerchantOffersRow({ quests, t }: { quests: Quest[]; t: (key: string) => string }) {
+function MerchantOffersRow({
+  quests,
+  t,
+  offerCardClassName,
+}: {
+  quests: Quest[];
+  t: (key: string) => string;
+  offerCardClassName?: string;
+}) {
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const scrollOffers = (dir: 'left' | 'right') => {
@@ -395,7 +406,13 @@ function MerchantOffersRow({ quests, t }: { quests: Quest[]; t: (key: string) =>
               key={quest.id}
               className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
             >
-              <QuestOfferCard quest={quest} index={index} t={t} mutedTextClassName={questMuted} />
+              <QuestOfferCard
+                quest={quest}
+                index={index}
+                t={t}
+                mutedTextClassName={questMuted}
+                cardClassName={offerCardClassName}
+              />
             </div>
           ))}
         </div>
@@ -935,7 +952,11 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
         <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
           {t('dealsOfTheDay')}
         </h2>
-        <OfferCarousel offers={GREEK_OFFERS} mutedTextClassName={questMuted} />
+        <OfferCarousel
+          offers={GREEK_OFFERS}
+          mutedTextClassName={questMuted}
+          cardClassName={QUESTS_OFFER_CARD_BG}
+        />
       </section>
 
       <div className="min-w-0 space-y-4">
@@ -968,7 +989,11 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                       onToggleFavorite={handleToggleFavoriteMerchant}
                     />
                   </div>
-                  <MerchantOffersRow quests={mq} t={t} />
+                  <MerchantOffersRow
+                    quests={mq}
+                    t={t}
+                    offerCardClassName={QUESTS_OFFER_CARD_BG}
+                  />
                 </motion.section>
               );
               })

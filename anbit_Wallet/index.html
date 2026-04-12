@@ -735,7 +735,7 @@
   <script>
       (function () {
         var stored = localStorage.getItem('anbit-theme');
-        var theme = (stored === 'light' || stored === 'dark') ? stored : (window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark');
+        var theme = (stored === 'light' || stored === 'dark') ? stored : 'dark';
         document.documentElement.setAttribute('data-theme', theme);
         var meta = document.getElementById('theme-color-meta');
         if (meta) meta.setAttribute('content', theme === 'light' ? '#FFFFFF' : '#0a0a0a');
