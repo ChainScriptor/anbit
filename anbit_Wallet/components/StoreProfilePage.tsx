@@ -164,7 +164,7 @@ const StoreProfilePage: React.FC = () => {
           />
           <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-black/35 to-black/75" />
         </div>
-        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-6xl px-4 pb-4 sm:px-6 sm:pb-6">
+        <div className="absolute inset-x-0 bottom-0 mx-auto max-w-[1180px] px-3 pb-4 sm:px-5 sm:pb-6">
           <div className="flex items-end justify-between gap-3">
             <div className="flex min-w-0 items-end gap-3 sm:gap-4">
               <div className="relative h-16 w-16 shrink-0 overflow-hidden rounded-2xl border border-white/20 bg-black/30 shadow-lg backdrop-blur-sm sm:h-20 sm:w-20">
@@ -200,7 +200,7 @@ const StoreProfilePage: React.FC = () => {
         </div>
       </section>
 
-      <main className="mx-auto max-w-6xl px-4 pb-16 pt-5 sm:px-6 sm:pt-6">
+      <main className="mx-auto max-w-[1180px] px-3 pb-14 pt-4 sm:px-5 sm:pt-5">
         {/* Top profile section */}
         <section>
           <div className="rounded-3xl border border-[color:var(--anbit-yellow)] bg-[color:var(--anbit-card)] p-4 shadow-lg sm:p-6">

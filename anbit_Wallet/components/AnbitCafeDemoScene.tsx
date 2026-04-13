@@ -29,7 +29,7 @@ const PhotoScene: React.FC<PhotoSceneProps> = ({ className = '' }) => {
 
         {/* Content Layer */}
         <div className="relative z-10 flex items-center justify-center p-4 md:p-8">
-          <div className="max-w-7xl w-full">
+          <div className="w-full max-w-[1180px]">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-center">
               {/* Left Side */}
               <div className="space-y-6 bg-anbit-card/95 backdrop-blur-sm rounded-2xl p-6 md:p-8 shadow-2xl border border-anbit-border">

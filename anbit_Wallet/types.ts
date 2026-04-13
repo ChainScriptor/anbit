@@ -3,6 +3,8 @@ export interface UserData {
   id: string;
   name: string;
   email: string;
+  /** Προαιρετικό — εμφανίζεται στο προφίλ όταν υπάρχει από το API. */
+  phone?: string;
   avatar: string;
   roles: string[]; // Backend roles: e.g. ["User"], ["Admin"], ["Merchant"]
   totalXP: number; // Global XP (Coming Soon)

@@ -96,7 +96,7 @@ const PwaHomeScreen: React.FC<PwaHomeScreenProps> = ({
         </div>
       </nav>
 
-      <main className="mx-auto max-w-5xl px-4 pb-32 pt-20">
+      <main className="mx-auto max-w-[1180px] px-3 pb-28 pt-16 sm:px-5">
         <section className="mb-6">
           <div className="relative">
             <span className="material-symbols-outlined pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-zinc-500 not-italic">

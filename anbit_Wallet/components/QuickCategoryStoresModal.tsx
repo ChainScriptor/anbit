@@ -1,9 +1,10 @@
 import React, { useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, MapPin, ChevronRight } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { Quest, Partner } from '../types';
 import { PLACEHOLDER_CATEGORY_IDS } from './questCategoryStrip';
 import { cn } from '@/lib/utils';
+import { NetworkStoreCard } from './NetworkStoreCard';
 
 export type QuickCategoryStoreEntry = {
   key: string;
@@ -60,16 +61,18 @@ type QuickCategoryStoresModalProps = {
   isOpen: boolean;
   onClose: () => void;
   categoryLabel: string;
-  entries: QuickCategoryStoreEntry[];
-  onOpenStore: (partnerId: string) => void;
+  partners: Partner[];
+  storeXP: Record<string, number>;
+  onOpenPartner: (partner: Partner) => void;
 };
 
 export const QuickCategoryStoresModal: React.FC<QuickCategoryStoresModalProps> = ({
   isOpen,
   onClose,
   categoryLabel,
-  entries,
-  onOpenStore,
+  partners,
+  storeXP,
+  onOpenPartner,
 }) => {
   useEffect(() => {
     if (!isOpen) return;
@@ -95,7 +98,7 @@ export const QuickCategoryStoresModal: React.FC<QuickCategoryStoresModalProps> =
             aria-modal="true"
             aria-labelledby="quick-stores-modal-title"
             className={cn(
-              'flex max-h-[min(85dvh,640px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-zinc-800/80 bg-[#111] shadow-2xl sm:rounded-2xl',
+              'flex max-h-[min(88dvh,720px)] w-full max-w-4xl flex-col overflow-hidden rounded-t-2xl border border-zinc-800/80 bg-[#111] shadow-2xl sm:rounded-2xl',
             )}
             initial={{ opacity: 0, y: 24 }}
             animate={{ opacity: 1, y: 0 }}
@@ -120,52 +123,23 @@ export const QuickCategoryStoresModal: React.FC<QuickCategoryStoresModalProps> =
               </button>
             </div>
             <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 py-3 sm:px-4 sm:py-4">
-              {entries.length === 0 ? (
+              {partners.length === 0 ? (
                 <p className="py-10 text-center text-sm text-zinc-500">Δεν υπάρχουν καταστήματα για αυτή την κατηγορία.</p>
               ) : (
-                <ul className="flex flex-col gap-2">
-                  {entries.map((e) => (
-                    <li key={e.key}>
-                      <button
-                        type="button"
-                        disabled={!e.partnerId}
-                        onClick={() => {
-                          if (e.partnerId) {
-                            onOpenStore(e.partnerId);
-                            onClose();
-                          }
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
+                  {partners.map((partner) => (
+                    <div key={partner.id} className="min-w-0">
+                      <NetworkStoreCard
+                        partner={partner}
+                        xp={storeXP[partner.id] ?? 0}
+                        onOpen={() => {
+                          onOpenPartner(partner);
+                          onClose();
                         }}
-                        className={cn(
-                          'flex w-full items-center gap-3 rounded-xl border border-zinc-800/60 bg-zinc-900/40 p-3 text-left transition-colors',
-                          e.partnerId
-                            ? 'hover:border-zinc-600 hover:bg-zinc-800/50'
-                            : 'cursor-default opacity-90',
-                        )}
-                      >
-                        <div className="h-12 w-12 shrink-0 overflow-hidden rounded-lg bg-zinc-800">
-                          {e.image ? (
-                            <img src={e.image} alt="" className="h-full w-full object-cover" />
-                          ) : (
-                            <div className="flex h-full w-full items-center justify-center text-xs font-semibold text-zinc-500">
-                              {e.name.slice(0, 1).toUpperCase()}
-                            </div>
-                          )}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-white">{e.name}</p>
-                          <p className="mt-0.5 flex items-center gap-1 truncate text-xs text-zinc-500">
-                            <MapPin className="h-3.5 w-3.5 shrink-0" />
-                            {e.location}
-                          </p>
-                          <p className="mt-1 text-xs font-medium text-anbit-brand">
-                            {e.questCount === 1 ? '1 προσφορά' : `${e.questCount} προσφορές`}
-                          </p>
-                        </div>
-                        {e.partnerId ? <ChevronRight className="h-5 w-5 shrink-0 text-zinc-500" /> : null}
-                      </button>
-                    </li>
+                      />
+                    </div>
                   ))}
-                </ul>
+                </div>
               )}
             </div>
           </motion.div>

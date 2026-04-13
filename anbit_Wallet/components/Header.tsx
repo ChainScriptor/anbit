@@ -28,6 +28,12 @@ const navPaths: { path: string; labelKey: string; icon: typeof User }[] = [
   { path: '/profile', labelKey: 'profile', icon: User },
 ];
 
+/** Το προφίλ έχει nested routes (`/profile/history`, κ.λπ.) — ίδιο active style με quests/network. */
+function isNavItemActive(itemPath: string, pathname: string): boolean {
+  if (itemPath === '/profile') return pathname.startsWith('/profile');
+  return pathname === itemPath;
+}
+
 const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0, onOpenLogin, onOpenRegister }) => {
   const location = useLocation();
   const isStoreProfileRoute = location.pathname.startsWith('/store-profile/');
@@ -93,7 +99,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
             : cn('glass-nav', isScrolled && 'navbar-scrolled'),
         )}
       >
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3">
+        <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-1 sm:px-2">
 
           <div className="flex items-center gap-3 shrink-0">
             <div ref={mobileMenuRef} className="md:hidden relative">
@@ -121,7 +127,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                   <div className="flex flex-col gap-1">
                     {navPaths.map((item) => {
                       const Icon = item.icon;
-                      const isActive = location.pathname === item.path;
+                      const isActive = isNavItemActive(item.path, location.pathname);
                       const isProfileAsGuest = item.path === "/profile" && !isAuthenticated && onOpenLogin;
 
                       const itemClass = cn(
@@ -329,7 +335,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
             >
               {navPaths.map((item) => {
                 const Icon = item.icon;
-                const isActive = location.pathname === item.path;
+                const isActive = isNavItemActive(item.path, location.pathname);
                 const isProfileAsGuest = item.path === '/profile' && !isAuthenticated && onOpenLogin;
                 const baseClass = cn(
                   'relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all',

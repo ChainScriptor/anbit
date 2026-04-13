@@ -8,6 +8,9 @@ export const DASHBOARD_URL = import.meta.env.VITE_DASHBOARD_URL || 'http://local
 export const MERCHANT_APPLY_URL =
   import.meta.env.VITE_MERCHANT_PORTAL_URL || 'http://localhost:5175/';
 
+/** Κεντρικό μέγιστο πλάτος shell (header, main, footer, profile, quests, κ.λπ.). */
+export const ANBIT_APP_MAX_WIDTH_CLASS = 'max-w-[1180px]';
+
 export const containerVariants = {
   hidden: { opacity: 0 },
   visible: {

@@ -21,7 +21,7 @@ const LandingPage: React.FC = () => {
     <div className="min-h-screen bg-anbit-bg text-anbit-text flex flex-col">
       {/* Navbar – κουμπιά όπως είναι (Σύνδεση / Εγγραφή) */}
       <nav className="sticky top-0 z-50 w-full border-b border-anbit-border bg-anbit-card/95 backdrop-blur-md">
-        <div className="max-w-6xl mx-auto px-4 sm:px-6 flex items-center justify-between h-14 sm:h-16">
+        <div className="mx-auto flex h-14 max-w-[1180px] items-center justify-between px-3 sm:h-16 sm:px-5">
           <div className="flex items-center gap-2">
             <div className="w-9 h-9 bg-anbit-yellow rounded-lg flex items-center justify-center -rotate-6">
               <span className="text-anbit-yellow-content font-black text-lg italic">A</span>
@@ -48,7 +48,7 @@ const LandingPage: React.FC = () => {
       </nav>
 
       {/* Αρχική σελίδα Anbit – κύριο περιεχόμενο */}
-      <main className="flex-1 w-full max-w-6xl mx-auto px-4 sm:px-6 py-8 sm:py-12">
+      <main className="mx-auto w-full max-w-[1180px] flex-1 px-3 py-7 sm:px-5 sm:py-10">
         {/* Hero */}
         <section className="mb-12 sm:mb-16">
           <motion.div

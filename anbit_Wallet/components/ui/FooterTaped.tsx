@@ -11,7 +11,7 @@ export const FooterTaped: React.FC<FooterTapedProps> = ({ t, className }) => {
 
   return (
     <footer className={cn('w-full bg-[#111111] text-white py-16 px-4 sm:px-8 mt-12', className)}>
-      <div className="max-w-7xl mx-auto">
+      <div className="mx-auto max-w-[1180px] px-3 sm:px-5">
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-12 mb-20">
           <div className="lg:col-span-1">
             <div className="text-4xl font-black italic text-white mb-8 leading-none tracking-tight">Anbit</div>

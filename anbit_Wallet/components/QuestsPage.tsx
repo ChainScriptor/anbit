@@ -651,7 +651,7 @@ function QuestsMerchantStrip({
     <div className="min-w-0 space-y-4">
       <h2
         className={cn(
-          'playpen-sans min-w-0 text-[30px] font-bold leading-tight tracking-tight sm:text-[32px]',
+          'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px]',
           theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
         )}
       >
@@ -709,7 +709,11 @@ function QuestsMerchantStrip({
   );
 }
 
-const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests, partners }) => {
+const QuestsPage: React.FC<{
+  quests: Quest[];
+  partners: Partner[];
+  storeXP?: Record<string, number>;
+}> = ({ quests, partners, storeXP = {} }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
   const questsOfferShell =
@@ -828,9 +832,20 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
     [quickStoresModalQuickId],
   );
 
-  const quickModalStoreEntries = useMemo(() => {
+  const quickModalPartners = useMemo(() => {
     if (!quickModalCategory) return [];
-    return buildQuickCategoryStoreEntries(quests, partners, quickModalCategory.categoryId);
+    const entries = buildQuickCategoryStoreEntries(quests, partners, quickModalCategory.categoryId);
+    const seen = new Set<string>();
+    const list: Partner[] = [];
+    for (const e of entries) {
+      if (!e.partnerId || seen.has(e.partnerId)) continue;
+      const p = partners.find((x) => x.id === e.partnerId);
+      if (p) {
+        seen.add(e.partnerId);
+        list.push(p);
+      }
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name, 'el', { sensitivity: 'base' }));
   }, [quickModalCategory, quests, partners]);
 
   /** Όταν δεν έχει γίνει κλικ σε quick κάρτα, η «επιλεγμένη» quick κάρτα = πρώτη που ταιριάζει στο φίλτρο (για σκεπή + περίγραμμα). */
@@ -953,7 +968,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                 : 'bg-[color:var(--anbit-bg)]',
             )}
           >
-            <div className="mx-auto max-w-[1600px]">
+            <div className="mx-auto max-w-[1180px]">
               <div
                 className={cn(
                   'rounded-xl px-3 py-2 shadow-lg',
@@ -1277,7 +1292,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       <section className="min-w-0 space-y-4">
         <h2
           className={cn(
-            'playpen-sans min-w-0 text-[30px] font-bold leading-tight tracking-tight sm:text-[32px]',
+            'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px]',
             theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
           )}
         >
@@ -1294,7 +1309,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       <div ref={offersSearchTriggerRef} className="min-w-0 space-y-4">
         <h2
           className={cn(
-            'playpen-sans min-w-0 text-[30px] font-bold leading-tight tracking-tight sm:text-[32px]',
+            'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px]',
             theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
           )}
         >
@@ -1345,10 +1360,10 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
         isOpen={quickStoresModalQuickId != null}
         onClose={() => setQuickStoresModalQuickId(null)}
         categoryLabel={quickModalCategory?.label ?? ''}
-        entries={quickModalStoreEntries}
-        onOpenStore={(partnerId) => {
-          const partner = partners.find((p) => p.id === partnerId);
-          navigate(`/store-profile/${partnerId}`, partner ? { state: { partner } } : undefined);
+        partners={quickModalPartners}
+        storeXP={storeXP}
+        onOpenPartner={(partner) => {
+          navigate(`/store-profile/${partner.id}`, { state: { partner } });
         }}
       />
     </motion.div>

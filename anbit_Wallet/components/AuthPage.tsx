@@ -65,7 +65,7 @@ const AuthPage: React.FC = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45 }}
-        className="auth-panel-floating w-full max-w-5xl rounded-[24px] overflow-hidden flex flex-col lg:flex-row relative z-10"
+        className="auth-panel-floating relative z-10 flex w-full max-w-4xl flex-col overflow-hidden rounded-[24px] lg:flex-row"
       >
         {/* Left: Form – off-white / light panel */}
         <div className="flex-1 min-w-0 flex flex-col auth-form-panel p-8 sm:p-10 lg:p-12">

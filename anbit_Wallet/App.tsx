@@ -22,8 +22,8 @@ import AuthModal from './components/AuthModal';
 import { useAuth } from './context/AuthContext';
 import { useOrder } from './context/OrderContext';
 import { useLanguage } from './context/LanguageContext';
+import { ANBIT_APP_MAX_WIDTH_CLASS, MERCHANT_APPLY_URL } from './constants';
 import { Partner, UserData, Reward } from './types';
-import { MERCHANT_APPLY_URL } from './constants';
 import { useDashboardData } from './hooks/useDashboardData';
 import { FooterTaped } from './components/ui/FooterTaped';
 import { OfferCarousel } from './components/ui/offer-carousel';
@@ -350,7 +350,7 @@ const App: React.FC = () => {
               ? 'flex-1 min-h-screen w-full p-0'
               : isStoreProfileRoute
                 ? 'flex-1 min-h-screen w-full p-0'
-                : 'flex-1 w-full max-w-[1600px] mx-auto pt-28 lg:pt-32 px-4 lg:px-8 pb-4 lg:pb-8'}
+                : `flex-1 w-full mx-auto pt-24 pb-4 px-3 sm:px-5 lg:pt-28 lg:px-6 lg:pb-6 ${ANBIT_APP_MAX_WIDTH_CLASS}`}
             >
               <Routes>
                 <Route path="/" element={<Navigate to="/quests" replace />} />
@@ -421,7 +421,11 @@ const App: React.FC = () => {
                 <Route
                   path="/quests"
                   element={
-                    <QuestsPage quests={dashboardFeed.quests} partners={dashboardFeed.partners} />
+                    <QuestsPage
+                      quests={dashboardFeed.quests}
+                      partners={dashboardFeed.partners}
+                      storeXP={userData?.storeXP ?? {}}
+                    />
                   }
                 />
                 <Route

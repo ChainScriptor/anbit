@@ -45,7 +45,7 @@ const LoginPage: React.FC = () => {
       
       <motion.div 
         initial={{ opacity: 0, scale: 0.98 }} animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-6xl z-10 grid grid-cols-1 xl:grid-cols-2 gap-6"
+        className="z-10 grid w-full max-w-[1180px] grid-cols-1 gap-5 xl:grid-cols-2 xl:gap-6"
       >
         <div className="p-8 lg:p-12 flex flex-col justify-between dashboard-card bg-anbit-card/40 border-white/5 min-h-[300px] lg:min-h-[500px]">
           <div className="space-y-6">

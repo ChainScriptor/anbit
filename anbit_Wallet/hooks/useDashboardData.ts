@@ -48,9 +48,12 @@ export function useDashboardData(isAuthenticated: boolean): DashboardFeed & { fr
         ]);
         if (cancelled) return;
         const partners = groupProductsByMerchant(products, merchants);
+        const demoModalPartners = mockDashboardData.partners.filter((p) => p.id.startsWith('modal_demo_'));
+        const seen = new Set(partners.map((p) => p.id));
+        const mergedPartners = [...partners, ...demoModalPartners.filter((p) => !seen.has(p.id))];
         setFeed((prev) => ({
           ...prev,
-          partners,
+          partners: mergedPartners,
         }));
         setFromDashboard(true);
       } catch (e) {
