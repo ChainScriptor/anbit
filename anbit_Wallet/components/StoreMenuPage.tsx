@@ -17,6 +17,9 @@ import {
   Milestone,
   Search,
   Settings,
+  Info,
+  Languages,
+  UserPlus,
   Lock,
   ShoppingBasket,
   ShoppingBag,
@@ -968,7 +971,9 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   const [storeTab, setStoreTab] = useState<StoreNavTab>('menu');
   const [storeBalanceXp, setStoreBalanceXp] = useState<number | null>(null);
   const [showStickyCategories, setShowStickyCategories] = useState(false);
+  const [showQuickActionsMenu, setShowQuickActionsMenu] = useState(false);
   const categorySectionRefs = useRef<Record<string, HTMLElement | null>>({});
+  const infoSectionRef = useRef<HTMLElement | null>(null);
 
   const menu = useMemo(() => partner.menu || [], [partner]);
   const categories = useMemo(() => {
@@ -1191,6 +1196,15 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     localStorage.setItem('anbit_store_theme', isDarkMode ? 'dark' : 'light');
   }, [isDarkMode]);
 
+  useEffect(() => {
+    if (!showQuickActionsMenu) return;
+    const onEsc = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setShowQuickActionsMenu(false);
+    };
+    window.addEventListener('keydown', onEsc);
+    return () => window.removeEventListener('keydown', onEsc);
+  }, [showQuickActionsMenu]);
+
   const loadStoreBalanceXp = useCallback(async () => {
     if (!user?.id) {
       setStoreBalanceXp(null);
@@ -1262,6 +1276,34 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   const topBarBg = useTransform(smoothScrollY, [0, 120], ['rgba(10,10,10,0)', 'rgba(10,10,10,1)']);
   const offersHeaderOpacity = useTransform(smoothScrollY, [90, 150], [0, 1]);
   const offersSectionRef = useRef<HTMLElement | null>(null);
+
+  const openMoreInfo = useCallback(() => {
+    setShowQuickActionsMenu(false);
+    infoSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  const openTranslate = useCallback(() => {
+    setShowQuickActionsMenu(false);
+    offersSectionRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }, []);
+
+  const orderTogether = useCallback(async () => {
+    setShowQuickActionsMenu(false);
+    const shareText = `Παράγγειλε μαζί μου από ${partner.name} στο anbit!`;
+    const shareUrl = typeof window !== 'undefined' ? window.location.href : '';
+    try {
+      if (navigator.share) {
+        await navigator.share({ title: partner.name, text: shareText, url: shareUrl });
+        return;
+      }
+      if (navigator.clipboard && shareUrl) {
+        await navigator.clipboard.writeText(shareUrl);
+        alert('Το link αντιγράφηκε. Στείλτο στην παρέα σου για Order together.');
+      }
+    } catch {
+      // User cancelled sharing or platform blocked it; silently ignore.
+    }
+  }, [partner.name]);
 
   useEffect(() => {
     if (storeTab !== 'menu') return;
@@ -1429,10 +1471,15 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
           </div>
           <button
             type="button"
+            onClick={() => setShowQuickActionsMenu((v) => !v)}
             className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-            aria-label="More"
+            aria-label={showQuickActionsMenu ? 'Close menu' : 'More'}
+            aria-haspopup="menu"
+            aria-expanded={showQuickActionsMenu}
           >
-            <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+            <span className="material-symbols-outlined text-[20px]">
+              {showQuickActionsMenu ? 'close' : 'more_horiz'}
+            </span>
           </button>
         </div>
         <motion.nav
@@ -1473,6 +1520,44 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         </motion.nav>
       </motion.header>
 
+      {showQuickActionsMenu ? (
+        <div
+          className="fixed inset-0 z-20 bg-black/15 backdrop-blur-[2px]"
+          onClick={() => setShowQuickActionsMenu(false)}
+          role="presentation"
+        >
+          <div className="mx-auto w-full max-w-[520px] px-3">
+            <div
+              className="ml-auto mt-[calc(env(safe-area-inset-top)+3.75rem)] w-[min(88vw,290px)] overflow-hidden rounded-[24px] border border-white/15 bg-[#141414]/95 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
+              onClick={(e) => e.stopPropagation()}
+              role="menu"
+              aria-label="Quick store actions"
+            >
+              {[
+                { label: 'More info', icon: <Info className="h-5 w-5" strokeWidth={2.1} />, onPress: openMoreInfo },
+                { label: 'Translate', icon: <Languages className="h-5 w-5" strokeWidth={2.1} />, onPress: openTranslate },
+                { label: 'Order together', icon: <UserPlus className="h-5 w-5" strokeWidth={2.1} />, onPress: orderTogether },
+              ].map((item, idx) => (
+                <button
+                  key={item.label}
+                  type="button"
+                  onClick={item.onPress}
+                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-[16px] font-medium text-white transition-colors hover:bg-white/10 ${
+                    idx < 2 ? 'border-b border-white/15' : ''
+                  }`}
+                  role="menuitem"
+                >
+                  <span className="inline-flex items-center justify-center text-white/95">
+                    {item.icon}
+                  </span>
+                  <span>{item.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+        </div>
+      ) : null}
+
       <main className={`mx-auto w-full max-w-[520px] pb-36 ${cart.length > 0 ? 'pb-56' : 'pb-40'}`}>
         <motion.section style={{ y: bannerY }} className="sticky top-0 z-0 h-[250px] w-full overflow-hidden">
           <img src={featuredProduct?.image || partner.image} alt={partner.name} className="h-full w-full object-cover" />
@@ -1480,6 +1565,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         </motion.section>
 
         <motion.section
+          ref={infoSectionRef}
           style={{ borderRadius: contentRadius }}
           className="relative z-10 -mt-12 mb-4 bg-[#0a0a0a] px-4 pb-4 pt-16 text-center"
         >

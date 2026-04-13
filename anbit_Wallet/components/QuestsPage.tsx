@@ -724,14 +724,64 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
   const [selectedMerchantKey, setSelectedMerchantKey] = useState<string | null>(null);
   const [quickStoresModalQuickId, setQuickStoresModalQuickId] = useState<string | null>(null);
   const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
+  const [showMobileStickySearch, setShowMobileStickySearch] = useState(false);
+  const [isMobileStickySearchFocused, setIsMobileStickySearchFocused] = useState(false);
   const quickCategoriesScrollRef = useRef<HTMLDivElement | null>(null);
   const partnerCategoryScrollRef = useRef<HTMLDivElement | null>(null);
+  const offersSearchTriggerRef = useRef<HTMLElement | null>(null);
+  const lastMobileScrollYRef = useRef(0);
 
   useEffect(() => {
     return subscribeFavoriteMerchantsChanged(() => {
       setFavoriteMerchantIds(loadFavoriteMerchantIds());
     });
   }, []);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const isMobile = () => window.innerWidth < 768;
+    const updateStickySearch = () => {
+      const currentY = window.scrollY || 0;
+      if (!isMobile()) {
+        setShowMobileStickySearch(false);
+        lastMobileScrollYRef.current = currentY;
+        return;
+      }
+      const triggerEl = offersSearchTriggerRef.current;
+      if (!triggerEl) {
+        setShowMobileStickySearch(false);
+        lastMobileScrollYRef.current = currentY;
+        return;
+      }
+      const prevY = lastMobileScrollYRef.current;
+      const isScrollingDown = currentY > prevY + 1;
+      const isScrollingUp = currentY < prevY - 1;
+      lastMobileScrollYRef.current = currentY;
+      const top = triggerEl.getBoundingClientRect().top;
+      const inOffersZone = top <= 96;
+
+      // 1) Κρύβεται αν ο χρήστης ανέβει πάνω από τα offers.
+      if (!inOffersZone) {
+        setShowMobileStickySearch(false);
+        return;
+      }
+
+      // 2) Μέσα στα offers: εμφανίζεται στο scroll down και μένει visible.
+      // 3) Κρύβεται μόνο στο scroll up ώστε να φαίνεται το navbar.
+      if (isScrollingDown) {
+        setShowMobileStickySearch(true);
+      } else if (isScrollingUp && !isMobileStickySearchFocused) {
+        setShowMobileStickySearch(false);
+      }
+    };
+    updateStickySearch();
+    window.addEventListener('scroll', updateStickySearch, { passive: true });
+    window.addEventListener('resize', updateStickySearch);
+    return () => {
+      window.removeEventListener('scroll', updateStickySearch);
+      window.removeEventListener('resize', updateStickySearch);
+    };
+  }, [isMobileStickySearchFocused]);
 
   const handleToggleFavoriteMerchant = useCallback((merchantKey: string) => {
     setFavoriteMerchantIds(toggleFavoriteMerchantId(merchantKey));
@@ -889,6 +939,58 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       variants={containerVariants}
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
+      <AnimatePresence>
+        {showMobileStickySearch && (
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.18, ease: 'easeOut' }}
+            className={cn(
+              'fixed inset-x-0 top-0 z-[120] px-3 pb-2 pt-[calc(env(safe-area-inset-top)+0.35rem)] shadow-sm md:hidden',
+              theme === 'light'
+                ? 'bg-white'
+                : 'bg-[color:var(--anbit-bg)]',
+            )}
+          >
+            <div className="mx-auto max-w-[1600px]">
+              <div
+                className={cn(
+                  'rounded-xl px-3 py-2 shadow-lg',
+                  theme === 'light'
+                    ? 'bg-white'
+                    : 'bg-[color:var(--anbit-card)]',
+                )}
+              >
+                <label className="relative block">
+                  <Search
+                    className={cn(
+                      'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2',
+                      theme === 'light' ? 'text-zinc-400' : 'text-[#9a9a9a]',
+                    )}
+                  />
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setIsMobileStickySearchFocused(true)}
+                    onBlur={() => setIsMobileStickySearchFocused(false)}
+                    placeholder="Αναζήτηση καταστήματος ή προσφοράς..."
+                    className={cn(
+                      'h-10 w-full rounded-lg border pl-9 pr-3 text-sm focus:outline-none focus:ring-2',
+                      theme === 'light'
+                        ? 'border-zinc-200 bg-white text-neutral-900 placeholder:text-zinc-400 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
+                        : 'border-anbit-border bg-anbit-card text-anbit-text placeholder:text-anbit-muted/80 focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
+                    )}
+                    aria-label="Αναζήτηση καταστήματος ή προσφοράς"
+                  />
+                </label>
+              </div>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <motion.section variants={itemVariants} className="-mt-2 space-y-2 sm:-mt-3 sm:space-y-3">
         <div className="relative overflow-visible py-5 sm:py-8">
           <QuickCategoriesWaveBackdrop />
@@ -1097,9 +1199,13 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
             ref={partnerCategoryScrollRef}
             role="toolbar"
             aria-label="Κατηγορίες δικτύου"
-            className="min-h-0 min-w-0 w-full overflow-x-auto overscroll-x-contain no-scrollbar scroll-smooth"
+            className="min-h-0 min-w-0 w-full overflow-x-auto overscroll-x-contain overscroll-y-none no-scrollbar scroll-smooth touch-pan-x"
+            style={{ touchAction: 'pan-x' }}
           >
-            <div className="flex w-max snap-x snap-mandatory flex-row items-center gap-4 sm:gap-5 md:gap-6 pr-1">
+            <div
+              className="flex w-max snap-x snap-mandatory flex-row items-center gap-4 sm:gap-5 md:gap-6 pr-1"
+              style={{ touchAction: 'pan-x' }}
+            >
               {partnerCategoryTabs.map((cat) => {
                 const active = partnerCategoryFilter === cat.id;
                 const src = stripCategoryTabImageSrc(cat, active);
@@ -1185,7 +1291,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
         />
       </section>
 
-      <div className="min-w-0 space-y-4">
+      <div ref={offersSearchTriggerRef} className="min-w-0 space-y-4">
         <h2
           className={cn(
             'playpen-sans min-w-0 text-[30px] font-bold leading-tight tracking-tight sm:text-[32px]',
