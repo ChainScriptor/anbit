@@ -445,12 +445,16 @@ function QuestMerchantBanner({
 
 function MerchantOffersRow({
   quests,
+  partner,
+  onOpenPartner,
   t,
   offerCardClassName,
   mutedTextClassName = questMuted,
   questsPage = true,
 }: {
   quests: Quest[];
+  partner?: Partner | null;
+  onOpenPartner?: (p: Partner) => void;
   t: (key: string) => string;
   offerCardClassName?: string;
   mutedTextClassName?: string;
@@ -495,6 +499,8 @@ function MerchantOffersRow({
                 mutedTextClassName={mutedTextClassName}
                 cardClassName={offerCardClassName}
                 questsPage={questsPage}
+                partner={partner ?? null}
+                onOpenPartner={onOpenPartner}
               />
             </div>
           ))}
@@ -1416,6 +1422,8 @@ const QuestsPage: React.FC<{
                   </div>
                   <MerchantOffersRow
                     quests={mq}
+                    partner={partner}
+                    onOpenPartner={(p) => navigate(`/store-profile/${p.id}`, { state: { partner: p } })}
                     t={t}
                     offerCardClassName={questsOfferShell}
                     mutedTextClassName={questsMutedForTheme}

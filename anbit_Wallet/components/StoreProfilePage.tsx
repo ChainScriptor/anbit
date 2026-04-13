@@ -273,7 +273,7 @@ const StoreProfilePage: React.FC = () => {
                     key={quest.id}
                     className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
                   >
-                    <QuestOfferCard quest={quest} index={index} t={t} />
+                    <QuestOfferCard quest={quest} index={index} t={t} partner={partner ?? null} />
                   </div>
                 ))}
               </div>
