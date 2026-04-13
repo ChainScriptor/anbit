@@ -808,6 +808,23 @@ const QuestsPage: React.FC<{
     [categoryStripBundle, t],
   );
 
+  const partnerCategoryFilterOptions = useMemo(
+    () => partnerCategoryTabs.map((cat) => ({ value: cat.id, label: cat.label })),
+    [partnerCategoryTabs],
+  );
+
+  const skipPartnerCategoryScrollIntoViewRef = useRef(true);
+  useEffect(() => {
+    if (skipPartnerCategoryScrollIntoViewRef.current) {
+      skipPartnerCategoryScrollIntoViewRef.current = false;
+      return;
+    }
+    const root = partnerCategoryScrollRef.current;
+    if (!root) return;
+    const btn = root.querySelector<HTMLElement>(`[data-partner-cat="${partnerCategoryFilter}"]`);
+    btn?.scrollIntoView({ behavior: 'smooth', inline: 'center', block: 'nearest' });
+  }, [partnerCategoryFilter]);
+
   useEffect(() => {
     const ids = new Set(partnerCategoryTabs.map((x) => x.id));
     if (!ids.has(partnerCategoryFilter)) {
@@ -1168,36 +1185,17 @@ const QuestsPage: React.FC<{
           >
             Αναζήτηση ανά κατηγορία
           </h2>
-          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 md:w-auto md:shrink-0 md:justify-end md:gap-3">
-            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
-              <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questsMutedForTheme}`}>{t('filterBy')}</span>
-              <OfferFilterSelect
-                value={offerFilter}
-                onChange={(v) => setOfferFilter(v as FilterValue)}
-                options={offerFilterOptions}
-                aria-label={t('filterBy')}
-              />
-            </div>
-            <label className="relative block w-full min-w-0 sm:min-w-[12rem] sm:flex-1 sm:max-w-[20rem] md:w-56 md:max-w-none md:shrink-0 md:flex-none">
-              <Search
-                className={cn(
-                  'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2',
-                  theme === 'light' ? 'text-zinc-400' : 'text-[#9a9a9a]',
-                )}
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search store or offer..."
-                className={cn(
-                  'h-10 w-full rounded-lg border pl-9 pr-3 text-sm focus:outline-none focus:ring-2',
-                  theme === 'light'
-                    ? 'border-zinc-200 bg-white text-neutral-900 placeholder:text-zinc-400 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
-                    : 'border-anbit-border bg-anbit-card text-anbit-text placeholder:text-anbit-muted/80 focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
-                )}
-              />
-            </label>
+          <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3 md:w-auto md:shrink-0">
+            <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questsMutedForTheme}`}>
+              {t('questCategoryFilter')}
+            </span>
+            <OfferFilterSelect
+              value={partnerCategoryFilter}
+              onChange={(v) => setPartnerCategoryFilter(v)}
+              options={partnerCategoryFilterOptions}
+              aria-label={t('questCategoryFilter')}
+              triggerClassName="max-w-[min(100vw-2rem,22rem)]"
+            />
           </div>
         </div>
 
@@ -1228,6 +1226,7 @@ const QuestsPage: React.FC<{
                   <button
                     key={cat.id}
                     type="button"
+                    data-partner-cat={cat.id}
                     onClick={() => {
                       setPartnerCategoryFilter(cat.id);
                     }}
@@ -1307,14 +1306,49 @@ const QuestsPage: React.FC<{
       </section>
 
       <div ref={offersSearchTriggerRef} className="min-w-0 space-y-4">
-        <h2
-          className={cn(
-            'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px]',
-            theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
-          )}
-        >
-          {t('quests')}
-        </h2>
+        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+          <h2
+            className={cn(
+              'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] md:min-w-0 md:flex-1 md:pr-4',
+              theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+            )}
+          >
+            {t('quests')}
+          </h2>
+          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 md:w-auto md:shrink-0 md:justify-end md:gap-3">
+            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
+              <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questsMutedForTheme}`}>{t('filterBy')}</span>
+              <OfferFilterSelect
+                value={offerFilter}
+                onChange={(v) => setOfferFilter(v as FilterValue)}
+                options={offerFilterOptions}
+                aria-label={t('filterBy')}
+              />
+            </div>
+            <label className="relative block w-full min-w-0 sm:min-w-[12rem] sm:flex-1 sm:max-w-[20rem] md:w-56 md:max-w-none md:shrink-0 md:flex-none">
+              <Search
+                className={cn(
+                  'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2',
+                  theme === 'light' ? 'text-zinc-400' : 'text-[#9a9a9a]',
+                )}
+                aria-hidden
+              />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Αναζήτηση καταστήματος ή προσφοράς..."
+                className={cn(
+                  'h-10 w-full rounded-lg border pl-9 pr-3 text-sm focus:outline-none focus:ring-2',
+                  theme === 'light'
+                    ? 'border-zinc-200 bg-white text-neutral-900 placeholder:text-zinc-400 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
+                    : 'border-anbit-border bg-anbit-card text-anbit-text placeholder:text-anbit-muted/80 focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
+                )}
+                aria-label="Αναζήτηση καταστήματος ή προσφοράς"
+              />
+            </label>
+          </div>
+        </div>
         <div className="space-y-10">
           <AnimatePresence mode="popLayout">
             {visibleMerchantSections.length === 0 ? (

@@ -1,16 +1,6 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import {
-  ChevronLeft,
-  ChevronRight,
-  Copy,
-  Facebook,
-  Linkedin,
-  Search,
-  Sparkles,
-  Star,
-  TicketPercent,
-} from 'lucide-react';
+import { Copy, Facebook, Linkedin, Search, Sparkles, Star, TicketPercent } from 'lucide-react';
 import { UserData, Partner } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '@/lib/utils';
@@ -24,7 +14,6 @@ import {
   subscribeFavoriteMerchantsChanged,
   useFavoriteMerchant,
 } from '@/lib/favoriteStores';
-import { offerCarouselNavButtonClass } from './ui/offer-carousel';
 import { NetworkStoreCard } from './NetworkStoreCard';
 import { Button } from './ui/button';
 
@@ -133,8 +122,6 @@ const profileTabs: Array<ProfileTabItem & { path: string }> = [
 const NETWORK_STORE_CARD_BG_DARK = 'bg-[#1e1e1e]';
 const NETWORK_STORE_CARD_BG_LIGHT = 'bg-white';
 
-const NETWORK_CAROUSEL_NAV_LIGHT =
-  'border-zinc-200 bg-white/95 text-neutral-900 hover:border-[#0a0a0a]/25 hover:bg-[#0a0a0a]/[0.06]';
 const MOCK_FAVORITES_PREVIEW_COUNT = 4;
 
 /** Ετικέτες δικτύου για φίλτρο ιστορικού όταν η παραγγελία ταιριάζει με partner. */
@@ -588,8 +575,6 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
     kind: null,
     message: '',
   });
-  const favoritesStoresScrollRef = useRef<HTMLDivElement | null>(null);
-
   const handleRedeemSubmit = useCallback(() => {
     const code = redeemCode.trim().toUpperCase();
     if (!code) {
@@ -606,13 +591,6 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
     });
     setRedeemCode('');
   }, [redeemCode]);
-
-  const scrollFavoritesStoresStrip = (dir: 'left' | 'right') => {
-    const el = favoritesStoresScrollRef.current;
-    if (!el) return;
-    const step = el.clientWidth * 0.75;
-    el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
-  };
 
   const orderHistoryCategoryOptions = useMemo(() => {
     const base: { value: string; label: string }[] = [
@@ -1680,12 +1658,8 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
             style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
           >
             {favoritePreviewStores.length === 0 ? (
-              <section
-                className="flex w-full flex-col items-start justify-between gap-8 rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-8 shadow-sm md:flex-row md:items-center md:p-12"
-                data-purpose="favorites-banner"
-                id="favorites-hero"
-              >
-                <div className="flex-1 space-y-4">
+              <>
+                <div className="space-y-4">
                   <h2 className={cn('playpen-sans text-2xl font-bold tracking-tight md:text-3xl', theme === 'light' ? 'text-neutral-900' : 'text-anbit-text')}>
                     Αγαπημένα καταστήματα
                   </h2>
@@ -1695,51 +1669,44 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                   </p>
                 </div>
                 <div
-                  className="flex w-full shrink-0 justify-center md:w-auto md:max-w-[min(100%,520px)] lg:max-w-[min(100%,640px)]"
-                  data-purpose="favourite-visual"
+                  className="flex w-full flex-col items-center justify-center"
+                  data-purpose="favorites-banner"
+                  id="favorites-hero"
                 >
-                  <img
-                    src="/fav.gif"
-                    alt=""
-                    className="h-auto max-h-[min(52vh,420px)] w-full object-contain"
-                    draggable={false}
-                  />
+                  <div
+                    className="flex w-full max-w-[min(100%,640px)] shrink-0 justify-center"
+                    data-purpose="favourite-visual"
+                  >
+                    <img
+                      src="/fav.gif"
+                      alt=""
+                      className="h-auto max-h-[min(52vh,420px)] w-full object-contain"
+                      draggable={false}
+                    />
+                  </div>
                 </div>
-              </section>
+              </>
             ) : (
-              <section className="space-y-4 rounded-xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-5 shadow-sm sm:p-6">
-              <h3
-                className={cn(
-                  'playpen-sans min-w-0 text-[24px] font-extrabold leading-tight tracking-tight sm:text-[28px]',
-                  theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
-                )}
-              >
-                Αγαπημένα καταστήματα
-              </h3>
-              <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]')}>
-                <span className={cn('font-semibold', theme === 'light' ? 'text-neutral-900' : 'text-anbit-text')}>Όλα</span>
-                <span className="mx-1.5 text-anbit-muted">·</span>
-                {favoritePreviewStores.length}{' '}
-                {favoritePreviewStores.length === 1 ? 'κατάστημα' : 'καταστήματα'} — ίδια εμφάνιση με το δίκτυο.
-              </p>
-              <div className="group relative w-full min-w-0">
-                <button
-                  type="button"
-                  onClick={() => scrollFavoritesStoresStrip('left')}
-                  className={cn(offerCarouselNavButtonClass, theme === 'light' && NETWORK_CAROUSEL_NAV_LIGHT, 'left-0')}
-                  aria-label="Προηγούμενα καταστήματα"
-                >
-                  <ChevronLeft className="h-6 w-6" />
-                </button>
-                <div
-                  ref={favoritesStoresScrollRef}
-                  className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
-                >
+              <>
+                <div className="space-y-2 sm:space-y-3">
+                  <h3
+                    className={cn(
+                      'playpen-sans min-w-0 text-[24px] font-extrabold leading-tight tracking-tight sm:text-[28px]',
+                      theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+                    )}
+                  >
+                    Αγαπημένα καταστήματα
+                  </h3>
+                  <p className={cn('text-sm', theme === 'light' ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]')}>
+                    <span className={cn('font-semibold', theme === 'light' ? 'text-neutral-900' : 'text-anbit-text')}>Όλα</span>
+                    <span className="mx-1.5 text-anbit-muted">·</span>
+                    {favoritePreviewStores.length}{' '}
+                    {favoritePreviewStores.length === 1 ? 'κατάστημα' : 'καταστήματα'} — ίδια εμφάνιση με το δίκτυο.
+                  </p>
+                </div>
+                <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
                   {favoritePreviewStores.map((partner) => (
-                    <div
-                      key={partner.id}
-                      className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
-                    >
+                    <div key={partner.id} className="min-w-0">
                       <NetworkStoreCard
                         partner={partner}
                         xp={storeXP[partner.id] ?? 0}
@@ -1748,16 +1715,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                     </div>
                   ))}
                 </div>
-                <button
-                  type="button"
-                  onClick={() => scrollFavoritesStoresStrip('right')}
-                  className={cn(offerCarouselNavButtonClass, theme === 'light' && NETWORK_CAROUSEL_NAV_LIGHT, 'right-0')}
-                  aria-label="Επόμενα καταστήματα"
-                >
-                  <ChevronRight className="h-6 w-6" />
-                </button>
-              </div>
-              </section>
+              </>
             )}
           </div>
         )}
