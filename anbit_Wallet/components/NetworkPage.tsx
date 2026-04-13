@@ -1,12 +1,15 @@
-import React, { useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { cn } from '@/lib/utils';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
+import { loadFavoriteMerchantIds, subscribeFavoriteMerchantsChanged } from '@/lib/favoriteStores';
 import { offerCarouselNavButtonClass } from './ui/offer-carousel';
 import { NetworkStoreCard } from './NetworkStoreCard';
+import { DiscoverButton, type DiscoverTabId } from './ui/discover-button';
 
 /** Βελάκια carousel — light (όπως `questsDealNavLight` στο offer-carousel) */
 const NETWORK_CAROUSEL_NAV_LIGHT =
@@ -45,11 +48,21 @@ interface NetworkPageProps {
 
 const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpenStoreProfile }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const isLight = theme === 'light';
   const networkMuted = isLight ? 'text-neutral-600' : 'text-[#b0b0b0]';
   const [categoryFilter, setCategoryFilter] = useState<string>('All');
   const [quickSelectionId, setQuickSelectionId] = useState<string | null>(null);
+  const [networkSearchQuery, setNetworkSearchQuery] = useState('');
+  const [networkDiscoverTab, setNetworkDiscoverTab] = useState<DiscoverTabId>('popular');
+  const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
   const storesScrollRef = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    return subscribeFavoriteMerchantsChanged(() => {
+      setFavoriteMerchantIds(loadFavoriteMerchantIds());
+    });
+  }, []);
 
   const scrollStoresStrip = (dir: 'left' | 'right') => {
     const el = storesScrollRef.current;
@@ -63,9 +76,30 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
     return partners.filter((p) => p.category === categoryFilter);
   }, [partners, categoryFilter]);
 
+  const searchFilteredPartners = useMemo(() => {
+    const q = networkSearchQuery.trim().toLowerCase();
+    if (!q) return filteredPartners;
+    return filteredPartners.filter((p) => p.name.toLowerCase().includes(q));
+  }, [filteredPartners, networkSearchQuery]);
+
+  const tabFilteredPartners = useMemo(() => {
+    if (networkDiscoverTab !== 'favorites') return searchFilteredPartners;
+    return searchFilteredPartners.filter((p) => favoriteMerchantIds.has(p.id));
+  }, [searchFilteredPartners, networkDiscoverTab, favoriteMerchantIds]);
+
   const sortedPartners = useMemo(() => {
-    return [...filteredPartners].sort((a, b) => a.name.localeCompare(b.name, 'el', { sensitivity: 'base' }));
-  }, [filteredPartners]);
+    const list = [...tabFilteredPartners];
+    if (networkDiscoverTab === 'popular') {
+      list.sort((a, b) => {
+        const xpb = storeXP[b.id] ?? 0;
+        const xpa = storeXP[a.id] ?? 0;
+        if (xpb !== xpa) return xpb - xpa;
+        return a.name.localeCompare(b.name, 'el', { sensitivity: 'base' });
+      });
+      return list;
+    }
+    return list.sort((a, b) => a.name.localeCompare(b.name, 'el', { sensitivity: 'base' }));
+  }, [tabFilteredPartners, networkDiscoverTab, storeXP]);
 
   const filterContextLabel =
     quickSelectionId != null
@@ -83,7 +117,7 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
       <motion.section variants={itemVariants} className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
+        <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:justify-between sm:gap-6">
           <div className="min-w-0 flex-1 space-y-2">
             <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
               Καταστήματα
@@ -94,54 +128,71 @@ const NetworkPage: React.FC<NetworkPageProps> = ({ partners, storeXP = {}, onOpe
               {sortedPartners.length} {sortedPartners.length === 1 ? 'κατάστημα' : 'καταστήματα'}
             </p>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2 sm:justify-end sm:pt-1.5">
-            <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${networkMuted}`}>Τύπος υπηρεσίας:</span>
-            <select
-              value={quickSelectionId ?? ''}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === '') {
-                  setCategoryFilter('All');
-                  setQuickSelectionId(null);
-                  return;
-                }
-                const qc = QUEST_QUICK_CATEGORIES.find((q) => q.id === v);
-                if (qc) {
-                  setQuickSelectionId(qc.id);
-                  setCategoryFilter(qc.categoryId);
-                }
+          <div className="flex w-full shrink-0 justify-start sm:w-auto sm:justify-end sm:pt-1.5">
+            <DiscoverButton
+              compact
+              className="w-full max-w-md justify-start sm:max-w-lg sm:justify-end"
+              searchQuery={networkSearchQuery}
+              onSearchChange={setNetworkSearchQuery}
+              activeDiscoverTab={networkDiscoverTab}
+              onDiscoverTabChange={(tab) => {
+                setNetworkDiscoverTab(tab);
               }}
-              className={cn(
-                'h-10 min-w-[11rem] shrink-0 rounded-lg bg-anbit-card px-3 py-2 pr-9 text-sm font-medium text-anbit-text focus:outline-none focus:ring-2 sm:min-w-[14rem]',
-                quickSelectionId == null &&
-                  'border border-anbit-border focus:border-anbit-brand focus:ring-anbit-brand/40',
-                quickSelectionId === RESTAURANTS_QUICK_ID &&
-                  (isLight
-                    ? 'border border-[#0a0a0a] ring-1 ring-[#0a0a0a]/20 focus:border-[#0a0a0a] focus:ring-[#0a0a0a]/25'
-                    : 'border border-white ring-1 ring-white/30 focus:border-white focus:ring-white/35'),
-                quickSelectionId != null &&
-                  quickSelectionId !== RESTAURANTS_QUICK_ID &&
-                  'border border-anbit-brand ring-1 ring-anbit-brand/35 focus:border-anbit-brand focus:ring-anbit-brand/40',
-              )}
-              style={{
-                appearance: 'none',
-                backgroundImage: isLight
-                  ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2352525c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
-                  : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b0b0b0' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 0.65rem center',
-                backgroundSize: '1rem',
+              labels={{
+                popular: t('discoverPopular'),
+                favorites: t('discoverFavorites'),
+                searchPlaceholder: t('searchPartners'),
               }}
-              aria-label="Γρήγορη επιλογή τύπου υπηρεσίας"
-            >
-              <option value="">Όλα</option>
-              {QUEST_QUICK_CATEGORIES.map((qc) => (
-                <option key={qc.id} value={qc.id}>
-                  {qc.label}
-                </option>
-              ))}
-            </select>
+            />
           </div>
+        </div>
+        <div className="flex flex-wrap items-center justify-start gap-2 sm:justify-end sm:pt-0.5">
+          <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${networkMuted}`}>Τύπος υπηρεσίας:</span>
+          <select
+            value={quickSelectionId ?? ''}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === '') {
+                setCategoryFilter('All');
+                setQuickSelectionId(null);
+                return;
+              }
+              const qc = QUEST_QUICK_CATEGORIES.find((q) => q.id === v);
+              if (qc) {
+                setQuickSelectionId(qc.id);
+                setCategoryFilter(qc.categoryId);
+              }
+            }}
+            className={cn(
+              'h-10 min-w-[11rem] shrink-0 rounded-lg bg-anbit-card px-3 py-2 pr-9 text-sm font-medium text-anbit-text focus:outline-none focus:ring-2 sm:min-w-[14rem]',
+              quickSelectionId == null &&
+                'border border-anbit-border focus:border-anbit-brand focus:ring-anbit-brand/40',
+              quickSelectionId === RESTAURANTS_QUICK_ID &&
+                (isLight
+                  ? 'border border-[#0a0a0a] ring-1 ring-[#0a0a0a]/20 focus:border-[#0a0a0a] focus:ring-[#0a0a0a]/25'
+                  : 'border border-white ring-1 ring-white/30 focus:border-white focus:ring-white/35'),
+              quickSelectionId != null &&
+                quickSelectionId !== RESTAURANTS_QUICK_ID &&
+                'border border-anbit-brand ring-1 ring-anbit-brand/35 focus:border-anbit-brand focus:ring-anbit-brand/40',
+            )}
+            style={{
+              appearance: 'none',
+              backgroundImage: isLight
+                ? `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%2352525c' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`
+                : `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23b0b0b0' stroke-width='2'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")`,
+              backgroundRepeat: 'no-repeat',
+              backgroundPosition: 'right 0.65rem center',
+              backgroundSize: '1rem',
+            }}
+            aria-label="Γρήγορη επιλογή τύπου υπηρεσίας"
+          >
+            <option value="">Όλα</option>
+            {QUEST_QUICK_CATEGORIES.map((qc) => (
+              <option key={qc.id} value={qc.id}>
+                {qc.label}
+              </option>
+            ))}
+          </select>
         </div>
 
         {sortedPartners.length === 0 ? (

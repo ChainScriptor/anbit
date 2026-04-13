@@ -9,6 +9,7 @@ import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { OfferCarousel, offerCarouselNavButtonClass } from './ui/offer-carousel';
 import { OfferFilterSelect } from './ui/offer-filter-select';
+import { DiscoverButton } from './ui/discover-button';
 import { GREEK_OFFERS } from '../data/greekOffers';
 import { cn } from '@/lib/utils';
 import {
@@ -626,12 +627,15 @@ function QuestsMerchantStrip({
   onSelect,
   favoriteMerchantIds,
   onToggleFavoriteMerchant,
+  discoverSlot,
 }: {
   sections: MerchantSectionGroup[];
   selectedKey: string | null;
   onSelect: (key: string | null) => void;
   favoriteMerchantIds: Set<string>;
   onToggleFavoriteMerchant: (merchantKey: string) => void;
+  /** Desktop: ίδια γραμμή με «Καταστήματα». Mobile: από κάτω, κεντραρισμένο. */
+  discoverSlot?: React.ReactNode;
 }) {
   const { theme } = useTheme();
   const scrollRef = useRef<HTMLDivElement | null>(null);
@@ -649,14 +653,21 @@ function QuestsMerchantStrip({
 
   return (
     <div className="min-w-0 space-y-4">
-      <h2
-        className={cn(
-          'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px]',
-          theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
-        )}
-      >
-        Καταστήματα
-      </h2>
+      <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+        <h2
+          className={cn(
+            'playpen-sans min-w-0 shrink-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] md:flex-1 md:min-w-0',
+            theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+          )}
+        >
+          Καταστήματα
+        </h2>
+        {discoverSlot ? (
+          <div className="flex w-full min-w-0 shrink-0 justify-start md:w-auto md:max-w-[min(100%,28rem)] md:justify-end">
+            {discoverSlot}
+          </div>
+        ) : null}
+      </div>
       <div className="group relative w-full min-w-0">
         <button
           type="button"
@@ -959,6 +970,24 @@ const QuestsPage: React.FC<{
     [t],
   );
 
+  const discoverButtonEl = (
+    <DiscoverButton
+      compact
+      className="w-full max-w-md justify-start sm:max-w-lg md:justify-end"
+      searchQuery={searchQuery}
+      onSearchChange={setSearchQuery}
+      activeDiscoverTab={offerFilter === 'favorite-stores' ? 'favorites' : 'popular'}
+      onDiscoverTabChange={(tab) => {
+        setOfferFilter(tab === 'favorites' ? 'favorite-stores' : 'highest-xp');
+      }}
+      labels={{
+        popular: t('discoverPopular'),
+        favorites: t('discoverFavorites'),
+        searchPlaceholder: t('searchPartners'),
+      }}
+    />
+  );
+
   const questsMutedForTheme = theme === 'light' ? 'text-neutral-600' : questMuted;
   const questsNavBtnLight =
     theme === 'light' ? 'border-zinc-200 bg-white/95 text-neutral-900 hover:border-[#0a0a0a]/25 hover:bg-[#0a0a0a]/[0.06]' : '';
@@ -1176,25 +1205,26 @@ const QuestsPage: React.FC<{
       </motion.section>
 
       <motion.div variants={itemVariants} className="min-w-0 space-y-3 pb-1">
-        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
+        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:items-center sm:justify-between sm:gap-4">
           <h2
             className={cn(
-              'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[30px] md:min-w-0 md:flex-1 md:pr-4',
+              'playpen-sans shrink-0 whitespace-nowrap text-[22px] font-bold leading-tight tracking-tight sm:text-[26px] md:text-[30px] sm:pr-3 md:pr-4',
               theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
             )}
           >
             Αναζήτηση ανά κατηγορία
           </h2>
-          <div className="flex w-full min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3 md:w-auto md:shrink-0">
-            <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questsMutedForTheme}`}>
+          <div className="flex min-w-0 w-full flex-1 flex-col items-start gap-2 sm:w-auto sm:flex-none sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
+            <span className={`w-full text-sm font-medium sm:w-auto sm:shrink-0 sm:whitespace-nowrap ${questsMutedForTheme}`}>
               {t('questCategoryFilter')}
             </span>
             <OfferFilterSelect
+              className="w-full max-w-[min(100%,22rem)] sm:w-auto sm:max-w-none"
               value={partnerCategoryFilter}
               onChange={(v) => setPartnerCategoryFilter(v)}
               options={partnerCategoryFilterOptions}
               aria-label={t('questCategoryFilter')}
-              triggerClassName="max-w-[min(100vw-2rem,22rem)]"
+              triggerClassName="w-full sm:w-auto sm:min-w-[13rem] md:min-w-[15rem]"
             />
           </div>
         </div>
@@ -1278,14 +1308,21 @@ const QuestsPage: React.FC<{
         </div>
       </motion.div>
 
-      {merchantSections.length > 0 && (
-        <QuestsMerchantStrip
-          sections={merchantSections}
-          selectedKey={selectedMerchantKey}
-          onSelect={setSelectedMerchantKey}
-          favoriteMerchantIds={favoriteMerchantIds}
-          onToggleFavoriteMerchant={handleToggleFavoriteMerchant}
-        />
+      {merchantSections.length > 0 ? (
+        <motion.div variants={itemVariants}>
+          <QuestsMerchantStrip
+            sections={merchantSections}
+            selectedKey={selectedMerchantKey}
+            onSelect={setSelectedMerchantKey}
+            favoriteMerchantIds={favoriteMerchantIds}
+            onToggleFavoriteMerchant={handleToggleFavoriteMerchant}
+            discoverSlot={discoverButtonEl}
+          />
+        </motion.div>
+      ) : (
+        <motion.div variants={itemVariants} className="flex min-w-0 justify-start pb-2 pt-1 md:justify-end">
+          {discoverButtonEl}
+        </motion.div>
       )}
 
       <section className="min-w-0 space-y-4">
@@ -1315,17 +1352,19 @@ const QuestsPage: React.FC<{
           >
             {t('quests')}
           </h2>
-          <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 md:w-auto md:shrink-0 md:justify-end md:gap-3">
-            <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
-              <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questsMutedForTheme}`}>{t('filterBy')}</span>
+          <div className="flex w-full min-w-0 flex-col items-start gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 md:w-auto md:shrink-0 md:justify-end md:gap-3">
+            <div className="flex w-full min-w-0 flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-3">
+              <span className={`w-full text-sm font-medium sm:w-auto sm:shrink-0 sm:whitespace-nowrap ${questsMutedForTheme}`}>{t('filterBy')}</span>
               <OfferFilterSelect
+                className="w-full max-w-[min(100%,22rem)] sm:max-w-none md:w-auto"
                 value={offerFilter}
                 onChange={(v) => setOfferFilter(v as FilterValue)}
                 options={offerFilterOptions}
                 aria-label={t('filterBy')}
+                triggerClassName="w-full sm:w-auto md:min-w-[15rem]"
               />
             </div>
-            <label className="relative block w-full min-w-0 sm:min-w-[12rem] sm:flex-1 sm:max-w-[20rem] md:w-56 md:max-w-none md:shrink-0 md:flex-none">
+            <label className="relative block w-full min-w-0 max-w-[min(100%,22rem)] sm:min-w-[12rem] sm:max-w-[20rem] sm:flex-1 md:w-56 md:max-w-none md:shrink-0 md:flex-none">
               <Search
                 className={cn(
                   'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2',

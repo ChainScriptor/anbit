@@ -101,8 +101,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
       >
         <div className="mx-auto flex max-w-[1180px] items-center justify-between gap-3 px-1 sm:px-2">
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div ref={mobileMenuRef} className="md:hidden relative">
+          <div className="flex min-w-0 flex-1 items-center justify-between gap-2 md:flex-initial md:justify-start md:gap-3 md:shrink-0">
+            <div className="flex min-w-0 flex-1 items-center gap-2 sm:gap-3 md:flex-initial md:min-w-0">
+            <div ref={mobileMenuRef} className="md:hidden relative shrink-0">
               <BurgerToggle
                 open={isMobileMenuOpen}
                 onOpenChange={setIsMobileMenuOpen}
@@ -281,14 +282,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               )}
             </div>
 
-            <NavLink to="/quests" className="logo-anbit cursor-pointer">
+            <NavLink to="/quests" className="logo-anbit shrink-0 cursor-pointer">
               <AnbitWordmark className="text-3xl sm:text-4xl lg:text-5xl" />
             </NavLink>
             <button
               type="button"
               onClick={() => setCityModalOpen(true)}
               className={cn(
-                'flex items-center gap-2 rounded-lg px-2 py-2 transition-colors focus:outline-none focus-visible:ring-2',
+                'flex min-w-0 max-w-[min(100%,11rem)] items-center gap-1.5 rounded-lg px-1.5 py-2 transition-colors focus:outline-none focus-visible:ring-2 sm:max-w-none sm:gap-2 sm:px-2 md:max-w-none',
                 navLightRedBar
                   ? 'text-white focus-visible:ring-white/45 hover:text-white/90'
                   : navLightAtTop
@@ -315,15 +316,28 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 )}
                 strokeWidth={2}
               />
-              <span className="text-sm font-semibold lg:text-base max-w-[120px] truncate">{city.labelEl}</span>
+              <span className="truncate text-sm font-semibold lg:text-base sm:max-w-[120px]">{city.labelEl}</span>
               <ChevronDown className={cn('w-4 h-4 shrink-0 transition-transform', cityModalOpen && 'rotate-180')} />
             </button>
+            </div>
+            {isAuthenticated ? (
+              <div className="ml-1 shrink-0 md:hidden">
+                <NotificationPopover
+                  notifications={walletNotifications}
+                  onNotificationsChange={setWalletNotifications}
+                  buttonClassName={notifNavButtonClass}
+                  title={t('notificationsTitle')}
+                  markAllReadLabel={t('markAllNotificationsRead')}
+                  bellAriaLabel={t('notificationsBellAria')}
+                />
+              </div>
+            ) : null}
           </div>
 
-          <div className="flex-1 flex items-center justify-center">
+          <div className="hidden min-w-0 flex-1 items-center justify-center md:flex">
             <nav
               className={cn(
-                'hidden md:flex items-center justify-center rounded-full px-2 py-1 gap-1 shrink-0',
+                'flex items-center justify-center gap-1 rounded-full px-2 py-1 shrink-0',
                 isStoreProfileHeroMode
                   ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
                   : navLightRedBar
@@ -405,19 +419,6 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 );
               })}
             </nav>
-          </div>
-
-          <div className="md:hidden flex items-center shrink-0">
-            {isAuthenticated ? (
-              <NotificationPopover
-                notifications={walletNotifications}
-                onNotificationsChange={setWalletNotifications}
-                buttonClassName={notifNavButtonClass}
-                title={t('notificationsTitle')}
-                markAllReadLabel={t('markAllNotificationsRead')}
-                bellAriaLabel={t('notificationsBellAria')}
-              />
-            ) : null}
           </div>
 
           <div className="hidden md:flex items-center gap-2 shrink-0">
