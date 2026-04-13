@@ -44,8 +44,8 @@
             'anbit-brand': 'var(--anbit-brand)',
             'anbit-brand-hover': 'var(--anbit-brand-hover)',
             'anbit-brand-foreground': 'var(--anbit-brand-foreground)',
-            'brand-red': '#0a0a0a',
-            'brand-black': '#333333',
+            'brand-red': 'var(--brand-red)',
+            'brand-black': 'var(--brand-black)',
           },
           fontFamily: {
             sans: ['Inter', 'system-ui', 'sans-serif'],
@@ -70,11 +70,12 @@
       --font-playpen: 'Playpen Sans', cursive;
       --font-body: var(--font-primary);
       --brand-red: #0a0a0a;
+      --brand-black: #333333;
       --xp-gold: #CA8A04;
       --store-soft-bg: #F8F9FA;
     }
 
-    /* Dark theme (default) – brand accent κόκκινο #e63533 */
+    /* Dark theme (default) – brand accent μπλε #2563eb */
     :root,
     [data-theme="dark"] {
       --anbit-bg: #0a0a0a;
@@ -86,7 +87,7 @@
       --anbit-text: #ffffff;
       --anbit-nav-bg: #000000;
       --anbit-input: rgba(255, 255, 255, 0.04);
-      --anbit-brand: #e63533;
+      --anbit-brand: #2563eb;
       --anbit-brand-hover: #cf2f2d;
       --anbit-brand-foreground: #ffffff;
       /* XP / πόντοι: το --anbit-yellow είναι #0a0a0a (κουμπιά) — ξεχωριστό accent για αριθμούς XP */
@@ -96,24 +97,26 @@
       --anbit-xp-surface-border: rgba(255, 255, 255, 0.2);
     }
 
-    /* Light: μαύρο αντί για κόκκινο· κείμενο κυρίως μαύρο */
+    /* Light: brand / κείμενο #0a0a0a (όχι κόκκινο) */
     [data-theme="light"] {
+      --brand-red: #0a0a0a;
+      --brand-black: #0a0a0a;
       --anbit-bg: #FFFFFF;
       --anbit-card: #FFFFFF;
-      --anbit-border: rgba(0, 0, 0, 0.08);
-      --anbit-yellow: #000000;
+      --anbit-border: rgba(10, 10, 10, 0.12);
+      --anbit-yellow: #0a0a0a;
       --anbit-yellow-content: #ffffff;
-      --anbit-muted: #3a3a3a;
-      --anbit-text: #000000;
+      --anbit-muted: #525252;
+      --anbit-text: #0a0a0a;
       --anbit-nav-bg: rgba(255, 255, 255, 0.95);
-      --anbit-input: #f5f5f5;
-      --anbit-brand: #000000;
-      --anbit-brand-hover: #262626;
+      --anbit-input: rgba(10, 10, 10, 0.06);
+      --anbit-brand: #0a0a0a;
+      --anbit-brand-hover: #171717;
       --anbit-brand-foreground: #ffffff;
-      --anbit-xp-accent: #000000;
-      --anbit-xp-bar: #000000;
-      --anbit-xp-surface: rgba(0, 0, 0, 0.06);
-      --anbit-xp-surface-border: rgba(0, 0, 0, 0.12);
+      --anbit-xp-accent: #0a0a0a;
+      --anbit-xp-bar: #0a0a0a;
+      --anbit-xp-surface: rgba(10, 10, 10, 0.06);
+      --anbit-xp-surface-border: rgba(10, 10, 10, 0.18);
     }
 
     .playpen-sans {
@@ -148,6 +151,20 @@
       box-shadow: 0 1px 0 rgba(0, 0, 0, 0.06);
     }
 
+    /* Light, πάνω στη σελίδα (χωρίς scroll): λευκό φόντο μπάρας */
+    [data-theme="light"] .glass-nav:not(.navbar-scrolled) {
+      background: #ffffff !important;
+      border-bottom-color: rgba(10, 10, 10, 0.1);
+    }
+
+    [data-theme="light"] .glass-nav:not(.navbar-scrolled) .logo-anbit {
+      color: #0a0a0a;
+    }
+
+    [data-theme="light"] .glass-nav:not(.navbar-scrolled) .logo-anbit:hover {
+      color: #171717;
+    }
+
     .section-title {
       font-family: var(--font-primary);
       font-weight: 800;
@@ -156,7 +173,7 @@
     }
 
     [data-theme="light"] .section-title {
-      color: #000000 !important;
+      color: var(--anbit-text) !important;
     }
 
     .section-title-lg {
@@ -167,29 +184,32 @@
     }
 
     [data-theme="light"] .section-title-lg {
-      color: #000000 !important;
+      color: var(--anbit-text) !important;
     }
 
-    /* Light + scroll: ανοιχτό φόντο, μαύρο κείμενο (όχι κόκκινο/λευκό) */
+    /* Light + scroll: σκούρη μπάρα + λευκό κείμενο */
     [data-theme="light"] .glass-nav.navbar-scrolled {
-      background: #ffffff;
-      border-bottom-color: rgba(0, 0, 0, 0.08);
-      color: #000000;
+      background: #0a0a0a !important;
+      border-bottom-color: rgba(0, 0, 0, 0.2);
+      color: #ffffff;
     }
 
-    [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-text,
+    [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-text {
+      color: #ffffff !important;
+    }
+
     [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-muted {
-      color: #000000 !important;
+      color: rgba(255, 255, 255, 0.82) !important;
     }
 
-    /* Mobile burger dropdown: override scroll navbar text colors so it stays readable. */
+    /* Mobile burger dropdown: λευκή κάρτα — σκούρο κείμενο */
     [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-text,
     [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-muted {
       color: inherit !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu {
-      color: var(--anbit-text) !important;
+      color: #171717 !important;
     }
 
     /* Mobile burger dropdown: keep LanguageSelector button solid/readable (avoid white-on-white). */
@@ -198,50 +218,91 @@
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .mobile-burger-menu .text-anbit-yellow:not(.fill-anbit-yellow) {
-      color: var(--anbit-yellow) !important;
+      color: #171717 !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button {
-      color: #000000 !important;
-      background: rgba(0, 0, 0, 0.04) !important;
-      border-color: rgba(0, 0, 0, 0.12) !important;
+      color: #ffffff !important;
+      background: rgba(255, 255, 255, 0.14) !important;
+      border-color: rgba(255, 255, 255, 0.35) !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .language-selector-wrap button:hover {
-      color: #000000 !important;
-      background: rgba(0, 0, 0, 0.06) !important;
+      color: #ffffff !important;
+      background: rgba(255, 255, 255, 0.22) !important;
     }
 
-    /* Hover card στο nav: πάντα ορατό κείμενο (δεν κληρονομεί το άσπρο του navbar) */
+    [data-theme="light"] .glass-nav .mobile-burger-menu .language-selector-wrap button {
+      color: #171717 !important;
+      background: #ffffff !important;
+      border-color: rgba(0, 0, 0, 0.12) !important;
+    }
+
+    [data-theme="light"] .glass-nav .mobile-burger-menu .language-selector-wrap button:hover {
+      color: #0a0a0a !important;
+      background: #f4f4f5 !important;
+    }
+
+    /* Hover card στο nav: λευκό panel, σκούρο κείμενο */
     [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card {
       background: #ffffff;
-      border-color: rgba(0, 0, 0, 0.08);
+      border-color: rgba(10, 10, 10, 0.12);
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .nav-hover-card .nav-hover-card-text {
-      color: #000000 !important;
+      color: #171717 !important;
     }
 
-    /* Popover ειδοποιήσεων: λευκό card — τα παραπάνω !important (#fff) για .text-anbit-* θα έκρυβαν το κείμενο */
+    /* Popover ειδοποιήσεων (light): πάντα μαύρο/γκρι — όχι brand κόκκινο, με ή χωρίς scroll */
+    [data-theme="light"] .notification-popover-panel {
+      color: #171717 !important;
+    }
+
+    [data-theme="light"] .notification-popover-panel .text-anbit-text {
+      color: #171717 !important;
+    }
+
+    [data-theme="light"] .notification-popover-panel .text-anbit-muted {
+      color: #52525c !important;
+    }
+
+    [data-theme="light"] .notification-popover-panel button {
+      color: #171717 !important;
+    }
+
+    [data-theme="light"] .notification-popover-panel button.text-anbit-muted,
+    [data-theme="light"] .notification-popover-panel .text-anbit-muted {
+      color: #52525c !important;
+    }
+
+    [data-theme="light"] .notification-popover-panel button:hover {
+      color: #0a0a0a !important;
+    }
+
+    /* Ίδιο panel αλλά μέσα στο scrolled nav: νικάει .navbar-scrolled .text-anbit-text (λευκό) */
     [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel {
-      color: var(--anbit-text) !important;
+      color: #171717 !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel .text-anbit-text {
-      color: var(--anbit-text) !important;
+      color: #171717 !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel .text-anbit-muted {
-      color: var(--anbit-muted) !important;
+      color: #52525c !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel button {
-      color: var(--anbit-text) !important;
+      color: #171717 !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel button.text-anbit-muted,
     [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel .text-anbit-muted {
-      color: var(--anbit-muted) !important;
+      color: #52525c !important;
+    }
+
+    [data-theme="light"] .glass-nav.navbar-scrolled .notification-popover-panel button:hover {
+      color: #0a0a0a !important;
     }
 
     [data-theme="dark"] .glass-nav .nav-hover-card {
@@ -254,34 +315,42 @@
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled button:not([class*="rounded-lg overflow-hidden"]) {
-      color: #000000;
+      color: #ffffff;
+    }
+
+    [data-theme="light"] .glass-nav .mobile-burger-menu button {
+      color: #171717 !important;
+    }
+
+    [data-theme="light"] .glass-nav .mobile-burger-menu button.bg-anbit-yellow {
+      color: #ffffff !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled nav {
-      border-color: rgba(0, 0, 0, 0.1);
-      background: rgba(0, 0, 0, 0.04);
+      border-color: rgba(255, 255, 255, 0.28);
+      background: rgba(255, 255, 255, 0.14);
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled nav button.bg-anbit-border {
-      background: rgba(0, 0, 0, 0.06);
-      color: #000000;
+      background: rgba(255, 255, 255, 0.2);
+      color: #ffffff;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .text-anbit-yellow:not(.fill-anbit-yellow) {
-      color: #000000 !important;
+      color: #ffffff !important;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .fill-anbit-yellow {
-      fill: #000000;
+      fill: #ffffff;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled [class*="border-anbit"] {
-      border-color: rgba(0, 0, 0, 0.12);
+      border-color: rgba(255, 255, 255, 0.3);
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled h1,
     [data-theme="light"] .glass-nav.navbar-scrolled .font-black {
-      color: #000000 !important;
+      color: #ffffff !important;
     }
 
     /* Dark mode: on scroll keep same dark nav background (no red) */
@@ -310,19 +379,28 @@
     }
 
     [data-theme="light"] .logo-anbit {
-      color: #000000;
+      color: #171717;
     }
 
     [data-theme="light"] .logo-anbit:hover {
-      color: #262626;
+      color: #0a0a0a;
+    }
+
+    /* Store profile hero (διαφανές header): λευκό λογότυπο πάνω σε σκούρο media */
+    [data-theme="light"] header.anbit-header-store-hero .logo-anbit {
+      color: #ffffff;
+    }
+
+    [data-theme="light"] header.anbit-header-store-hero .logo-anbit:hover {
+      color: rgba(255, 255, 255, 0.88);
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit {
-      color: #000000;
+      color: #ffffff;
     }
 
     [data-theme="light"] .glass-nav.navbar-scrolled .logo-anbit:hover {
-      color: #262626;
+      color: rgba(255, 255, 255, 0.9);
     }
 
     .anbit-wordmark {
@@ -358,6 +436,14 @@
     .anbit-tabs-scrollbar::-webkit-scrollbar-thumb {
       background: #242424;
       border-radius: 9999px;
+    }
+
+    [data-theme="light"] .anbit-tabs-scrollbar {
+      scrollbar-color: #0a0a0a transparent;
+    }
+
+    [data-theme="light"] .anbit-tabs-scrollbar::-webkit-scrollbar-thumb {
+      background: #0a0a0a;
     }
 
     /* Auth page – Lysium-style: floating panel + immersive right */
@@ -414,7 +500,7 @@
 
     [data-theme="light"] .auth-logo-wrap {
       background: var(--anbit-yellow);
-      box-shadow: 0 0 20px rgba(230, 53, 51, 0.35);
+      box-shadow: 0 0 20px rgba(10, 10, 10, 0.2);
     }
 
     .auth-logo-text {
@@ -444,11 +530,11 @@
     }
 
     [data-theme="light"] .auth-btn-primary {
-      box-shadow: 0 4px 14px rgba(230, 53, 51, 0.3), inset 0 1px 0 rgba(255, 255, 255, 0.2);
+      box-shadow: 0 4px 14px rgba(10, 10, 10, 0.18), inset 0 1px 0 rgba(255, 255, 255, 0.2);
     }
 
     [data-theme="light"] .auth-btn-primary:hover:not(:disabled) {
-      box-shadow: 0 6px 20px rgba(230, 53, 51, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.25);
+      box-shadow: 0 6px 20px rgba(10, 10, 10, 0.22), inset 0 1px 0 rgba(255, 255, 255, 0.25);
     }
 
     .auth-btn-secondary {
@@ -513,12 +599,16 @@
       background: #0a0a0c;
     }
 
+    [data-theme="light"] .auth-hero-panel {
+      background: rgba(10, 10, 10, 0.04);
+    }
+
     .auth-hero-gradient {
       background: linear-gradient(160deg, rgba(9, 9, 11, 0.95) 0%, rgba(202, 138, 4, 0.08) 50%, rgba(9, 9, 11, 0.98) 100%);
     }
 
     [data-theme="light"] .auth-hero-gradient {
-      background: linear-gradient(160deg, #1a1a1e 0%, rgba(230, 53, 51, 0.06) 50%, #141418 100%);
+      background: linear-gradient(160deg, rgba(10, 10, 10, 0.08) 0%, rgba(255, 255, 255, 0.92) 45%, rgba(10, 10, 10, 0.06) 100%);
     }
 
     .auth-hero-number {
@@ -527,7 +617,8 @@
     }
 
     [data-theme="light"] .auth-hero-number {
-      text-shadow: 0 0 30px rgba(230, 53, 51, 0.2);
+      color: #0a0a0a;
+      text-shadow: 0 0 24px rgba(10, 10, 10, 0.12);
     }
 
     .auth-hero-label {
@@ -535,7 +626,7 @@
     }
 
     [data-theme="light"] .auth-hero-label {
-      color: rgba(255, 255, 255, 0.9);
+      color: #0a0a0a;
     }
 
     .auth-modal-input {
@@ -610,6 +701,27 @@
       animation: city-select-pulse-red 2s ease-out infinite;
     }
 
+    @keyframes city-select-pulse-neutral {
+      0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(10, 10, 10, 0.45);
+      }
+
+      70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 14px rgba(10, 10, 10, 0);
+      }
+
+      100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(10, 10, 10, 0);
+      }
+    }
+
+    [data-theme="light"] .city-select-pulse-red {
+      animation-name: city-select-pulse-neutral;
+    }
+
     /* Order waiting — concentric pulse (brand black on white) */
     @keyframes order-sent-pulse {
       0% {
@@ -629,6 +741,10 @@
 
     .dark-city-map-vignette {
       background: radial-gradient(circle at center, transparent 0%, #000000 100%);
+    }
+
+    [data-theme="light"] .dark-city-map-vignette {
+      background: radial-gradient(circle at center, transparent 0%, rgba(10, 10, 10, 0.45) 100%);
     }
 
     /* Fix for iOS PWA address bar overlap */
@@ -667,6 +783,19 @@
       font-optical-sizing: auto;
       font-weight: 700;
       font-style: normal;
+    }
+
+    /* PWA titles typography by active UI language */
+    :root[data-ui-lang="el"] .section-title,
+    :root[data-ui-lang="el"] .section-title-lg {
+      font-family: 'Playpen Sans', cursive !important;
+      font-weight: 800 !important;
+    }
+
+    :root[data-ui-lang="en"] .section-title,
+    :root[data-ui-lang="en"] .section-title-lg {
+      font-family: 'Omnes', 'Inter', system-ui, sans-serif !important;
+      font-weight: 700 !important;
     }
 
     /* FrostedHoverNav */

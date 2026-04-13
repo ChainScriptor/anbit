@@ -1,5 +1,5 @@
 import React, { useState, useMemo, useCallback, useEffect, useRef } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useScroll, useSpring, useTransform } from 'framer-motion';
 import {
   ArrowLeft,
   BadgeCheck,
@@ -35,7 +35,6 @@ import { useLanguage } from '../context/LanguageContext';
 import { useOrder } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
-import ProductDetailModal from './ProductDetailModal';
 import ProductCustomizeModal from './ProductCustomizeModal';
 import AnbitWordmark from './AnbitWordmark';
 import { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
@@ -943,7 +942,6 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   const { user, logout } = useAuth();
   const { session } = useOrder();
   const [cart, setCart] = useState<CartItemData[]>([]);
-  const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [productToCustomize, setProductToCustomize] = useState<Product | null>(null);
   const [showCheckoutModal, setShowCheckoutModal] = useState(false);
   const [orderSent, setOrderSent] = useState(false);
@@ -969,6 +967,8 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   });
   const [storeTab, setStoreTab] = useState<StoreNavTab>('menu');
   const [storeBalanceXp, setStoreBalanceXp] = useState<number | null>(null);
+  const [showStickyCategories, setShowStickyCategories] = useState(false);
+  const categorySectionRefs = useRef<Record<string, HTMLElement | null>>({});
 
   const menu = useMemo(() => partner.menu || [], [partner]);
   const categories = useMemo(() => {
@@ -977,19 +977,15 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     return ['All', ...rest];
   }, [menu]);
 
-  const filteredByCategory = useMemo(() => {
-    return activeCategory === 'All' ? menu : menu.filter((p) => p.category === activeCategory);
-  }, [menu, activeCategory]);
-
   const filteredMenu = useMemo(() => {
-    if (!searchQuery.trim()) return filteredByCategory;
+    if (!searchQuery.trim()) return menu;
     const q = searchQuery.trim().toLowerCase();
-    return filteredByCategory.filter(
+    return menu.filter(
       (p) =>
         p.name.toLowerCase().includes(q) ||
         (p.description && p.description.toLowerCase().includes(q))
     );
-  }, [filteredByCategory, searchQuery]);
+  }, [menu, searchQuery]);
 
   const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
   const xpTotal = cart.reduce((acc, item) => acc + item.xpReward * item.quantity, 0);
@@ -1234,8 +1230,22 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   const topStoreXp = Math.max(0, storeBalanceXp ?? user?.storeXP?.[partner.id] ?? user?.totalXP ?? 0);
 
   const categoryLabel = (id: string) => (id === 'All' ? t('all') : id);
-  const sectionTitle = activeCategory === 'All' ? partner.name : activeCategory;
   const featuredProduct = menu[0];
+  const specials = menu.slice(0, 2);
+  const dealTiles = menu.slice(0, 6);
+  const navCategories = useMemo(
+    () => ['All', ...categories.filter((c) => c !== 'All')],
+    [categories],
+  );
+  const groupedProducts = useMemo(() => {
+    return categories
+      .filter((c) => c !== 'All')
+      .map((category) => ({
+        category,
+        items: filteredMenu.filter((p) => p.category === category),
+      }))
+      .filter((group) => group.items.length > 0);
+  }, [categories, filteredMenu]);
   const categoryPreview = useMemo(() => {
     const map = new Map<string, string>();
     for (const c of categories) {
@@ -1245,6 +1255,54 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     return map;
   }, [categories, menu, partner.image]);
   const merchantBanners = useMemo(() => readMerchantBanners(partner.id), [partner.id]);
+  const { scrollY } = useScroll();
+  const smoothScrollY = useSpring(scrollY, { stiffness: 120, damping: 24, mass: 0.3 });
+  const bannerY = useTransform(smoothScrollY, [0, 200], [0, -50]);
+  const contentRadius = useTransform(smoothScrollY, [0, 150], ['40px 40px 0px 0px', '0px 0px 0px 0px']);
+  const topBarBg = useTransform(smoothScrollY, [0, 120], ['rgba(10,10,10,0)', 'rgba(10,10,10,1)']);
+  const offersHeaderOpacity = useTransform(smoothScrollY, [90, 150], [0, 1]);
+  const offersSectionRef = useRef<HTMLElement | null>(null);
+
+  useEffect(() => {
+    if (storeTab !== 'menu') return;
+    const updateStickyCategories = () => {
+      const el = offersSectionRef.current;
+      if (!el) return;
+      const top = el.getBoundingClientRect().top;
+      // Εμφάνιση categories όταν το προϊόν section φτάσει στο πάνω μέρος (κάτω από το search header).
+      setShowStickyCategories(top <= 76);
+    };
+    updateStickyCategories();
+    window.addEventListener('scroll', updateStickyCategories, { passive: true });
+    window.addEventListener('resize', updateStickyCategories);
+    return () => {
+      window.removeEventListener('scroll', updateStickyCategories);
+      window.removeEventListener('resize', updateStickyCategories);
+    };
+  }, [storeTab]);
+
+  useEffect(() => {
+    if (storeTab !== 'menu') return;
+    const onScrollSpy = () => {
+      const anchor = 132;
+      let current = 'All';
+      for (const group of groupedProducts) {
+        const el = categorySectionRefs.current[group.category];
+        if (!el) continue;
+        const top = el.getBoundingClientRect().top;
+        if (top <= anchor) current = group.category;
+        else break;
+      }
+      if (current !== activeCategory) setActiveCategory(current);
+    };
+    onScrollSpy();
+    window.addEventListener('scroll', onScrollSpy, { passive: true });
+    window.addEventListener('resize', onScrollSpy);
+    return () => {
+      window.removeEventListener('scroll', onScrollSpy);
+      window.removeEventListener('resize', onScrollSpy);
+    };
+  }, [storeTab, groupedProducts, activeCategory]);
 
   if (orderDelivered) {
     return (
@@ -1340,189 +1398,267 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   }
 
   return (
-    <div className={storeTab === 'menu' ? 'store-wolt min-h-screen' : 'min-h-screen bg-[#ffffff]'}>
+    <div className={storeTab === 'menu' ? 'min-h-screen bg-[#0a0a0a] text-white' : 'min-h-screen bg-[#ffffff]'}>
       {storeTab === 'menu' && (
         <>
-      <header
-        className="fixed top-0 left-0 right-0 z-50 grid min-h-[4.75rem] grid-cols-3 items-center border-b border-white/10 bg-[#0a0a0a] px-2 backdrop-blur-xl sm:min-h-[5.25rem] sm:px-4"
-        style={{ paddingTop: 'env(safe-area-inset-top)' }}
+      <motion.header
+        className="fixed top-0 left-1/2 z-30 w-full max-w-[520px] -translate-x-1/2 border-b border-white/10 px-3 pb-2 pt-2"
+        style={{ backgroundColor: topBarBg }}
       >
-        <div className="flex items-center justify-self-start pl-1">
-          {user ? (
-            <button
-              type="button"
-              onClick={() => {
-                logout();
-                onBack();
-              }}
-              className="text-white active:scale-95 transition-transform"
-              aria-label={t('logout')}
-            >
-              <LogOut className="h-5 w-5" strokeWidth={2.4} />
-            </button>
-          ) : (
-            <button type="button" onClick={onBack} className="text-white active:scale-95 transition-transform" aria-label={t('back')}>
-              <Menu className="h-5 w-5" strokeWidth={2.4} />
-            </button>
-          )}
-        </div>
-
-        <div className="flex min-w-0 flex-col items-center justify-center justify-self-center text-center">
-          {user ? (
-            <div
-              className="flex max-w-full items-center justify-center gap-1.5 sm:gap-2"
-              aria-label={t('totalXp')}
-            >
-              <Star
-                className="h-6 w-6 shrink-0 fill-anbit-brand text-anbit-brand drop-shadow-[0_0_10px_rgba(0,0,0,0.35)] sm:h-7 sm:w-7"
-                strokeWidth={2}
-              />
-              <span
-                className={`anbit-wordmark truncate ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(0,0,0,0.2),0_1px_0_rgba(0,0,0,0.15)]`}
-              >
-                {topStoreXp.toLocaleString()} XP
-              </span>
-            </div>
-          ) : (
-            <button
-              type="button"
-              onClick={() => onOpenLogin?.()}
-              disabled={!onOpenLogin}
-              className="flex max-w-full items-center justify-center gap-1.5 rounded-lg px-1 py-0.5 transition-transform active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 sm:gap-2"
-              aria-label={t('storeHeaderLogin')}
-            >
-              <LogIn
-                className="h-6 w-6 shrink-0 text-anbit-brand drop-shadow-[0_0_10px_rgba(0,0,0,0.35)] sm:h-7 sm:w-7"
-                strokeWidth={2.25}
-              />
-              <span
-                className={`anbit-wordmark ${ANBIT_DISPLAY_FONT} text-[1.35rem] leading-none text-anbit-brand sm:text-[1.65rem] sm:tracking-tight md:text-[1.85rem] [text-shadow:0_0_20px_rgba(0,0,0,0.2),0_1px_0_rgba(0,0,0,0.15)]`}
-              >
-                {t('storeHeaderLogin')}
-              </span>
-            </button>
-          )}
-        </div>
-
-        <div className="flex items-center justify-end justify-self-end gap-2 pr-1 sm:gap-3">
-          <button type="button" onClick={() => setIsDarkMode((v) => !v)} className="text-white active:scale-95 transition-transform">
-            {isDarkMode ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+        <div
+          className="mx-auto flex max-w-xl items-center justify-between gap-3"
+          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.25rem)' }}
+        >
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            aria-label={t('back')}
+          >
+            <ArrowLeft className="h-4.5 w-4.5" strokeWidth={2.2} />
           </button>
-          <button type="button" onClick={openCheckout} className="text-white active:scale-95 transition-transform">
-            <ShoppingBag className="h-4 w-4" strokeWidth={2.2} />
-          </button>
-        </div>
-      </header>
-
-      <main
-        className={`px-4 pt-[calc(4.75rem+env(safe-area-inset-top))] max-w-5xl mx-auto sm:pt-[calc(5.25rem+env(safe-area-inset-top))] ${cart.length > 0 ? 'pb-[15rem]' : 'pb-40'}`}
-      >
-        <section className="mb-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-500" strokeWidth={2} />
+          <div className="flex h-10 flex-1 items-center gap-2 rounded-full bg-[#262626] px-4">
+            <Search className="h-4 w-4 text-[#858585]" />
             <input
-              type="search"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Αναζήτηση & Φιλτράρισμα"
-              className="w-full bg-white border border-black/10 rounded-premium-sm py-3 pl-10 pr-4 text-[#1b1c1c] placeholder-zinc-500 focus:ring-1 focus:ring-[#0a0a0a] focus:border-[#0a0a0a] transition-all text-sm"
+              placeholder="Αναζήτηση ανά κατηγορία"
+              className="w-full bg-transparent text-[14px] font-semibold tracking-tight text-white placeholder:text-[#858585] outline-none"
               aria-label={t('searchProduct')}
             />
           </div>
-        </section>
+          <button
+            type="button"
+            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            aria-label="More"
+          >
+            <span className="material-symbols-outlined text-[20px]">more_horiz</span>
+          </button>
+        </div>
+        <motion.nav
+          initial={false}
+          animate={{
+            opacity: showStickyCategories ? 1 : 0,
+            y: showStickyCategories ? 0 : -8,
+            height: showStickyCategories ? 44 : 0,
+            marginTop: showStickyCategories ? 8 : 0,
+          }}
+          transition={{ duration: 0.2, ease: 'easeOut' }}
+          className="mx-auto mt-2 flex h-11 max-w-xl items-center gap-6 overflow-x-auto border-t border-white/5 no-scrollbar"
+        >
+          {navCategories.map((cat) => {
+            const isActive = activeCategory === cat;
+            const label = String(categoryLabel(cat)).toUpperCase();
+            return (
+              <button
+                key={cat}
+                type="button"
+                onClick={() => {
+                  setActiveCategory(cat);
+                  const targetEl =
+                    cat === 'All' ? offersSectionRef.current : categorySectionRefs.current[cat];
+                  if (!targetEl) return;
+                  const y = window.scrollY + targetEl.getBoundingClientRect().top - 124;
+                  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                }}
+                className="relative h-full shrink-0 whitespace-nowrap"
+              >
+                <span className={`text-[13px] font-extrabold tracking-widest ${isActive ? 'text-white' : 'text-[#858585]'}`}>
+                  {label}
+                </span>
+                {isActive ? <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-t-sm bg-[#2563eb]" /> : null}
+              </button>
+            );
+          })}
+        </motion.nav>
+      </motion.header>
 
-        <StoreWaveStrokeDivider />
+      <main className={`mx-auto w-full max-w-[520px] pb-36 ${cart.length > 0 ? 'pb-56' : 'pb-40'}`}>
+        <motion.section style={{ y: bannerY }} className="sticky top-0 z-0 h-[250px] w-full overflow-hidden">
+          <img src={featuredProduct?.image || partner.image} alt={partner.name} className="h-full w-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+        </motion.section>
 
-        <section className="mb-0 rounded-2xl bg-[#0a0a0a] p-6 relative overflow-hidden">
-          <div className="relative z-10">
-            {merchantBanners.length > 0 ? (
-              <>
-                <h4 className="mb-3 text-lg tracking-tight text-white uppercase">Store Banners</h4>
-                <div className="no-scrollbar flex gap-3 overflow-x-auto pb-1">
-                  {merchantBanners.map((banner) => (
-                    <article key={banner.id} className="relative h-32 min-w-[240px] overflow-hidden rounded-xl border border-white/15">
-                      <img src={banner.imageUrl} alt={banner.title || 'store banner'} className="h-full w-full object-cover" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/55 via-black/10 to-transparent" />
-                      {banner.title ? (
-                        <p className="absolute bottom-2 left-2 right-2 truncate text-xs font-semibold text-white">
-                          {banner.title}
-                        </p>
-                      ) : null}
-                    </article>
-                  ))}
-                </div>
-              </>
-            ) : (
-              <>
-                <h4 className="text-xl tracking-tighter mb-1 text-white uppercase">XP Multiplier Active!</h4>
-                <p className="text-white/90 text-sm mb-4 leading-snug max-w-[70%]">Κερδίστε x2 XP σε κάθε παραγγελία για τις επόμενες 2 ώρες.</p>
-                <button type="button" className="primary-button bg-white text-black text-[10px] px-4 py-2 rounded-premium-sm uppercase tracking-widest shadow-sm hover:bg-zinc-100 transition-colors">
-                  Περισσότερα
-                </button>
-              </>
-            )}
+        <motion.section
+          style={{ borderRadius: contentRadius }}
+          className="relative z-10 -mt-12 mb-4 bg-[#0a0a0a] px-4 pb-4 pt-16 text-center"
+        >
+          <h1 className="mb-1.5 text-[28px] font-extrabold tracking-tight text-white">{partner.name}</h1>
+          <div className="mb-1 flex items-center justify-center gap-1.5 text-[11px] font-medium">
+            <span>⭐ {(partner.rating ?? 4.9).toFixed(1)}</span>
+            <span className="text-[#adaaaa]">•</span>
+            <span>🔥 2x XP Multiplier</span>
+            <span className="text-[#adaaaa]">•</span>
+            <span>📍 300m</span>
           </div>
-          <span className="absolute -right-4 -bottom-4 text-[90px] text-white/10 rotate-12">✦</span>
+          <div className="flex items-center justify-center gap-2.5 text-[11px] text-[#adaaaa]">
+            <span>💎 Premium Anbit Partner</span>
+            <button type="button" className="font-bold text-[#2563eb]">More</button>
+          </div>
+        </motion.section>
+
+        <section className="mb-5 px-4">
+          <div className="flex items-center justify-between rounded-xl bg-[#131313] p-3 shadow-lg ring-1 ring-white/10">
+            <div className="flex items-center gap-4">
+              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563eb]/15 text-[#2563eb]">
+                <span className="material-symbols-outlined text-[17px]">trophy</span>
+              </div>
+              <div className="flex items-center gap-1">
+                <p className="text-[13px] font-bold text-white">xp wallet</p>
+                <span className="material-symbols-outlined text-sm text-[#adaaaa]">keyboard_arrow_down</span>
+              </div>
+            </div>
+            <button type="button" className="text-[#adaaaa]">
+              <span className="material-symbols-outlined">share</span>
+            </button>
+          </div>
         </section>
 
-        <StoreWaveDarkToSoft />
-
-        <section className="mb-8 overflow-hidden">
-          <div className="flex gap-3 overflow-x-auto pb-2 no-scrollbar">
-            {categories.map((cat) => {
-              const isActive = activeCategory === cat;
-              return (
-                <button
-                  key={cat}
-                  type="button"
-                  onClick={() => setActiveCategory(cat)}
-                  className="flex-none group cursor-pointer"
-                >
-                  <div
-                    className={`relative w-24 h-24 rounded-xl overflow-hidden mb-2 border transition-all ${isActive ? 'border-[#0a0a0a]' : 'border-zinc-800'} `}
-                  >
-                    <img
-                      src={categoryPreview.get(cat) || partner.image}
-                      alt={categoryLabel(cat)}
-                      className="w-full h-full object-cover transform transition-transform duration-500 group-hover:scale-105"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+        <section className="mb-5">
+          <div className="mb-3 px-4">
+            <h2 className="text-xl font-bold tracking-tight text-white">Specials for you</h2>
+          </div>
+          <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-4">
+            {(specials.length ? specials : filteredMenu.slice(0, 2)).map((product, idx) => (
+              <article key={product.id} className={`relative w-56 flex-none overflow-hidden rounded-xl p-3 ${idx === 0 ? 'bg-[#1e3a8a]/40' : 'bg-[#c188f2]/10'}`}>
+                {idx === 0 ? (
+                  <div className="absolute right-3 top-3">
+                    <span className="material-symbols-outlined text-2xl text-[#2563eb]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                      local_fire_department
+                    </span>
                   </div>
-                  <span
-                    className={`category-label text-center text-[13px] uppercase transition-colors ${
-                      isActive ? 'text-[#0a0a0a]' : 'text-zinc-500 group-hover:text-[#0a0a0a]'
-                    }`}
-                  >
-                    {categoryLabel(cat)}
-                  </span>
+                ) : null}
+                <p className={`mb-1 text-xs font-bold uppercase tracking-widest ${idx === 0 ? 'text-[#2563eb]' : 'text-[#ce96ff]'}`}>
+                  {idx === 0 ? 'Best Deal' : 'Gift'}
+                </p>
+                <h3 className="mb-1.5 text-lg font-bold leading-tight text-white">{product.name}</h3>
+                <p className="mb-3 text-[11px] text-[#adaaaa]">{product.description || 'Perfect for sharing or big appetites'}</p>
+                <p className="mb-3 text-[12px] font-bold text-[#2563eb]">
+                  €{product.price.toFixed(2)} <span className="text-white/80">• +{product.xpReward} XP</span>
+                </p>
+                <button
+                  type="button"
+                  onClick={() => openCustomize(product)}
+                  className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${idx === 0 ? 'bg-[#2563eb] text-white' : 'bg-[#d09aff] text-[#280047]'}`}
+                >
+                  {idx === 0 ? 'Add to cart' : 'Claim offer'}
                 </button>
-              );
-            })}
+              </article>
+            ))}
           </div>
         </section>
 
-        <StoreWaveStrokeDivider />
-
-        <section className="grid grid-cols-2 gap-x-4 gap-y-8 mb-4">
-          {filteredMenu.map((product) => (
-            <ProductCard
-              key={product.id}
-              product={product}
-              onAddToCart={() => openCustomize(product)}
-              onViewDetail={() => setSelectedProduct(product)}
-            />
-          ))}
+        <section className="mb-5">
+          <div className="mb-3 flex items-center justify-between px-4">
+            <h2 className="text-lg font-bold tracking-tight text-white">Deals of the day</h2>
+            <button type="button" className="text-xs font-bold text-[#2563eb]">See all</button>
+          </div>
+          <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-4">
+            {dealTiles.map((product, idx) => (
+              <article
+                key={product.id}
+                role="button"
+                tabIndex={0}
+                  onClick={() => openCustomize(product)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                      openCustomize(product);
+                  }
+                }}
+                className="group relative aspect-[4/5] w-44 flex-none overflow-hidden rounded-xl"
+              >
+                <img src={product.image} alt={product.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                <div className="absolute bottom-0 left-0 w-full p-3">
+                  <span className={`mb-1.5 inline-block rounded px-1.5 py-1 text-[9px] font-black uppercase tracking-widest ${idx % 3 === 0 ? 'bg-[#2563eb] text-white' : idx % 3 === 1 ? 'bg-[#fd7e94] text-[#56001c]' : 'bg-[#ce96ff] text-[#470875]'}`}>
+                    {idx % 3 === 0 ? '50% Off' : idx % 3 === 1 ? 'Buy 1 Get 1' : 'Free Delivery'}
+                  </span>
+                  <h3 className="mb-1 text-base font-extrabold leading-tight text-white">{product.name}</h3>
+                  <p className="text-[9px] font-medium uppercase tracking-tighter text-white/70">{partner.name}</p>
+                  <p className="mt-1 text-[10px] font-bold text-[#60a5fa]">+{product.xpReward} XP</p>
+                </div>
+              </article>
+            ))}
+          </div>
         </section>
 
-        {filteredMenu.length === 0 && <p className="text-sm py-10 text-center text-zinc-500">Δεν βρέθηκαν προϊόντα στην κατηγορία {sectionTitle}.</p>}
-
+        <motion.section
+          ref={offersSectionRef}
+          style={{ opacity: offersHeaderOpacity }}
+          className="mb-5 px-4 pt-2"
+        >
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="text-[28px] font-extrabold tracking-tight text-white">{String(categoryLabel(activeCategory)).toUpperCase()}</h2>
+            <button className="flex items-center gap-1.5 rounded-full bg-[#262626] px-3 py-1.5 transition-colors hover:bg-[#2f2f2f]">
+              <span className="material-symbols-outlined text-[14px] text-white">translate</span>
+              <span className="text-[11px] font-bold uppercase tracking-wider text-white">Translate</span>
+            </button>
+          </div>
+          <div className="space-y-4">
+            {groupedProducts.map((group) => (
+              <section
+                key={group.category}
+                ref={(el) => {
+                  categorySectionRefs.current[group.category] = el;
+                }}
+                className="space-y-4"
+              >
+                <h3 className="px-1 text-base font-extrabold uppercase tracking-wider text-white">
+                  {group.category}
+                </h3>
+                {group.items.map((product, idx) => {
+                  const oldPrice = product.price * 1.25;
+                  const tag = idx % 2 === 0 ? 'DEAL' : idx % 3 === 0 ? 'POPULAR' : null;
+                  return (
+                    <article
+                      key={product.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openCustomize(product)}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' || e.key === ' ') {
+                          e.preventDefault();
+                          openCustomize(product);
+                        }
+                      }}
+                      className="flex gap-4 rounded-2xl bg-[#191919]/70 p-4 transition-transform active:scale-[0.98]"
+                    >
+                      <div className="flex flex-1 flex-col">
+                        {tag ? (
+                          <div>
+                            <span className="rounded bg-[#262626] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-tighter text-[#2563eb]/80">
+                              {tag}
+                            </span>
+                          </div>
+                        ) : null}
+                        <h3 className="mt-1 text-[17px] font-extrabold leading-snug text-white">{product.name}</h3>
+                        <p className="mb-3 mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#858585]">
+                          {product.description || 'Signature recipe, fresh ingredients and premium flavor profile.'}
+                        </p>
+                        <div className="mt-auto flex items-center gap-2">
+                          <span className="text-[16px] font-extrabold text-[#2563eb]">€{product.price.toFixed(2)}</span>
+                          <span className="text-[14px] text-[#858585] line-through">€{oldPrice.toFixed(2)}</span>
+                          <span className="text-[12px] font-bold text-[#60a5fa]">+{product.xpReward} XP</span>
+                        </div>
+                      </div>
+                      <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#262626]">
+                        <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                      </div>
+                    </article>
+                  );
+                })}
+              </section>
+            ))}
+          </div>
+        </motion.section>
       </main>
 
       {cart.length > 0 && (
         <div
-          className="fixed left-4 right-4 z-[60] rounded-premium bg-[#0a0a0a] text-white shadow-2xl border border-white/10 px-4 py-3 flex items-center justify-between gap-3"
+          className="fixed left-1/2 z-[60] flex w-[calc(100%-2rem)] max-w-[488px] -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white shadow-2xl"
           style={{
-            bottom: `calc(${STORE_BOTTOM_NAV_VISUAL_HEIGHT} + ${STORE_CART_TO_WAVE_GAP} + env(safe-area-inset-bottom))`,
+            bottom: 'calc(4rem + env(safe-area-inset-bottom))',
           }}
         >
           <div className="min-w-0">
@@ -1535,12 +1671,24 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
           </div>
           <button
             onClick={openCheckout}
-            className="primary-button shrink-0 px-4 py-2 rounded-premium-sm bg-black/30 hover:bg-black/45 text-sm transition-colors"
+            className="shrink-0 rounded-full bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1d4ed8]"
           >
             Checkout
           </button>
         </div>
       )}
+      <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[520px] -translate-x-1/2">
+        <div
+          className="flex items-center justify-between bg-[#2563eb] px-6 py-4 shadow-[0_-8px_32px_rgba(37,99,235,0.4)]"
+          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+        >
+          <div className="flex items-center gap-3">
+            <span className="material-symbols-outlined text-white">local_offer</span>
+            <span className="font-bold text-white">{Math.max(12, filteredMenu.length)} offers available</span>
+          </div>
+          <span className="material-symbols-outlined text-white">expand_less</span>
+        </div>
+      </div>
         </>
       )}
 
@@ -1565,12 +1713,14 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         />
       )}
 
-      <StoreBottomNav
-        activeTab={storeTab}
-        onMenuPress={handleBottomNavMenu}
-        onXpPress={() => setStoreTab('xp')}
-        onProfilePress={() => setStoreTab('profile')}
-      />
+      {storeTab !== 'menu' ? (
+        <StoreBottomNav
+          activeTab={storeTab}
+          onMenuPress={handleBottomNavMenu}
+          onXpPress={() => setStoreTab('xp')}
+          onProfilePress={() => setStoreTab('profile')}
+        />
+      ) : null}
 
       <CartCheckoutModal
         isOpen={showCheckoutModal}
@@ -1584,12 +1734,6 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         onConfirm={handleConfirmOrder}
         isSubmitting={orderSubmitting}
         error={checkoutError}
-      />
-      <ProductDetailModal
-        product={selectedProduct}
-        onClose={() => setSelectedProduct(null)}
-        onAddToCart={(p) => { setSelectedProduct(null); openCustomize(p); }}
-        partnerName={partner.name}
       />
       <ProductCustomizeModal
         product={productToCustomize}

@@ -45,14 +45,14 @@ export interface PulseBeamsProps {
 
 const DARK_GRADIENT = {
   start: 'rgba(230, 53, 51, 0)',
-  middle: '#e63533',
+  middle: '#2563eb',
   end: 'rgba(230, 53, 51, 0.35)',
 };
 
 const LIGHT_GRADIENT = {
-  start: 'rgba(0, 0, 0, 0)',
-  middle: '#000000',
-  end: 'rgba(0, 0, 0, 0.35)',
+  start: 'rgba(10, 10, 10, 0)',
+  middle: '#0a0a0a',
+  end: 'rgba(10, 10, 10, 0.35)',
 };
 
 export const PulseBeams = ({
@@ -68,7 +68,7 @@ export const PulseBeams = ({
 }: PulseBeamsProps) => {
   const theme = useThemeMode();
   const isLight = theme === 'light';
-  const baseColor = baseColorProp ?? (isLight ? '#000000' : '#e63533');
+  const baseColor = baseColorProp ?? (isLight ? '#0a0a0a' : '#2563eb');
   const accentColor = accentColorProp ?? (isLight ? '#333333' : '#b02826');
   const gradientColors = gradientColorsProp ?? (isLight ? LIGHT_GRADIENT : DARK_GRADIENT);
 

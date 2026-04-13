@@ -1,4 +1,4 @@
-import React, { createContext, useContext, ReactNode } from 'react';
+import React, { createContext, useContext, ReactNode, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 
 type Language = 'en' | 'el';
@@ -14,6 +14,12 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const { t, i18n } = useTranslation();
   const language = (i18n.language?.startsWith('el') ? 'el' : i18n.language?.startsWith('en') ? 'en' : 'el') as Language;
+
+  useEffect(() => {
+    if (typeof document === 'undefined') return;
+    document.documentElement.setAttribute('lang', language);
+    document.documentElement.setAttribute('data-ui-lang', language);
+  }, [language]);
 
   const setLanguage = (lang: Language) => {
     i18n.changeLanguage(lang);

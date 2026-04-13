@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { useTheme } from '../../context/ThemeContext';
 
 /**
- * Custom listbox αντί για native `<select>` ώστε hover/focus στις επιλογές να χρησιμοποιούν #e63533
+ * Custom listbox αντί για native `<select>` — light: accent #0a0a0a, dark: brand #2563eb
  * (τα `<option>` δεν επιδέχονται styling στους περισσότερους browsers).
  */
 export function OfferFilterSelect({
@@ -21,6 +22,8 @@ export function OfferFilterSelect({
   triggerClassName?: string;
   'aria-label'?: string;
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   const selected = options.find((o) => o.value === value) ?? options[0];
@@ -52,20 +55,32 @@ export function OfferFilterSelect({
         aria-label={ariaLabel}
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          'flex h-10 w-full min-w-[9.5rem] items-center justify-between gap-2 rounded-lg border border-anbit-border bg-anbit-card px-3 text-left text-sm font-medium text-anbit-text transition-colors focus:border-[#e63533] focus:outline-none focus:ring-2 focus:ring-[#e63533]/40 sm:min-w-[13rem] md:min-w-[15rem]',
+          'flex h-10 w-full min-w-[9.5rem] items-center justify-between gap-2 rounded-lg border px-3 text-left text-sm font-medium transition-colors focus:outline-none focus:ring-2 sm:min-w-[13rem] md:min-w-[15rem]',
+          isLight
+            ? 'border-zinc-200 bg-white text-neutral-900 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
+            : 'border-anbit-border bg-anbit-card text-anbit-text focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
           triggerClassName,
         )}
       >
         <span className="truncate">{selected?.label}</span>
         <ChevronDown
-          className={cn('h-4 w-4 shrink-0 text-[#9a9a9a] transition-transform duration-200', open && 'rotate-180')}
+          className={cn(
+            'h-4 w-4 shrink-0 transition-transform duration-200',
+            isLight ? 'text-zinc-500' : 'text-[#9a9a9a]',
+            open && 'rotate-180',
+          )}
           aria-hidden
         />
       </button>
       {open ? (
         <ul
           role="listbox"
-          className="absolute left-0 right-0 z-[60] mt-1 max-h-64 overflow-auto rounded-lg border border-anbit-border bg-[#131313] py-1 shadow-xl ring-1 ring-white/10"
+          className={cn(
+            'absolute left-0 right-0 z-[60] mt-1 max-h-64 overflow-auto rounded-lg border py-1 shadow-xl',
+            isLight
+              ? 'border-zinc-200 bg-white ring-1 ring-black/5'
+              : 'border-anbit-border bg-[#131313] ring-1 ring-white/10',
+          )}
         >
           {options.map((opt) => {
             const isSelected = value === opt.value;
@@ -80,11 +95,20 @@ export function OfferFilterSelect({
                     setOpen(false);
                   }}
                   className={cn(
-                    'flex w-full px-3 py-2.5 text-left text-sm font-medium transition-colors',
-                    isSelected
-                      ? 'bg-[#e63533]/30 text-white'
-                      : 'text-[#e5e5e5] hover:bg-[#e63533] hover:text-white',
-                    'focus-visible:bg-[#e63533] focus-visible:text-white focus-visible:outline-none',
+                    'flex w-full px-3 py-2.5 text-left text-sm font-medium transition-colors focus-visible:outline-none',
+                    isLight
+                      ? cn(
+                          isSelected
+                            ? 'bg-[#0a0a0a] text-white'
+                            : 'text-neutral-900 hover:bg-zinc-100',
+                          'focus-visible:bg-[#0a0a0a] focus-visible:text-white',
+                        )
+                      : cn(
+                          isSelected
+                            ? 'bg-[#2563eb]/30 text-white'
+                            : 'text-[#e5e5e5] hover:bg-[#2563eb] hover:text-white',
+                          'focus-visible:bg-[#2563eb] focus-visible:text-white',
+                        ),
                   )}
                 >
                   {opt.label}

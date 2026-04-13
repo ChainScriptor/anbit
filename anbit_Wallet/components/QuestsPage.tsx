@@ -6,6 +6,7 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { Quest, Partner } from '../types';
 import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
+import { useTheme } from '../context/ThemeContext';
 import { OfferCarousel, offerCarouselNavButtonClass } from './ui/offer-carousel';
 import { OfferFilterSelect } from './ui/offer-filter-select';
 import { GREEK_OFFERS } from '../data/greekOffers';
@@ -31,12 +32,18 @@ import {
 
 const questMuted = 'text-[color:var(--anbit-muted)]';
 
-/** Φόντο καρτών deals + προσφορών quest μόνο στη σελίδα /quests */
-const QUESTS_OFFER_CARD_BG = 'bg-[#131313]';
+/** Φόντο καρτών deals + προσφορών quest μόνο στη σελίδα /quests — ευθυγραμμισμένο με `--anbit-card` (πιο ήρεμο από #131313) */
+const QUESTS_OFFER_CARD_BG = 'bg-[color:var(--anbit-card)]';
+/** Light mode /quests: λευκή κάρτα, μαύρο κείμενο στο σώμα */
+const QUESTS_OFFER_CARD_BG_LIGHT = 'bg-white';
+/** Chips καταστημάτων — dark */
+const QUESTS_MERCHANT_CHIP_BG = 'bg-[#1e1e1e]';
+/** Chips καταστημάτων — light */
+const QUESTS_MERCHANT_CHIP_BG_LIGHT = 'bg-white';
 
 /** Strip «Αναζήτηση ανά κατηγορία»: βελάκια ορατά στο mobile (το κοινό `offerCarouselNavButtonClass` είναι `hidden` κάτω από `sm`). */
 const partnerCategoryNavButtonClass =
-  'absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-anbit-border bg-anbit-card/95 text-anbit-text shadow-sm backdrop-blur-sm transition-opacity hover:border-anbit-yellow hover:bg-anbit-yellow hover:text-anbit-yellow-content sm:h-10 sm:w-10 opacity-90 md:opacity-0 md:group-hover:opacity-100';
+  'absolute top-1/2 z-10 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full border border-anbit-border bg-anbit-card/90 text-anbit-text shadow-sm backdrop-blur-sm transition-colors transition-opacity hover:border-anbit-brand/25 hover:bg-anbit-brand/[0.08] sm:h-10 sm:w-10 opacity-90 md:opacity-0 md:group-hover:opacity-100';
 
 function publicUrl(path: string): string {
   const base = import.meta.env.BASE_URL || '/';
@@ -241,6 +248,8 @@ function QuestMerchantBanner({
   isFavorite: boolean;
   onToggleFavorite: (merchantKey: string) => void;
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   const navigate = useNavigate();
   const name = partner?.name ?? representativeQuest.storeName ?? 'Merchant';
   const img = partner?.image ?? representativeQuest.storeImage ?? '';
@@ -272,8 +281,16 @@ function QuestMerchantBanner({
   return (
     <div
       className={cn(
-        'group relative inline-flex max-w-[min(100%,17rem)] shrink-0 items-stretch overflow-hidden rounded-lg border bg-[#131313] shadow-md transition-all duration-300 hover:bg-[#191919]',
-        selected ? 'border-anbit-brand ring-1 ring-anbit-brand/40' : 'border-white/10 hover:border-white/15',
+        'group relative inline-flex max-w-[min(100%,17rem)] shrink-0 items-stretch overflow-hidden rounded-lg border shadow-sm transition-all duration-300',
+        isLight ? QUESTS_MERCHANT_CHIP_BG_LIGHT : QUESTS_MERCHANT_CHIP_BG,
+        isLight ? 'hover:bg-zinc-50' : 'hover:bg-[#262626]',
+        selected
+          ? isLight
+            ? 'border-[#0a0a0a] ring-1 ring-[#0a0a0a]/20'
+            : 'border-anbit-brand/50 ring-1 ring-anbit-brand/20'
+          : isLight
+            ? 'border-zinc-200 hover:border-zinc-300'
+            : 'border-white/[0.08] hover:border-white/12',
         isInteractive && 'cursor-pointer',
       )}
       onClick={handleCardActivate}
@@ -293,26 +310,63 @@ function QuestMerchantBanner({
           <img
             src={img}
             alt=""
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
             draggable={false}
           />
         ) : (
-          <div className="h-full w-full bg-[#1f1f1f]" />
+          <div className={cn('h-full w-full', isLight ? 'bg-zinc-200' : 'bg-[#1f1f1f]')} />
         )}
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 to-transparent" />
+        <div
+          className={cn(
+            'absolute inset-0 bg-gradient-to-r to-transparent',
+            isLight ? 'from-black/10' : 'from-black/25',
+          )}
+        />
       </div>
-      <div className="min-w-0 flex-1 py-2.5 pl-2.5 pr-9 text-[#e5e5e5]">
+      <div
+        className={cn(
+          'min-w-0 flex-1 py-2.5 pl-2.5 pr-9',
+          isLight ? 'text-neutral-900' : 'text-[#e5e5e5]',
+        )}
+      >
         <div className="flex items-center gap-1.5">
-          <h2 className="truncate text-sm font-bold leading-tight tracking-tight text-white">{name}</h2>
-          <span className="shrink-0 rounded-sm bg-anbit-brand px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-anbit-brand-foreground">
+          <h2
+            className={cn(
+              'truncate text-sm font-semibold leading-tight tracking-tight',
+              isLight ? 'text-neutral-900' : 'text-white',
+            )}
+          >
+            {name}
+          </h2>
+          <span
+            className={cn(
+              'shrink-0 rounded-sm px-1 py-px text-[7px] font-semibold uppercase leading-none tracking-tight text-white',
+              isLight ? 'bg-[#0a0a0a]' : 'bg-anbit-brand/90',
+            )}
+          >
             Anbit+
           </span>
         </div>
-        <p className="mt-0.5 line-clamp-1 text-[10px] font-medium text-[#ababab]">
+        <p
+          className={cn(
+            'mt-0.5 line-clamp-1 text-[10px] font-medium',
+            isLight ? 'text-neutral-600' : 'text-[#ababab]',
+          )}
+        >
           <span>{formatFeeLabel(partner)}</span>
-          <span className="mx-1 inline-block h-0.5 w-0.5 rounded-full bg-[#484848] align-middle" />
+          <span
+            className={cn(
+              'mx-1 inline-block h-0.5 w-0.5 rounded-full align-middle',
+              isLight ? 'bg-zinc-400' : 'bg-[#484848]',
+            )}
+          />
           <span>{formatDeliveryLabel(partner)}</span>
-          <span className="mx-1 inline-block h-0.5 w-0.5 rounded-full bg-[#484848] align-middle" />
+          <span
+            className={cn(
+              'mx-1 inline-block h-0.5 w-0.5 rounded-full align-middle',
+              isLight ? 'bg-zinc-400' : 'bg-[#484848]',
+            )}
+          />
           <span className="inline-flex items-center gap-0.5">
             {rating.toFixed(1)}
             <span
@@ -324,7 +378,14 @@ function QuestMerchantBanner({
           </span>
         </p>
         <div className="mt-1 flex min-w-0 items-center justify-between gap-2 pr-0">
-          <span className="truncate text-sm font-extrabold leading-none text-white">{maxXp} XP</span>
+          <span
+            className={cn(
+              'truncate text-sm font-bold leading-none',
+              isLight ? 'text-neutral-900' : 'text-white',
+            )}
+          >
+            {maxXp} XP
+          </span>
           {profilePartnerId ? (
             <button
               type="button"
@@ -336,7 +397,12 @@ function QuestMerchantBanner({
                   navigate(`/store-profile/${profilePartnerId}`);
                 }
               }}
-              className="shrink-0 text-[10px] font-bold tracking-wide text-[#ababab] underline-offset-2 transition-colors hover:text-anbit-brand hover:underline"
+              className={cn(
+                'shrink-0 text-[10px] font-bold tracking-wide underline-offset-2 transition-colors hover:underline',
+                isLight
+                  ? 'text-neutral-600 hover:text-[#0a0a0a]'
+                  : 'text-[#ababab] hover:text-anbit-brand',
+              )}
             >
               Προφίλ
             </button>
@@ -351,8 +417,16 @@ function QuestMerchantBanner({
             onToggleFavorite(favoriteMerchantId);
           }}
           className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full bg-[#262626]/80 text-white backdrop-blur-sm transition-colors duration-300 hover:bg-[#e63533]/90',
-            isFavorite && 'bg-[#e63533]',
+            'flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-sm transition-colors duration-300',
+            isLight
+              ? cn(
+                  'border border-zinc-200 bg-zinc-100 text-neutral-600 hover:bg-zinc-200',
+                  isFavorite && 'border-[#0a0a0a] bg-[#0a0a0a] text-white hover:bg-[#171717]',
+                )
+              : cn(
+                  'bg-black/25 text-white/90 hover:bg-anbit-brand/35',
+                  isFavorite && 'bg-anbit-brand/85',
+                ),
           )}
           aria-label={isFavorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
         >
@@ -372,12 +446,19 @@ function MerchantOffersRow({
   quests,
   t,
   offerCardClassName,
+  mutedTextClassName = questMuted,
+  questsPage = true,
 }: {
   quests: Quest[];
   t: (key: string) => string;
   offerCardClassName?: string;
+  mutedTextClassName?: string;
+  questsPage?: boolean;
 }) {
+  const { theme } = useTheme();
   const scrollRef = useRef<HTMLDivElement | null>(null);
+  const navLight =
+    theme === 'light' ? 'border-zinc-200 bg-white/95 text-neutral-900 hover:border-[#0a0a0a]/25 hover:bg-[#0a0a0a]/[0.06]' : '';
 
   const scrollOffers = (dir: 'left' | 'right') => {
     const el = scrollRef.current;
@@ -392,7 +473,7 @@ function MerchantOffersRow({
         <button
           type="button"
           onClick={() => scrollOffers('left')}
-          className={cn(offerCarouselNavButtonClass, 'left-0')}
+          className={cn(offerCarouselNavButtonClass, navLight, 'left-0')}
           aria-label="Προηγούμενες προσφορές"
         >
           <ChevronLeft className="h-6 w-6" />
@@ -410,8 +491,9 @@ function MerchantOffersRow({
                 quest={quest}
                 index={index}
                 t={t}
-                mutedTextClassName={questMuted}
+                mutedTextClassName={mutedTextClassName}
                 cardClassName={offerCardClassName}
+                questsPage={questsPage}
               />
             </div>
           ))}
@@ -419,7 +501,7 @@ function MerchantOffersRow({
         <button
           type="button"
           onClick={() => scrollOffers('right')}
-          className={cn(offerCarouselNavButtonClass, 'right-0')}
+          className={cn(offerCarouselNavButtonClass, navLight, 'right-0')}
           aria-label="Επόμενες προσφορές"
         >
           <ChevronRight className="h-6 w-6" />
@@ -445,6 +527,8 @@ function AllMerchantsStripCard({
   onSelect: () => void;
   totalOffers: number;
 }) {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
   return (
     <div
       role="button"
@@ -457,26 +541,78 @@ function AllMerchantsStripCard({
         }
       }}
       className={cn(
-        'group relative inline-flex max-w-[min(100%,17rem)] shrink-0 cursor-pointer items-stretch overflow-hidden rounded-lg border bg-[#131313] shadow-md transition-all duration-300 hover:bg-[#191919]',
-        selected ? 'border-anbit-brand ring-1 ring-anbit-brand/40' : 'border-white/10 hover:border-white/15',
+        'group relative inline-flex max-w-[min(100%,17rem)] shrink-0 cursor-pointer items-stretch overflow-hidden rounded-lg border shadow-sm transition-all duration-300',
+        isLight ? QUESTS_MERCHANT_CHIP_BG_LIGHT : QUESTS_MERCHANT_CHIP_BG,
+        isLight ? 'hover:bg-zinc-50' : 'hover:bg-[#262626]',
+        selected
+          ? isLight
+            ? 'border-[#0a0a0a] ring-1 ring-[#0a0a0a]/20'
+            : 'border-anbit-brand/50 ring-1 ring-anbit-brand/20'
+          : isLight
+            ? 'border-zinc-200 hover:border-zinc-300'
+            : 'border-white/[0.08] hover:border-white/12',
       )}
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
-      <div className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden bg-[#1f1f1f]">
-        <span className="text-[10px] font-extrabold uppercase tracking-wide text-white">Όλα</span>
-        <div className="absolute inset-0 bg-gradient-to-r from-black/25 to-transparent" />
+      <div
+        className={cn(
+          'relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden',
+          isLight ? 'bg-zinc-100' : 'bg-[#1f1f1f]',
+        )}
+      >
+        <span
+          className={cn(
+            'text-[10px] font-semibold uppercase tracking-wide',
+            isLight ? 'text-neutral-800' : 'text-white',
+          )}
+        >
+          Όλα
+        </span>
+        <div
+          className={cn(
+            'absolute inset-0 bg-gradient-to-r to-transparent',
+            isLight ? 'from-black/5' : 'from-black/25',
+          )}
+        />
       </div>
-      <div className="min-w-0 flex-1 py-2.5 pl-2.5 pr-3 text-[#e5e5e5]">
+      <div
+        className={cn(
+          'min-w-0 flex-1 py-2.5 pl-2.5 pr-3',
+          isLight ? 'text-neutral-900' : 'text-[#e5e5e5]',
+        )}
+      >
         <div className="flex items-center gap-1.5">
-          <h2 className="truncate text-sm font-bold leading-tight tracking-tight text-white">Όλα τα καταστήματα</h2>
-          <span className="shrink-0 rounded-sm bg-anbit-brand px-1 py-px text-[7px] font-extrabold uppercase leading-none tracking-tighter text-anbit-brand-foreground">
+          <h2
+            className={cn(
+              'truncate text-sm font-semibold leading-tight tracking-tight',
+              isLight ? 'text-neutral-900' : 'text-white',
+            )}
+          >
+            Όλα τα καταστήματα
+          </h2>
+          <span
+            className={cn(
+              'shrink-0 rounded-sm px-1 py-px text-[7px] font-semibold uppercase leading-none tracking-tight text-white',
+              isLight ? 'bg-[#0a0a0a]' : 'bg-anbit-brand/90',
+            )}
+          >
             Anbit+
           </span>
         </div>
-        <p className="mt-0.5 line-clamp-1 text-[10px] font-medium text-[#ababab]">
+        <p
+          className={cn(
+            'mt-0.5 line-clamp-1 text-[10px] font-medium',
+            isLight ? 'text-neutral-600' : 'text-[#ababab]',
+          )}
+        >
           Προβολή όλων των προσφορών δικτύου
         </p>
-        <p className="mt-1 text-sm font-extrabold leading-none text-white">
+        <p
+          className={cn(
+            'mt-1 text-sm font-bold leading-none',
+            isLight ? 'text-neutral-900' : 'text-white',
+          )}
+        >
           {totalOffers} {totalOffers === 1 ? 'προσφορά' : 'προσφορές'}
         </p>
       </div>
@@ -497,6 +633,7 @@ function QuestsMerchantStrip({
   favoriteMerchantIds: Set<string>;
   onToggleFavoriteMerchant: (merchantKey: string) => void;
 }) {
+  const { theme } = useTheme();
   const scrollRef = useRef<HTMLDivElement | null>(null);
 
   const scrollStrip = (dir: 'left' | 'right') => {
@@ -507,17 +644,24 @@ function QuestsMerchantStrip({
   };
 
   const totalOffers = sections.reduce((n, g) => n + g.quests.length, 0);
+  const navLight =
+    theme === 'light' ? 'border-zinc-200 bg-white/95 text-neutral-900 hover:border-[#0a0a0a]/25 hover:bg-[#0a0a0a]/[0.06]' : '';
 
   return (
     <div className="min-w-0 space-y-4">
-      <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+      <h2
+        className={cn(
+          'playpen-sans min-w-0 text-[30px] font-bold leading-tight tracking-tight sm:text-[32px]',
+          theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+        )}
+      >
         Καταστήματα
       </h2>
       <div className="group relative w-full min-w-0">
         <button
           type="button"
           onClick={() => scrollStrip('left')}
-          className={cn(offerCarouselNavButtonClass, 'left-0')}
+          className={cn(offerCarouselNavButtonClass, navLight, 'left-0')}
           aria-label="Προηγούμενα καταστήματα"
         >
           <ChevronLeft className="h-6 w-6" />
@@ -555,7 +699,7 @@ function QuestsMerchantStrip({
         <button
           type="button"
           onClick={() => scrollStrip('right')}
-          className={cn(offerCarouselNavButtonClass, 'right-0')}
+          className={cn(offerCarouselNavButtonClass, navLight, 'right-0')}
           aria-label="Επόμενα καταστήματα"
         >
           <ChevronRight className="h-6 w-6" />
@@ -566,7 +710,10 @@ function QuestsMerchantStrip({
 }
 
 const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests, partners }) => {
+  const { theme } = useTheme();
   const { t } = useLanguage();
+  const questsOfferShell =
+    theme === 'light' ? QUESTS_OFFER_CARD_BG_LIGHT : QUESTS_OFFER_CARD_BG;
   const navigate = useNavigate();
   const location = useLocation();
   const prevPathnameRef = useRef<string | undefined>(undefined);
@@ -730,6 +877,10 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
     [t],
   );
 
+  const questsMutedForTheme = theme === 'light' ? 'text-neutral-600' : questMuted;
+  const questsNavBtnLight =
+    theme === 'light' ? 'border-zinc-200 bg-white/95 text-neutral-900 hover:border-[#0a0a0a]/25 hover:bg-[#0a0a0a]/[0.06]' : '';
+
   return (
     <motion.div
       className="space-y-8 md:space-y-10 pb-8"
@@ -746,7 +897,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
               <button
                 type="button"
                 onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'left')}
-                className={cn(offerCarouselNavButtonClass, 'left-0')}
+                className={cn(offerCarouselNavButtonClass, questsNavBtnLight, 'left-0')}
                 aria-label="Προηγούμενο"
               >
                 <ChevronLeft className="h-6 w-6" />
@@ -781,33 +932,64 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                 >
                   <div
                     className={cn(
-                      'flex w-full flex-col overflow-hidden rounded-lg border bg-[#131313] text-left shadow-md transition-colors duration-300 hover:bg-[#191919]',
-                      isActive
-                        ? 'border-white ring-1 ring-white/45'
-                        : 'border-white/10 hover:border-white/15',
+                      'flex w-full flex-col overflow-hidden rounded-lg border text-left shadow-sm transition-colors duration-300',
+                      theme === 'light'
+                        ? cn(
+                            'border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50/80',
+                            isActive ? 'ring-2 ring-[#0a0a0a]/20 border-zinc-300' : '',
+                          )
+                        : cn(
+                            'border-white/[0.08] bg-[#1e1e1e] hover:border-white/12 hover:bg-[#262626]',
+                            isActive ? 'border-white/25 ring-1 ring-white/20' : '',
+                          ),
                     )}
                     style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
                   >
                     <button
                       type="button"
                       onClick={selectQuickCategory}
-                      className="group relative h-[128px] w-full shrink-0 overflow-hidden rounded-t-lg bg-[#1f1f1f] text-left outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-brand/55 sm:h-[138px]"
+                      className={cn(
+                        'group relative h-[128px] w-full shrink-0 overflow-hidden rounded-t-lg text-left outline-none focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-brand/55 sm:h-[138px]',
+                        theme === 'light' ? 'bg-zinc-100' : 'bg-[#252525]',
+                      )}
                     >
                       <img
                         src={qc.image}
                         alt=""
-                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-[1.02]"
                       />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-black/10 to-transparent" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/30 via-black/5 to-transparent" />
                     </button>
-                    <div className="flex min-h-0 items-stretch border-t border-white/10">
+                    <div
+                      className={cn(
+                        'flex min-h-0 items-stretch border-t',
+                        theme === 'light' ? 'border-zinc-200' : 'border-white/[0.08]',
+                      )}
+                    >
                       <button
                         type="button"
                         onClick={selectQuickCategory}
-                        className="min-w-0 flex-1 px-2.5 py-2 text-left outline-none transition-colors hover:bg-white/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-anbit-brand/55 sm:px-3 sm:py-2.5"
+                        className={cn(
+                          'min-w-0 flex-1 px-2.5 py-2 text-left outline-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:px-3 sm:py-2.5',
+                          theme === 'light'
+                            ? 'focus-visible:ring-[#0a0a0a]/35 hover:bg-zinc-50'
+                            : 'focus-visible:ring-anbit-brand/35 hover:bg-white/[0.04]',
+                        )}
                       >
-                        <p className="line-clamp-2 text-xs font-bold leading-tight text-white sm:text-sm">{qc.label}</p>
-                        <p className="mt-1 line-clamp-3 text-[9px] font-medium leading-snug text-[#8f8f8f] sm:line-clamp-4 sm:text-[10px]">
+                        <p
+                          className={cn(
+                            'line-clamp-2 text-xs font-semibold leading-tight sm:text-sm',
+                            theme === 'light' ? 'text-neutral-900' : 'text-white',
+                          )}
+                        >
+                          {qc.label}
+                        </p>
+                        <p
+                          className={cn(
+                            'mt-1 line-clamp-3 text-[9px] font-medium leading-snug sm:line-clamp-4 sm:text-[10px]',
+                            theme === 'light' ? 'text-neutral-600' : 'text-[#9a9a9a]',
+                          )}
+                        >
                           {qc.subtitle}
                         </p>
                       </button>
@@ -817,11 +999,28 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                           e.stopPropagation();
                           setQuickStoresModalQuickId(qc.id);
                         }}
-                        className="inline-flex shrink-0 flex-col items-center justify-center gap-0.5 border-l border-white/10 px-2.5 py-2 outline-none transition-colors hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-anbit-brand/55 sm:px-3"
+                        className={cn(
+                          'inline-flex shrink-0 flex-col items-center justify-center gap-0.5 border-l px-2.5 py-2 outline-none transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:px-3',
+                          theme === 'light'
+                            ? 'border-zinc-200 focus-visible:ring-[#0a0a0a]/35 hover:bg-zinc-50'
+                            : 'border-white/[0.08] focus-visible:ring-anbit-brand/35 hover:bg-white/[0.05]',
+                        )}
                         aria-label={`Καταστήματα — ${qc.label} (${count})`}
                       >
-                        <QuestQuickMerchantIcon className="h-4 w-4 opacity-95" />
-                        <span className="text-xs font-bold text-white sm:text-sm">{count}</span>
+                        <QuestQuickMerchantIcon
+                          className={cn(
+                            'h-4 w-4 opacity-95',
+                            theme === 'light' ? 'text-[#0a0a0a]' : 'text-anbit-brand',
+                          )}
+                        />
+                        <span
+                          className={cn(
+                            'text-xs font-semibold sm:text-sm',
+                            theme === 'light' ? 'text-neutral-900' : 'text-white',
+                          )}
+                        >
+                          {count}
+                        </span>
                       </button>
                     </div>
                   </div>
@@ -832,7 +1031,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
               <button
                 type="button"
                 onClick={() => scrollQuestQuickStrip(quickCategoriesScrollRef.current, 'right')}
-                className={cn(offerCarouselNavButtonClass, 'right-0')}
+                className={cn(offerCarouselNavButtonClass, questsNavBtnLight, 'right-0')}
                 aria-label="Επόμενο"
               >
                 <ChevronRight className="h-6 w-6" />
@@ -844,12 +1043,17 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
 
       <motion.div variants={itemVariants} className="min-w-0 space-y-3 pb-1">
         <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between md:gap-4">
-          <h2 className="playpen-sans min-w-0 text-[28px] font-extrabold leading-tight tracking-tight text-anbit-text sm:text-[36px] md:min-w-0 md:flex-1 md:pr-4">
+          <h2
+            className={cn(
+              'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[30px] md:min-w-0 md:flex-1 md:pr-4',
+              theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+            )}
+          >
             Αναζήτηση ανά κατηγορία
           </h2>
           <div className="flex w-full min-w-0 flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:justify-end sm:gap-2 md:w-auto md:shrink-0 md:justify-end md:gap-3">
             <div className="flex min-w-0 flex-wrap items-center justify-end gap-2 sm:gap-3">
-              <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questMuted}`}>{t('filterBy')}</span>
+              <span className={`shrink-0 whitespace-nowrap text-sm font-medium ${questsMutedForTheme}`}>{t('filterBy')}</span>
               <OfferFilterSelect
                 value={offerFilter}
                 onChange={(v) => setOfferFilter(v as FilterValue)}
@@ -858,13 +1062,23 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
               />
             </div>
             <label className="relative block w-full min-w-0 sm:min-w-[12rem] sm:flex-1 sm:max-w-[20rem] md:w-56 md:max-w-none md:shrink-0 md:flex-none">
-              <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9a9a9a]" />
+              <Search
+                className={cn(
+                  'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2',
+                  theme === 'light' ? 'text-zinc-400' : 'text-[#9a9a9a]',
+                )}
+              />
               <input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search store or offer..."
-                className="h-10 w-full rounded-lg border border-anbit-border bg-anbit-card pl-9 pr-3 text-sm text-anbit-text placeholder:text-[#8a8a8a] focus:border-[#e63533] focus:outline-none focus:ring-2 focus:ring-[#e63533]/40"
+                className={cn(
+                  'h-10 w-full rounded-lg border pl-9 pr-3 text-sm focus:outline-none focus:ring-2',
+                  theme === 'light'
+                    ? 'border-zinc-200 bg-white text-neutral-900 placeholder:text-zinc-400 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
+                    : 'border-anbit-border bg-anbit-card text-anbit-text placeholder:text-anbit-muted/80 focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
+                )}
               />
             </label>
           </div>
@@ -874,7 +1088,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
           <button
             type="button"
             onClick={() => scrollPartnerCategoryStrip(partnerCategoryScrollRef.current, 'left')}
-            className={cn(partnerCategoryNavButtonClass, 'left-0')}
+            className={cn(partnerCategoryNavButtonClass, questsNavBtnLight, 'left-0')}
             aria-label="Προηγούμενη κατηγορία"
           >
             <ChevronLeft className="h-6 w-6" />
@@ -897,14 +1111,14 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                       setPartnerCategoryFilter(cat.id);
                     }}
                     className={cn(
-                      'group/cat flex w-40 shrink-0 snap-start flex-col items-center justify-start gap-0 border-0 bg-transparent p-0 text-center outline-none transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-brand/55 sm:w-44 md:w-48 lg:w-52',
-                      active && 'scale-[1.02]',
+                      'group/cat flex w-40 shrink-0 snap-start flex-col items-center justify-start gap-0 border-0 bg-transparent p-0 text-center outline-none transition-transform focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-anbit-brand/35 sm:w-44 md:w-48 lg:w-52',
+                      active && 'scale-[1.01]',
                     )}
                   >
                     <div
                       className={cn(
-                        'flex w-full justify-center',
-                        active ? 'scale-[1.05]' : 'group-hover/cat:scale-[1.03]',
+                        'flex w-full justify-center transition-transform duration-200',
+                        active ? 'scale-[1.02]' : 'group-hover/cat:scale-[1.015]',
                       )}
                     >
                       <img
@@ -916,8 +1130,14 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                     </div>
                     <p
                       className={cn(
-                        'mt-0 line-clamp-2 w-full px-0.5 text-xs font-extrabold leading-tight tracking-tight sm:text-sm',
-                        active ? 'text-anbit-brand' : 'text-[color:var(--anbit-text)] group-hover/cat:text-anbit-brand',
+                        'mt-0 line-clamp-2 w-full px-0.5 text-xs font-semibold leading-tight tracking-tight sm:text-sm',
+                        active
+                          ? theme === 'light'
+                            ? 'text-neutral-900'
+                            : 'text-anbit-brand/90'
+                          : theme === 'light'
+                            ? 'text-neutral-600 group-hover/cat:text-neutral-900'
+                            : 'text-zinc-400 group-hover/cat:text-anbit-brand/75',
                       )}
                     >
                       {cat.label}
@@ -930,7 +1150,7 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
           <button
             type="button"
             onClick={() => scrollPartnerCategoryStrip(partnerCategoryScrollRef.current, 'right')}
-            className={cn(partnerCategoryNavButtonClass, 'right-0')}
+            className={cn(partnerCategoryNavButtonClass, questsNavBtnLight, 'right-0')}
             aria-label="Επόμενη κατηγορία"
           >
             <ChevronRight className="h-6 w-6" />
@@ -949,24 +1169,35 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
       )}
 
       <section className="min-w-0 space-y-4">
-        <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+        <h2
+          className={cn(
+            'playpen-sans min-w-0 text-[30px] font-bold leading-tight tracking-tight sm:text-[32px]',
+            theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+          )}
+        >
           {t('dealsOfTheDay')}
         </h2>
         <OfferCarousel
           offers={GREEK_OFFERS}
-          mutedTextClassName={questMuted}
-          cardClassName={QUESTS_OFFER_CARD_BG}
+          mutedTextClassName={questsMutedForTheme}
+          cardClassName={questsOfferShell}
+          questsDealSurface
         />
       </section>
 
       <div className="min-w-0 space-y-4">
-        <h2 className="playpen-sans min-w-0 text-[36px] font-extrabold leading-tight tracking-tight text-anbit-text">
+        <h2
+          className={cn(
+            'playpen-sans min-w-0 text-[30px] font-bold leading-tight tracking-tight sm:text-[32px]',
+            theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+          )}
+        >
           {t('quests')}
         </h2>
-        <div className="space-y-12">
+        <div className="space-y-10">
           <AnimatePresence mode="popLayout">
             {visibleMerchantSections.length === 0 ? (
-              <p className={`text-center text-sm ${questMuted}`}>{emptyQuestsMessage}</p>
+              <p className={`text-center text-sm ${questsMutedForTheme}`}>{emptyQuestsMessage}</p>
             ) : (
               visibleMerchantSections.map(({ partner, quests: mq, representative }) => {
                 const merchantKey = groupKeyFromSection({ partner, representative });
@@ -992,7 +1223,9 @@ const QuestsPage: React.FC<{ quests: Quest[]; partners: Partner[] }> = ({ quests
                   <MerchantOffersRow
                     quests={mq}
                     t={t}
-                    offerCardClassName={QUESTS_OFFER_CARD_BG}
+                    offerCardClassName={questsOfferShell}
+                    mutedTextClassName={questsMutedForTheme}
+                    questsPage
                   />
                 </motion.section>
               );

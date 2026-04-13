@@ -10,6 +10,7 @@ import LanguageSelector from './LanguageSelector';
 import { CitySelectModal } from './CitySelectModal';
 import AnbitWordmark from './AnbitWordmark';
 import { NotificationPopover, defaultWalletNotifications, type Notification } from './ui/notification-popover';
+import { cn } from '@/lib/utils';
 
 interface HeaderProps {
   isAuthenticated: boolean;
@@ -41,6 +42,17 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
   const { logout } = useAuth();
   const { t } = useLanguage();
   const { theme, toggleTheme } = useTheme();
+  /** Light, όχι store hero: πάνω στη σελίδα vs μετά scroll (σκούρη μπάρα μόνο στο scroll) */
+  const navLightNotHero = theme === 'light' && !isStoreProfileHeroMode;
+  const navLightRedBar = navLightNotHero && isScrolled;
+  const navLightAtTop = navLightNotHero && !isScrolled;
+  const notifNavButtonClass = isStoreProfileRoute
+    ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-[#121214] border border-white/15 text-white hover:text-white transition-colors shadow-none'
+    : navLightRedBar
+      ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg border border-white/30 bg-white/15 text-white hover:bg-white/25 transition-colors shadow-none'
+      : navLightAtTop
+        ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input transition-colors shadow-none'
+        : undefined;
 
   useEffect(() => {
     const handleScroll = () => setIsScrolled(window.scrollY > SCROLL_THRESHOLD);
@@ -72,23 +84,39 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
   return (
     <>
       <header
-        className={`fixed top-0 left-0 right-0 z-50 w-full px-3 lg:px-5 py-3 lg:py-4 transition-colors duration-300 ${
+        className={cn(
+          'fixed top-0 left-0 right-0 z-50 w-full px-3 lg:px-5 py-3 lg:py-4 transition-colors duration-300',
           isStoreProfileRoute
-            ? (isScrolled ? 'glass-nav navbar-scrolled' : 'bg-transparent border-transparent shadow-none')
-            : `glass-nav ${isScrolled ? 'navbar-scrolled' : ''}`
-        }`}
+            ? isScrolled
+              ? 'glass-nav navbar-scrolled'
+              : 'anbit-header-store-hero bg-transparent border-transparent shadow-none'
+            : cn('glass-nav', isScrolled && 'navbar-scrolled'),
+        )}
       >
         <div className="max-w-[1400px] mx-auto flex items-center justify-between gap-3">
 
           <div className="flex items-center gap-3 shrink-0">
             <div ref={mobileMenuRef} className="md:hidden relative">
-              <BurgerToggle open={isMobileMenuOpen} onOpenChange={setIsMobileMenuOpen} />
+              <BurgerToggle
+                open={isMobileMenuOpen}
+                onOpenChange={setIsMobileMenuOpen}
+                className={
+                  navLightRedBar
+                    ? '!border-white/35 !bg-white/15 !text-white hover:!bg-white/25 hover:!text-white'
+                    : navLightAtTop
+                      ? '!border-anbit-border !bg-white !text-anbit-text hover:!bg-anbit-input hover:!text-anbit-text'
+                      : undefined
+                }
+              />
 
               {isMobileMenuOpen && (
                 <div
                   role="menu"
                   aria-label="Mobile navigation"
-                  className="absolute left-0 top-full mt-2 w-64 rounded-2xl border border-anbit-border bg-anbit-card px-2 py-2 shadow-xl text-anbit-text mobile-burger-menu"
+                  className={cn(
+                    'absolute left-0 top-full mt-2 w-64 rounded-2xl border border-anbit-border bg-anbit-card px-2 py-2 shadow-xl mobile-burger-menu',
+                    navLightNotHero ? 'text-neutral-900' : 'text-anbit-text',
+                  )}
                 >
                   <div className="flex flex-col gap-1">
                     {navPaths.map((item) => {
@@ -96,10 +124,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       const isActive = location.pathname === item.path;
                       const isProfileAsGuest = item.path === "/profile" && !isAuthenticated && onOpenLogin;
 
-                      const itemClass = `flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-colors ${isActive
-                          ? "bg-anbit-text text-anbit-bg"
-                          : "text-white hover:bg-anbit-border/40 hover:text-white"
-                        }`;
+                      const itemClass = cn(
+                        'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-colors',
+                        isActive
+                          ? navLightNotHero
+                            ? 'bg-[#0a0a0a] text-white'
+                            : 'bg-anbit-text text-anbit-bg'
+                          : navLightNotHero
+                            ? 'text-neutral-900 hover:bg-zinc-100'
+                            : 'text-white hover:bg-anbit-border/40 hover:text-white',
+                      );
 
                       if (isProfileAsGuest) {
                         return (
@@ -113,7 +147,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                             }}
                             className={itemClass}
                           >
-                            <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
+                            <Icon
+                              className={cn(
+                                'w-5 h-5 lg:w-6 lg:h-6',
+                                isActive && (navLightNotHero ? 'text-white' : 'text-anbit-bg'),
+                              )}
+                            />
                             <span className="text-sm font-semibold">{t(item.labelKey)}</span>
                           </button>
                         );
@@ -127,7 +166,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                           onClick={() => setIsMobileMenuOpen(false)}
                           className={itemClass}
                         >
-                          <Icon className={`w-5 h-5 lg:w-6 lg:h-6 ${isActive ? "text-anbit-bg" : ""}`} />
+                            <Icon
+                              className={cn(
+                                'w-5 h-5 lg:w-6 lg:h-6',
+                                isActive && (navLightNotHero ? 'text-white' : 'text-anbit-bg'),
+                              )}
+                            />
                           <span className="text-sm font-semibold">{t(item.labelKey)}</span>
                         </NavLink>
                       );
@@ -137,8 +181,21 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                   <div className="mt-2 pt-2 border-t border-anbit-border flex flex-col gap-2">
                     <div className="px-3 py-1">
                       <div className="flex items-center gap-3">
-                        <LanguageSelector />
-                        <span className="text-sm font-semibold text-anbit-text">{t("languageSelection")}</span>
+                        <LanguageSelector
+                          buttonClassName={
+                            navLightNotHero
+                              ? '!border-zinc-200 !bg-white !text-neutral-900 hover:!bg-zinc-100'
+                              : undefined
+                          }
+                        />
+                        <span
+                          className={cn(
+                            'text-sm font-semibold',
+                            navLightNotHero ? 'text-neutral-900' : 'text-anbit-text',
+                          )}
+                        >
+                          {t("languageSelection")}
+                        </span>
                       </div>
                     </div>
 
@@ -149,7 +206,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                         toggleTheme();
                         setIsMobileMenuOpen(false);
                       }}
-                      className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl bg-anbit-card border border-anbit-border text-white hover:text-white hover:bg-anbit-border/40 transition-colors"
+                      className={cn(
+                        'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border transition-colors',
+                        navLightNotHero
+                          ? 'bg-white border-zinc-200 text-neutral-900 hover:bg-zinc-100'
+                          : 'bg-anbit-card border-anbit-border text-white hover:text-white hover:bg-anbit-border/40',
+                      )}
                       aria-label={theme === "dark" ? "Light mode" : "Dark mode"}
                     >
                       {theme === "dark" ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -165,7 +227,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                             logout();
                             setIsMobileMenuOpen(false);
                           }}
-                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-anbit-border bg-anbit-card text-anbit-muted hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/5 transition-colors"
+                          className={cn(
+                            'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-anbit-border bg-anbit-card transition-colors',
+                            navLightNotHero
+                              ? 'text-neutral-700 hover:text-red-600 hover:border-red-300 hover:bg-red-50'
+                              : 'text-anbit-muted hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/5',
+                          )}
                           aria-label={t("logout")}
                         >
                           <LogOut className="w-5 h-5" />
@@ -181,7 +248,12 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                             onOpenLogin?.();
                             setIsMobileMenuOpen(false);
                           }}
-                          className="flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-anbit-border bg-anbit-card text-anbit-muted hover:text-anbit-yellow hover:bg-anbit-border/40 transition-colors"
+                          className={cn(
+                            'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl border border-anbit-border bg-anbit-card transition-colors',
+                            navLightNotHero
+                              ? 'text-neutral-700 hover:text-neutral-900 hover:bg-zinc-100'
+                              : 'text-anbit-muted hover:text-anbit-yellow hover:bg-anbit-border/40',
+                          )}
                         >
                           <span className="text-sm font-semibold">Σύνδεση</span>
                         </button>
@@ -209,45 +281,83 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
             <button
               type="button"
               onClick={() => setCityModalOpen(true)}
-              className={`flex items-center gap-2 rounded-lg px-2 py-2 text-anbit-text transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-anbit-yellow/50 ${
-                theme === 'dark' ? 'hover:text-white/80' : 'hover:text-anbit-yellow'
-              }`}
+              className={cn(
+                'flex items-center gap-2 rounded-lg px-2 py-2 transition-colors focus:outline-none focus-visible:ring-2',
+                navLightRedBar
+                  ? 'text-white focus-visible:ring-white/45 hover:text-white/90'
+                  : navLightAtTop
+                    ? 'text-anbit-text focus-visible:ring-anbit-brand/25 hover:text-anbit-brand-hover'
+                    : cn(
+                        'text-anbit-text focus-visible:ring-anbit-yellow/50',
+                        theme === 'dark' ? 'hover:text-white/80' : 'hover:text-anbit-yellow',
+                      ),
+              )}
               aria-label="Αλλαγή τοποθεσίας"
               aria-expanded={cityModalOpen}
               aria-haspopup="dialog"
             >
               <MapPin
-                className={`w-6 h-6 lg:w-8 lg:h-8 shrink-0 ${theme === 'dark' ? 'text-white' : 'text-anbit-yellow'}`}
+                className={cn(
+                  'w-6 h-6 lg:w-8 lg:h-8 shrink-0',
+                  navLightRedBar
+                    ? 'text-white'
+                    : navLightAtTop
+                      ? 'text-anbit-text'
+                      : theme === 'dark'
+                        ? 'text-white'
+                        : 'text-anbit-yellow',
+                )}
                 strokeWidth={2}
               />
               <span className="text-sm font-semibold lg:text-base max-w-[120px] truncate">{city.labelEl}</span>
-              <ChevronDown className={`w-4 h-4 shrink-0 transition-transform ${cityModalOpen ? 'rotate-180' : ''}`} />
+              <ChevronDown className={cn('w-4 h-4 shrink-0 transition-transform', cityModalOpen && 'rotate-180')} />
             </button>
           </div>
 
           <div className="flex-1 flex items-center justify-center">
-            <nav className={`hidden md:flex items-center justify-center rounded-full px-2 py-1 gap-1 shrink-0 ${
-              isStoreProfileHeroMode
-                ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
-                : 'bg-white/[0.03] border border-anbit-border'
-            }`}>
+            <nav
+              className={cn(
+                'hidden md:flex items-center justify-center rounded-full px-2 py-1 gap-1 shrink-0',
+                isStoreProfileHeroMode
+                  ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
+                  : navLightRedBar
+                    ? 'bg-white/15 border border-white/25'
+                    : navLightAtTop
+                      ? 'bg-white border border-anbit-border'
+                      : 'bg-white/[0.03] border border-anbit-border',
+              )}
+            >
               {navPaths.map((item) => {
                 const Icon = item.icon;
                 const isActive = location.pathname === item.path;
                 const isProfileAsGuest = item.path === '/profile' && !isAuthenticated && onOpenLogin;
-                const baseClass = `relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all ${
+                const baseClass = cn(
+                  'relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all',
                   isActive
-                    ? 'bg-anbit-text text-anbit-bg shadow-sm'
+                    ? navLightRedBar
+                      ? 'bg-white text-[#0a0a0a] shadow-sm'
+                      : navLightAtTop
+                        ? 'bg-anbit-text text-anbit-bg shadow-sm'
+                        : 'bg-anbit-text text-anbit-bg shadow-sm'
                     : isStoreProfileHeroMode
                       ? 'bg-[#121214] text-white hover:bg-[#121214] hover:text-white'
-                      : 'text-white hover:bg-anbit-border/40 hover:text-white'
-                  }`;
+                      : navLightRedBar
+                        ? 'text-white hover:bg-white/20'
+                        : navLightAtTop
+                          ? 'text-anbit-text hover:bg-anbit-input'
+                          : 'text-white hover:bg-anbit-border/40 hover:text-white',
+                );
                 const hoverCardContent = (
                   <div
                     className="nav-hover-card pointer-events-none absolute left-1/2 top-full z-50 mt-2 w-48 -translate-x-1/2 rounded-lg border border-anbit-border bg-anbit-card px-4 py-3 shadow-lg outline-none opacity-0 transition-opacity duration-200 group-hover:opacity-100 group-focus-visible:opacity-100"
                     style={{ boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}
                   >
-                    <p className="nav-hover-card-text text-center text-sm font-semibold text-anbit-text">
+                    <p
+                      className={cn(
+                        'nav-hover-card-text text-center text-sm font-semibold',
+                        navLightAtTop ? 'text-anbit-text' : navLightNotHero ? 'text-neutral-900' : 'text-anbit-text',
+                      )}
+                    >
                       {t(item.labelKey)}
                     </p>
                   </div>
@@ -260,7 +370,13 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       onClick={() => onOpenLogin?.('/profile')}
                       className={baseClass}
                     >
-                      <Icon className="w-5 h-5 lg:w-6 lg:h-6" />
+                      <Icon
+                        className={cn(
+                          'w-5 h-5 lg:w-6 lg:h-6',
+                          isActive &&
+                          (navLightRedBar ? 'text-[#0a0a0a]' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
+                        )}
+                      />
                       {hoverCardContent}
                     </button>
                   );
@@ -271,7 +387,13 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                     to={item.path}
                     className={baseClass}
                   >
-                    <Icon className={`w-5 h-5 lg:w-6 lg:h-6 ${isActive ? 'text-anbit-bg' : ''}`} />
+                    <Icon
+                      className={cn(
+                        'w-5 h-5 lg:w-6 lg:h-6',
+                        isActive &&
+                          (navLightRedBar ? 'text-[#0a0a0a]' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
+                      )}
+                    />
                     {hoverCardContent}
                   </NavLink>
                 );
@@ -284,6 +406,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               <NotificationPopover
                 notifications={walletNotifications}
                 onNotificationsChange={setWalletNotifications}
+                buttonClassName={notifNavButtonClass}
                 title={t('notificationsTitle')}
                 markAllReadLabel={t('markAllNotificationsRead')}
                 bellAriaLabel={t('notificationsBellAria')}
@@ -292,26 +415,62 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
           </div>
 
           <div className="hidden md:flex items-center gap-2 shrink-0">
-            <LanguageSelector buttonClassName={isStoreProfileRoute ? '!bg-[#121214] !border-white/15 !text-white' : undefined} />
+            <LanguageSelector
+              buttonClassName={
+                isStoreProfileHeroMode
+                  ? '!bg-[#121214] !border-white/15 !text-white'
+                  : navLightRedBar
+                    ? '!border-white/35 !bg-white/15 !text-white hover:!bg-white/25'
+                    : navLightAtTop
+                      ? '!border-anbit-border !bg-white !text-anbit-text hover:!bg-anbit-input'
+                      : undefined
+              }
+            />
             {isAuthenticated ? (
               <>
-                <div className={`hidden md:flex items-center gap-2 px-3 py-2 rounded-lg ${
-                  isStoreProfileRoute ? 'bg-[#121214] border border-white/15' : 'bg-white/[0.03] border border-white/10'
-                }`}>
+                <div
+                  className={cn(
+                    'hidden md:flex items-center gap-2 px-3 py-2 rounded-lg',
+                    isStoreProfileRoute
+                      ? 'bg-[#121214] border border-white/15'
+                      : navLightRedBar
+                        ? 'bg-white/10 border border-white/25'
+                        : navLightAtTop
+                          ? 'bg-white border border-anbit-border'
+                          : 'bg-white/[0.03] border border-white/10',
+                  )}
+                >
                   <Zap
-                    className={`w-4 h-4 shrink-0 ${theme === 'dark' ? 'text-white fill-white' : 'text-anbit-yellow fill-anbit-yellow'}`}
+                    className={cn(
+                      'w-4 h-4 shrink-0',
+                      isStoreProfileRoute || theme === 'dark' || navLightRedBar
+                        ? 'text-white fill-white'
+                        : navLightAtTop
+                          ? 'text-anbit-text fill-anbit-text'
+                          : 'text-anbit-yellow fill-anbit-yellow',
+                    )}
                   />
-                  <span className="anbit-tabular-nums text-lg font-bold text-anbit-text tracking-tighter">
+                  <span
+                    className={cn(
+                      'anbit-tabular-nums text-lg font-bold tracking-tighter',
+                      isStoreProfileRoute || navLightRedBar ? 'text-white' : 'text-anbit-text',
+                    )}
+                  >
                     {totalXP.toLocaleString()} XP
                   </span>
                 </div>
                 <button
                   onClick={toggleTheme}
-                  className={`w-10 h-10 lg:w-11 lg:h-11 rounded-lg flex items-center justify-center text-white hover:text-white transition-colors ${
+                  className={cn(
+                    'w-10 h-10 lg:w-11 lg:h-11 rounded-lg flex items-center justify-center transition-colors',
                     isStoreProfileHeroMode
-                      ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
-                      : 'bg-white/[0.05] border border-anbit-border'
-                  }`}
+                      ? 'bg-[#121214] border border-white/15 backdrop-blur-sm text-white hover:text-white'
+                      : navLightRedBar
+                        ? 'border border-white/35 bg-white/15 text-white hover:bg-white/25'
+                        : navLightAtTop
+                          ? 'border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input'
+                          : 'bg-white/[0.05] border border-anbit-border text-white hover:text-white',
+                  )}
                   aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -319,7 +478,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <NotificationPopover
                   notifications={walletNotifications}
                   onNotificationsChange={setWalletNotifications}
-                  buttonClassName={isStoreProfileRoute ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-[#121214] border border-white/15 text-white hover:text-white transition-colors shadow-none' : undefined}
+                  buttonClassName={notifNavButtonClass}
                   title={t('notificationsTitle')}
                   markAllReadLabel={t('markAllNotificationsRead')}
                   bellAriaLabel={t('notificationsBellAria')}
@@ -327,11 +486,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <button
                   type="button"
                   onClick={() => logout()}
-                  className={`flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-xl border transition-colors ${
+                  className={cn(
+                    'flex items-center gap-2 px-3 lg:px-4 py-2 lg:py-2.5 rounded-xl border transition-colors',
                     isStoreProfileRoute
                       ? 'border-white/15 bg-[#121214] text-white hover:text-red-300 hover:border-red-300/60 hover:bg-[#121214]'
-                      : 'border-anbit-border bg-white/[0.03] text-anbit-muted hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/5'
-                  }`}
+                      : navLightRedBar
+                        ? 'border-white/35 bg-white/10 text-white hover:text-red-100 hover:border-red-200/80 hover:bg-red-600/30'
+                        : navLightAtTop
+                          ? 'border-anbit-border bg-white text-anbit-text hover:text-red-600 hover:border-red-300 hover:bg-red-50'
+                          : 'border-anbit-border bg-white/[0.03] text-anbit-muted hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/5',
+                  )}
                   aria-label={t('logout')}
                 >
                   <LogOut className="w-4 h-4 lg:w-5 lg:h-5" />
@@ -342,11 +506,16 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               <>
                 <button
                   onClick={toggleTheme}
-                  className={`w-10 h-10 lg:w-11 lg:h-11 rounded-lg flex items-center justify-center text-white hover:text-white transition-colors ${
+                  className={cn(
+                    'w-10 h-10 lg:w-11 lg:h-11 rounded-lg flex items-center justify-center transition-colors',
                     isStoreProfileHeroMode
-                      ? 'bg-[#121214] border border-white/15 backdrop-blur-sm'
-                      : 'bg-white/[0.05] border border-anbit-border'
-                  }`}
+                      ? 'bg-[#121214] border border-white/15 backdrop-blur-sm text-white hover:text-white'
+                      : navLightRedBar
+                        ? 'border border-white/35 bg-white/15 text-white hover:bg-white/25'
+                        : navLightAtTop
+                          ? 'border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input'
+                          : 'bg-white/[0.05] border border-anbit-border text-white hover:text-white',
+                  )}
                   aria-label={theme === 'dark' ? 'Light mode' : 'Dark mode'}
                 >
                   {theme === 'dark' ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
@@ -354,7 +523,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <button
                   type="button"
                   onClick={() => onOpenLogin?.()}
-                  className="px-4 py-2 text-lg font-semibold text-anbit-text hover:text-anbit-yellow transition-colors"
+                  className={cn(
+                    'px-4 py-2 text-lg font-semibold transition-colors',
+                    navLightRedBar
+                      ? 'text-white hover:text-white/85'
+                      : navLightAtTop
+                        ? 'text-anbit-text hover:text-anbit-brand-hover'
+                        : 'text-anbit-text hover:text-anbit-yellow',
+                  )}
                 >
                   Σύνδεση
                 </button>

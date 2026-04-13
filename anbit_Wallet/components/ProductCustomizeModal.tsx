@@ -1,10 +1,9 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft,
+  X,
   Minus,
   Plus,
-  ShoppingBag,
   Star,
   Check,
   ChevronRight,
@@ -18,7 +17,6 @@ import {
 import { Product } from '../types';
 import type { ProductCartOptions } from '../types';
 import { useLanguage } from '../context/LanguageContext';
-import AnbitWordmark from './AnbitWordmark';
 
 const SUGAR_AMOUNT_KEYS = ['sugarNone', 'sugarLight', 'sugarMedium', 'sugarSweet', 'sugarExtra'] as const;
 const SUGAR_TYPE_KEYS = ['sugarWhite', 'sugarBrown', 'sugarStevia', 'sugarRaw'] as const;
@@ -138,7 +136,7 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
   const [quantity, setQuantity] = useState(1);
   const [sugarAmount, setSugarAmount] = useState<string>('none');
   const [sugarType, setSugarType] = useState<string>('white');
-  const [selectedSize, setSelectedSize] = useState<string>('standard');
+  const [selectedSize, setSelectedSize] = useState<string>('');
   const [selectedExtras, setSelectedExtras] = useState<string[]>([]);
   const [comments, setComments] = useState('');
   const showCoffeeOptions = isCoffeeProduct(safeProduct);
@@ -199,13 +197,15 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
 
   const extraPrice = selectedSizePrice + selectedExtrasPrice;
   const totalPrice = safeProduct.price * quantity + extraPrice;
+  const totalXp = safeProduct.xpReward * quantity;
 
   const handleAdd = () => {
     if (!product) return;
+    if (!selectedSize) return;
     const options: ProductCartOptions = {
-      size: selectedSize,
       extras: selectedExtras.join(','),
     };
+    if (selectedSize) options.size = selectedSize;
     if (showCoffeeOptions) {
       options.sugarAmount = sugarAmount;
       options.sugarType = sugarType;
@@ -229,42 +229,28 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-[260] bg-white"
+        className="fixed inset-0 z-[260] bg-black/60 backdrop-blur-sm"
+        onClick={onClose}
       >
         <motion.div
           initial={{ y: '100%' }}
           animate={{ y: 0 }}
           exit={{ y: '100%' }}
           transition={{ type: 'spring', damping: 32, stiffness: 320 }}
-          className="relative flex h-[100dvh] max-h-[100dvh] w-full flex-col overflow-hidden bg-white text-[#0a0a0a] antialiased"
+          onClick={(e) => e.stopPropagation()}
+          className="relative mx-auto mt-[4dvh] flex h-[96dvh] max-h-[96dvh] w-full max-w-[520px] flex-col overflow-hidden rounded-t-[24px] bg-[#0e0e0e] text-white antialiased"
         >
-          <header
-            className="fixed left-0 right-0 top-0 z-20 flex min-h-16 items-center justify-between border-b border-white/[0.08] bg-[#0a0a0a] px-5 pt-[env(safe-area-inset-top)] shadow-[0_8px_24px_-8px_rgba(0,0,0,0.45)] sm:px-6"
-          >
-            <div className="flex h-16 items-center gap-3 sm:gap-4">
-              <button
-                type="button"
-                onClick={onClose}
-                className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:bg-white/[0.12] active:scale-95"
-                aria-label="Back"
-              >
-                <ArrowLeft className="h-6 w-6" strokeWidth={2.2} />
-              </button>
-              <AnbitWordmark className="text-2xl text-white sm:text-[1.65rem]" />
-            </div>
-            <button
-              type="button"
-              className="flex h-10 w-10 items-center justify-center rounded-full text-white transition-colors hover:bg-white/[0.12] active:scale-95"
-              aria-label="Cart"
-            >
-              <ShoppingBag className="h-5 w-5" strokeWidth={2.2} />
-            </button>
-          </header>
-
-          <div className="flex flex-1 flex-col overflow-y-auto overscroll-contain pb-36 pt-[calc(4rem+env(safe-area-inset-top))]">
-            <main className="mx-auto w-full max-w-lg space-y-4 px-4 pb-4 pt-2 sm:space-y-5 sm:px-6 sm:pt-3">
-              <article className="overflow-hidden rounded-[1.75rem] border border-[#0a0a0a]/[0.08] bg-white shadow-[0_24px_56px_-20px_rgba(10,10,10,0.22)] ring-1 ring-black/[0.03]">
-                <div className="relative h-[min(48vh,288px)] w-full min-h-[200px] bg-neutral-100 sm:h-[min(42vh,320px)]">
+          <div className="flex flex-1 flex-col overflow-y-auto overscroll-contain pb-36 hide-scrollbar">
+            <main className="mx-auto w-full max-w-2xl pb-6">
+              <section className="relative aspect-[4/3] w-full overflow-hidden">
+                  <button
+                    type="button"
+                    onClick={onClose}
+                    className="absolute right-4 top-4 z-10 flex h-11 w-11 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-md transition-colors hover:bg-black/60 active:scale-95"
+                    aria-label="Close"
+                  >
+                    <X className="h-6 w-6" strokeWidth={2.2} />
+                  </button>
                   <img
                     src={safeProduct.image}
                     alt={safeProduct.name}
@@ -272,109 +258,58 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
                     loading="eager"
                     decoding="async"
                   />
-                  <div
-                    className="pointer-events-none absolute inset-0 bg-gradient-to-b from-black/[0.12] via-transparent to-black/[0.18]"
-                    aria-hidden
-                  />
-                  <div
-                    className="pointer-events-none absolute inset-x-0 bottom-0 h-16 bg-gradient-to-t from-black/25 to-transparent"
-                    aria-hidden
-                  />
-                </div>
+              </section>
 
-                <div className="relative border-t border-[#0a0a0a]/[0.06] bg-white px-5 pb-5 pt-5 sm:px-6 sm:pb-6 sm:pt-6">
-                  <h1 className="text-[1.6rem] font-extrabold leading-[1.2] tracking-tight text-[#0a0a0a] sm:text-[2rem]">
+              <article className="relative z-10 px-6 pt-5">
+                <div className="flex flex-col gap-2">
+                  <h1 className="text-4xl font-extrabold leading-tight tracking-tight text-white">
                     {safeProduct.name}
                   </h1>
+                  <div className="flex items-end gap-3">
+                    <div className="text-4xl font-bold text-white">€{safeProduct.price.toFixed(2)}</div>
+                    <div className="pb-1 text-sm font-bold text-[#60a5fa]">+{safeProduct.xpReward} XP</div>
+                  </div>
                   {safeProduct.description ? (
-                    <p className="mt-3 max-w-prose text-[15px] leading-relaxed text-[#0a0a0a]/68 sm:text-base">
-                      {safeProduct.description}
-                    </p>
+                    <p className="mt-2 text-base leading-relaxed text-white/80">{safeProduct.description}</p>
                   ) : null}
-
-                  <div className="mt-6 flex flex-col gap-4 border-t border-dashed border-[#0a0a0a]/[0.12] pt-6 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                      <p className="text-[10px] font-bold uppercase tracking-[0.18em] text-[#0a0a0a]/40">Price</p>
-                      <p className="mt-1 text-xs text-[#0a0a0a]/50">Base · full total on Add button</p>
-                    </div>
-                    <div className="flex items-center gap-3 sm:justify-end">
-                      <div className="inline-flex items-baseline gap-0.5 rounded-2xl bg-[#0a0a0a] px-5 py-3 shadow-[0_10px_28px_-8px_rgba(10,10,10,0.55)] ring-1 ring-white/10">
-                        <span className="text-lg font-bold text-white/90">€</span>
-                        <span className="text-[1.85rem] font-extrabold tabular-nums leading-none tracking-tight text-white sm:text-[2rem]">
-                          {safeProduct.price.toFixed(2)}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
                 </div>
-              </article>
 
-              <WaveStrokeDivider />
-
-              {safeProduct.xpReward > 0 && (
-                <div className="flex items-center justify-between gap-3 rounded-[1.75rem] bg-[#0a0a0a] p-4 pr-3 shadow-[0_12px_32px_-8px_rgba(0,0,0,0.45)] ring-1 ring-white/10 sm:p-5">
-                  <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl bg-gradient-to-br from-white/25 to-white/10 shadow-inner">
-                      <Star className="h-5 w-5 fill-white text-white" />
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-sm font-bold leading-snug text-white">
-                        Earn {safeProduct.xpReward} XP with this item
-                      </p>
-                      <p className="mt-0.5 text-xs text-white/50">Progress towards Gold Tier</p>
-                    </div>
+                <section className="mt-10">
+                  <div className="mb-4 flex items-end justify-between">
+                    <h3 className="text-2xl font-bold text-white">{t('pickSize')}</h3>
+                    <span className="rounded-full bg-blue-600/20 px-3 py-1 text-[10px] font-bold uppercase tracking-wider text-blue-400">Required</span>
                   </div>
-                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/10">
-                    <ChevronRight className="h-5 w-5 text-white/80" strokeWidth={2} />
-                  </div>
-                </div>
-              )}
-
-              {safeProduct.xpReward > 0 ? <WaveDarkGap /> : null}
-
-              <section>
-                <div className="relative overflow-hidden rounded-[1.75rem] bg-[#0a0a0a] shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.09]">
-                  <div
-                    className="pointer-events-none absolute inset-x-0 top-0 h-5 opacity-[0.35]"
-                    aria-hidden
-                  >
-                    <svg viewBox="0 0 1200 40" preserveAspectRatio="none" className="h-full w-full text-white/25">
-                      <path
-                        d="M0,18 C200,2 400,28 600,12 C800,-4 1000,22 1200,8 L1200,0 L0,0 Z"
-                        fill="currentColor"
-                      />
-                    </svg>
-                  </div>
-                  <div className="relative p-5 sm:p-6">
-                  <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">Choose your size</h3>
-                  <p className="mb-4 text-xs text-white/35">Select a size for your order</p>
-                  <div className="grid grid-cols-2 gap-3 sm:gap-4">
+                  <div className="space-y-3">
                     {sizeOptions.map((opt) => {
                       const isSelected = selectedSize === opt.id;
                       return (
-                        <button
+                        <label
                           key={opt.id}
-                          type="button"
-                          onClick={() => setSelectedSize(opt.id)}
-                          className={`flex flex-col items-center justify-center rounded-2xl px-3 py-4 transition-all duration-200 sm:py-5 ${
-                            isSelected
-                              ? 'bg-white/[0.14] ring-2 ring-white ring-offset-2 ring-offset-[#0a0a0a] shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]'
-                              : 'bg-white/[0.06] ring-1 ring-white/[0.08] hover:bg-white/[0.09] hover:ring-white/15'
-                          }`}
+                          className="flex cursor-pointer items-center justify-between rounded-xl bg-[#131313] p-4 transition-colors hover:bg-[#191919]"
                         >
-                          <span className="mb-1 text-center text-[15px] font-bold text-white">{opt.label}</span>
-                          <span className={`text-xs ${opt.price > 0 ? 'font-semibold text-white/90' : 'italic text-white/45'}`}>
-                            {opt.price > 0 ? `+€${opt.price.toFixed(2)}` : opt.includedLabel ?? 'Included'}
+                          <span className="font-medium text-white">{opt.label}</span>
+                          <input
+                            type="radio"
+                            name="size-option"
+                            checked={isSelected}
+                            onChange={() => setSelectedSize(opt.id)}
+                            className="sr-only"
+                          />
+                          <span
+                            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${
+                              isSelected
+                                ? 'border-[#2563eb] bg-[#2563eb] text-white'
+                                : 'border-[#484848] bg-transparent text-transparent'
+                            }`}
+                            aria-hidden
+                          >
+                            <Check className="h-3.5 w-3.5" strokeWidth={3} />
                           </span>
-                        </button>
+                        </label>
                       );
                     })}
                   </div>
-                  </div>
-                </div>
-              </section>
-
-              <WaveDarkGap />
+                </section>
 
               {showCoffeeOptions && (
                 <>
@@ -448,97 +383,68 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
                 </>
               )}
 
-              <section>
-                <div className="rounded-[1.75rem] bg-[#0a0a0a] p-5 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.09] sm:p-6">
+              <section className="mt-10">
+                <div className="mb-4 flex items-end justify-between">
+                  <h3 className="text-2xl font-bold text-white">Πρόσθεσε extra</h3>
+                  <span className="text-xs font-medium text-white/65">Optional</span>
+                </div>
+                <div className="space-y-3">
                   <div className="mb-4 flex items-start justify-between gap-3">
-                    <div>
-                      <h3 className="text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">Extra Toppings</h3>
-                      <p className="mt-1 text-xs text-white/30">Customize your item</p>
-                    </div>
-                    <span className="shrink-0 rounded-full bg-white/10 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-white/70 ring-1 ring-white/15">
-                      Optional
-                    </span>
                   </div>
-                  <div className="flex flex-col gap-2">
                     {extraOptions.map((opt) => {
                       const isSelected = selectedExtras.includes(opt.id);
-                      const Icon = extraIcon(opt.id);
                       return (
-                        <div
+                        <label
                           key={opt.id}
-                          className={`flex items-center justify-between gap-3 rounded-xl px-3 py-3 sm:px-4 ${
-                            isSelected ? 'bg-white/[0.12] ring-1 ring-white/18' : 'bg-white/[0.05] ring-1 ring-white/[0.06]'
-                          }`}
+                          className="flex cursor-pointer items-center justify-between rounded-xl bg-[#131313] p-4 transition-colors hover:bg-[#191919]"
                         >
-                          <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-white/[0.08] ring-1 ring-white/10">
-                              {Icon ? <Icon className="h-5 w-5 text-white/55" /> : null}
-                            </div>
+                          <div className="flex min-w-0 flex-col">
                             <span className="truncate text-[15px] font-medium text-white">{opt.label}</span>
+                            <span className="text-sm text-white/65">+€{opt.price.toFixed(2)}</span>
                           </div>
-                          <div className="flex shrink-0 items-center gap-3">
-                            <span className="text-sm tabular-nums text-white/50">+€{opt.price.toFixed(2)}</span>
-                            <button
-                              type="button"
-                              onClick={() => toggleExtra(opt.id)}
-                              className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-full border-2 transition-all active:scale-90 ${
-                                isSelected
-                                  ? 'border-white bg-white text-[#0a0a0a] shadow-sm'
-                                  : 'border-white/35 text-white hover:border-white/60 hover:bg-white/[0.06]'
-                              }`}
-                              aria-pressed={isSelected}
-                            >
-                              {isSelected ? (
-                                <Check className="h-4 w-4" strokeWidth={3} />
-                              ) : (
-                                <Plus className="h-4 w-4" strokeWidth={2.5} />
-                              )}
-                            </button>
-                          </div>
-                        </div>
+                          <input
+                            type="checkbox"
+                            checked={isSelected}
+                            onChange={() => toggleExtra(opt.id)}
+                            className="sr-only"
+                          />
+                          <span
+                            className={`flex h-6 w-6 items-center justify-center rounded-full border-2 transition-all ${
+                              isSelected
+                                ? 'border-[#2563eb] bg-[#2563eb] text-white'
+                                : 'border-[#484848] bg-transparent text-transparent'
+                            }`}
+                            aria-hidden
+                          >
+                            <Check className="h-3.5 w-3.5" strokeWidth={3} />
+                          </span>
+                        </label>
                       );
                     })}
-                  </div>
                 </div>
               </section>
-
-              <WaveStrokeDivider flip />
-
-              <section>
-                <div className="rounded-[1.75rem] bg-[#0a0a0a] p-5 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.4)] ring-1 ring-white/[0.09] sm:p-6">
-                  <h3 className="mb-1 text-[10px] font-bold uppercase tracking-[0.2em] text-white/45">Special Instructions</h3>
-                  <p className="mb-3 text-xs text-white/30">Optional note for the kitchen</p>
-                  <textarea
-                    value={comments}
-                    onChange={(e) => setComments(e.target.value)}
-                    placeholder={t('commentsPlaceholder')}
-                    rows={3}
-                    className="min-h-[5.5rem] w-full resize-none rounded-xl border border-white/[0.12] bg-white/[0.06] px-4 py-3.5 text-[15px] leading-relaxed text-white placeholder:text-white/35 focus:border-white/25 focus:outline-none focus:ring-2 focus:ring-white/10"
-                  />
-                </div>
-              </section>
+              </article>
             </main>
           </div>
 
           <footer
-            className="fixed bottom-0 left-0 right-0 z-20 border-t border-[#0a0a0a]/[0.08] bg-white/95 px-5 pt-3 shadow-[0_-8px_30px_-4px_rgba(10,10,10,0.08)] backdrop-blur-md sm:px-6 sm:pt-4"
+            className="absolute bottom-0 left-0 right-0 z-20 border-t border-white/5 bg-[#0e0e0e] px-6 pt-3 shadow-[0_-8px_32px_rgba(0,0,0,0.5)]"
             style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
           >
-            <WaveFooterTop />
             <div className="relative mx-auto flex max-w-lg items-center gap-3 sm:gap-4">
-              <div className="flex items-center rounded-full border border-[#0a0a0a]/[0.1] bg-[#0a0a0a]/[0.04] p-0.5 shadow-inner">
+              <div className="flex items-center rounded-xl bg-[#262626] p-1">
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => Math.max(1, q - 1))}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#0a0a0a]/[0.07] active:scale-90"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/[0.07] active:scale-90"
                 >
                   <Minus className="h-4 w-4" strokeWidth={2.5} />
                 </button>
-                <span className="min-w-[2rem] text-center text-lg font-bold tabular-nums text-[#0a0a0a]">{quantity}</span>
+                <span className="min-w-[2rem] text-center text-lg font-bold tabular-nums text-white">{quantity}</span>
                 <button
                   type="button"
                   onClick={() => setQuantity((q) => q + 1)}
-                  className="flex h-11 w-11 items-center justify-center rounded-full text-[#0a0a0a] transition-colors hover:bg-[#0a0a0a]/[0.07] active:scale-90"
+                  className="flex h-10 w-10 items-center justify-center rounded-lg text-white transition-colors hover:bg-white/[0.07] active:scale-90"
                 >
                   <Plus className="h-4 w-4" strokeWidth={2.5} />
                 </button>
@@ -546,11 +452,17 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
               <button
                 type="button"
                 onClick={handleAdd}
-                className="flex h-[3.25rem] flex-1 items-center justify-center gap-2.5 rounded-full bg-[#0a0a0a] px-5 text-[15px] font-extrabold tracking-wide text-white shadow-[0_8px_24px_-6px_rgba(10,10,10,0.45)] transition-all active:scale-[0.98] sm:h-14 sm:gap-3 sm:text-base"
+                disabled={!selectedSize}
+                className="flex h-14 flex-1 items-center justify-between rounded-xl bg-[#2563eb] px-4 text-white shadow-[0_10px_28px_-8px_rgba(37,99,235,0.55)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
               >
-                <span>Add</span>
-                <span className="rounded-lg bg-white/18 px-2.5 py-1 text-sm font-bold tabular-nums text-white">
-                  €{totalPrice.toFixed(2)}
+                <span className="text-[15px] font-black tracking-wide">ΠΡΟΣΘΗΚΗ</span>
+                <span className="flex flex-col items-end leading-tight">
+                  <span className="rounded-md bg-black/20 px-2.5 py-0.5 text-sm font-extrabold tabular-nums text-white">
+                    €{totalPrice.toFixed(2)}
+                  </span>
+                  {totalXp > 0 ? (
+                    <span className="mt-0.5 text-[11px] font-bold text-white/90">+{totalXp} XP</span>
+                  ) : null}
                 </span>
               </button>
             </div>
