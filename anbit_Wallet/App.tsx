@@ -25,7 +25,7 @@ import { useLanguage } from './context/LanguageContext';
 import { ANBIT_APP_MAX_WIDTH_CLASS, MERCHANT_APPLY_URL } from './constants';
 import { Partner, UserData, Reward } from './types';
 import { useDashboardData } from './hooks/useDashboardData';
-import { FooterTaped } from './components/ui/FooterTaped';
+import { WoltBottomNav } from './components/WoltBottomNav';
 import { OfferCarousel } from './components/ui/offer-carousel';
 import { GREEK_OFFERS } from './data/greekOffers';
 import ScanPage from './components/ScanPage';
@@ -349,8 +349,8 @@ const App: React.FC = () => {
             <main className={hideChrome
               ? 'flex-1 min-h-screen w-full p-0'
               : isStoreProfileRoute
-                ? 'flex-1 min-h-screen w-full p-0'
-                : `flex-1 w-full mx-auto pt-24 pb-4 px-3 sm:px-5 lg:pt-28 lg:px-6 lg:pb-6 ${ANBIT_APP_MAX_WIDTH_CLASS}`}
+                ? 'flex-1 min-h-screen w-full p-0 pb-20'
+                : `flex-1 w-full mx-auto pt-16 pb-24 px-0 lg:pt-20 lg:px-0 ${ANBIT_APP_MAX_WIDTH_CLASS}`}
             >
               <Routes>
                 <Route path="/" element={<Navigate to="/quests" replace />} />
@@ -425,6 +425,8 @@ const App: React.FC = () => {
                       quests={dashboardFeed.quests}
                       partners={dashboardFeed.partners}
                       storeXP={userData?.storeXP ?? {}}
+                      totalXP={userData?.totalXP}
+                      userName={userData?.name}
                     />
                   }
                 />
@@ -441,7 +443,7 @@ const App: React.FC = () => {
                 <Route path="*" element={<Navigate to="/quests" replace />} />
               </Routes>
             </main>
-            {!hideChrome && <FooterTaped t={t} />}
+            {!hideChrome && <WoltBottomNav />}
             <AuthModal
               isOpen={authModalOpen}
               onClose={closeAuthModal}

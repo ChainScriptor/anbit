@@ -4,7 +4,7 @@ import { Check } from 'lucide-react';
 import { api } from '../services/api';
 import { useOrder } from '../context/OrderContext';
 import { Partner, Product } from '../types';
-import StoreMenuPage from './StoreMenuPage';
+import AnbitScanMenuPage from './AnbitScanMenuPage';
 import { useDashboardData } from '../hooks/useDashboardData';
 import { useLanguage } from '../context/LanguageContext';
 import AnbitSplashScreen from './AnbitSplashScreen';
@@ -45,8 +45,8 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
       : null;
 
   const navigate = useNavigate();
-  const { setSession } = useOrder();
-  const { partners } = useDashboardData(isAuthenticated);
+  const { setSession, session } = useOrder();
+  const { partners, quests } = useDashboardData(isAuthenticated);
   const { language, setLanguage } = useLanguage();
 
   const [langChosen, setLangChosen] = useState(() =>
@@ -279,14 +279,21 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
     return <AnbitSplashScreen />;
   }
 
+  const tableNumber = session?.tableNumber ?? 0;
+  const partnerQuests = partner
+    ? quests.filter((q) => q.partnerId?.toLowerCase() === partner.id.toLowerCase())
+    : [];
+
   return (
-    <StoreMenuPage
+    <AnbitScanMenuPage
       partner={partner}
+      tableNumber={tableNumber}
+      entryMethod="qr"
       onBack={() => navigate('/dashboard')}
       onOrderComplete={onOrderComplete}
       isAuthenticated={isAuthenticated}
       onOpenLogin={onOpenLogin}
-      onOpenRegister={onOpenRegister}
+      partnerQuests={partnerQuests}
     />
   );
 };
