@@ -20,6 +20,7 @@ import {
   Info,
   Languages,
   UserPlus,
+  Ellipsis,
   Lock,
   ShoppingBasket,
   ShoppingBag,
@@ -1444,7 +1445,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
       {storeTab === 'menu' && (
         <>
       <motion.header
-        className="fixed top-0 left-1/2 z-30 w-full max-w-[520px] -translate-x-1/2 border-b border-white/10 px-3 pb-2 pt-2"
+        className="fixed top-0 left-1/2 z-50 w-full max-w-[520px] -translate-x-1/2 border-b border-white/10 px-3 pb-2 pt-2"
         style={{ backgroundColor: topBarBg }}
       >
         <div
@@ -1471,15 +1472,16 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
           </div>
           <button
             type="button"
-            onClick={() => setShowQuickActionsMenu((v) => !v)}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+            onClick={(e) => {
+              e.stopPropagation();
+              setShowQuickActionsMenu((v) => !v);
+            }}
+            className="relative z-[80] flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
             aria-label={showQuickActionsMenu ? 'Close menu' : 'More'}
             aria-haspopup="menu"
             aria-expanded={showQuickActionsMenu}
           >
-            <span className="material-symbols-outlined text-[20px]">
-              {showQuickActionsMenu ? 'close' : 'more_horiz'}
-            </span>
+            {showQuickActionsMenu ? <X className="h-4.5 w-4.5" strokeWidth={2.2} /> : <Ellipsis className="h-5 w-5" strokeWidth={2.2} />}
           </button>
         </div>
         <motion.nav
@@ -1491,7 +1493,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
             marginTop: showStickyCategories ? 8 : 0,
           }}
           transition={{ duration: 0.2, ease: 'easeOut' }}
-          className="mx-auto mt-2 flex h-11 max-w-xl items-center gap-6 overflow-x-auto border-t border-white/5 no-scrollbar"
+          className={`mx-auto mt-2 flex h-11 max-w-xl items-center gap-6 overflow-x-auto border-t border-white/5 no-scrollbar ${showStickyCategories ? 'pointer-events-auto' : 'pointer-events-none'}`}
         >
           {navCategories.map((cat) => {
             const isActive = activeCategory === cat;
@@ -1522,7 +1524,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
 
       {showQuickActionsMenu ? (
         <div
-          className="fixed inset-0 z-20 bg-black/15 backdrop-blur-[2px]"
+          className="fixed inset-0 z-[70] bg-black/15 backdrop-blur-[2px]"
           onClick={() => setShowQuickActionsMenu(false)}
           role="presentation"
         >

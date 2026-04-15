@@ -370,22 +370,18 @@ const App: React.FC = () => {
                 <Route path="/scan/:shortCode" element={<ScanPage />} />
                 <Route
                   path="/store/:shortCode"
-                  element={
-                    userData ? (
-                      <StoreFromQrPage
-                        isAuthenticated={!!userData}
-                        onOpenLogin={openLogin}
-                        onOpenRegister={openRegister}
-                        onOrderComplete={(xpEarned) => {
-                          if (userData && selectedPartner) {
-                            handleOrderComplete(xpEarned);
-                          }
-                        }}
-                      />
-                    ) : (
-                      <Navigate to={`/login?returnTo=${encodeURIComponent(location.pathname)}`} replace />
-                    )
-                  }
+                  element={(
+                    <StoreFromQrPage
+                      isAuthenticated={!!userData}
+                      onOpenLogin={openLogin}
+                      onOpenRegister={openRegister}
+                      onOrderComplete={(xpEarned) => {
+                        if (userData && selectedPartner) {
+                          handleOrderComplete(xpEarned);
+                        }
+                      }}
+                    />
+                  )}
                 />
                 <Route path="/network" element={
                   storeMenuPartner ? (

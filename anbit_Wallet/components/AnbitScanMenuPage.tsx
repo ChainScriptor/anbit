@@ -1643,6 +1643,12 @@ function AuthGateScreen({
   onLogin: () => void;
   onGuest: () => void;
 }) {
+  const handleGuestContinue = (e?: React.SyntheticEvent) => {
+    e?.preventDefault();
+    e?.stopPropagation();
+    onGuest();
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 60 }}
@@ -1712,11 +1718,12 @@ function AuthGateScreen({
 
         <motion.button
           type="button"
-          onClick={onGuest}
+          onClick={handleGuestContinue}
+          onPointerUp={handleGuestContinue}
           whileTap={{ scale: 0.97 }}
           className="flex w-full items-center justify-center rounded-2xl border border-white/[0.09] bg-white/[0.04] py-4 text-sm font-bold text-white/55"
         >
-          Συνέχεια ως επισκέπτης →  Κατάλογος
+          Συνέχεια χωρίς πόντους
         </motion.button>
       </div>
     </motion.div>
@@ -2141,21 +2148,35 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
   const [showAuthGate, setShowAuthGate] = useState(false);
 
   const doSubmitOrder = async (paymentMethod: PaymentMethod, xpDiscountXP: number, earnXp: boolean) => {
+    if (!user?.id) {
+      setSubmitError('Απαιτείται σύνδεση χρήστη για αποστολή παραγγελίας.');
+      return;
+    }
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const discountEur = xpDiscountXP / XP_PER_EUR;
-      const finalPrice = paymentMethod === 'xp' ? 0 : Math.max(0, cartTotal.eur - discountEur);
+      const orderItems = [
+        ...cartItems.map((item) => ({
+          productId: String(item.id),
+          quantity: item.quantity,
+        })),
+        ...xpCartItems.map((item) => ({
+          productId: String(item.id),
+          quantity: item.quantity,
+        })),
+      ].filter((item) => item.productId && item.quantity > 0);
+
+      if (orderItems.length === 0) {
+        setSubmitError('Δεν υπάρχουν προϊόντα για αποστολή.');
+        return;
+      }
+
+      // Backend /Orders expects CreateOrderRequest: userId, merchantId, tableNumber, orderItems.
       await api.submitOrder({
+        userId: user.id,
         merchantId: partner.id,
         tableNumber,
-        items: [
-          ...cartItems.map((item) => ({ productId: item.id, quantity: item.quantity, unitPrice: item.price, unitXp: earnXp ? item.xpReward : 0 })),
-          ...xpCartItems.map((item) => ({ productId: item.id, quantity: item.quantity, unitPrice: 0, unitXp: 0 })),
-        ],
-        totalPrice: finalPrice,
-        totalXp: earnXp ? cartTotal.xp : 0,
-        paymentMethod,
+        orderItems,
       });
       setScreen('pending');
     } catch {
@@ -2184,7 +2205,22 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
   };
 
   const handleAuthGateGuest = () => {
+    const pending = pendingOrderRef.current;
+    pendingOrderRef.current = null;
     setShowAuthGate(false);
+    setSubmitError(null);
+    setSelectedProduct(null);
+    setShowDotMenu(false);
+    setShowTranslate(false);
+    setShowInfo(false);
+
+    if (pending) {
+      // Continue checkout as guest: no XP redemption and no XP earnings.
+      const fallbackPayment: PaymentMethod = pending.paymentMethod === 'xp' ? 'cash' : pending.paymentMethod;
+      void doSubmitOrder(fallbackPayment, 0, false);
+      return;
+    }
+
     setScreen('menu');
   };
 
@@ -2294,7 +2330,39 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
           </motion.button>
         </div>
 
-        {/* Dot-menu popover */}
+      </motion.div>
+
+      {/* ── PARALLAX HERO ── */}
+      <div className="relative h-60 w-full overflow-hidden sm:h-72">
+        <motion.img
+          src={partner.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800'}
+          alt={partner.name}
+          className="absolute inset-0 h-full w-full object-cover"
+          style={{ y: heroY, scale: heroScale }}
+          draggable={false}
+          initial={{ scale: 1.08, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ duration: 0.65, ease: 'easeOut' }}
+        />
+        <motion.div
+          className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/15 to-black/90"
+          style={{ opacity: heroGradientOpacity }}
+        />
+
+        {/* Hero 3-dot button — top-right, always visible before scroll */}
+        <div className="absolute right-4 z-[60]" style={{ top: 'max(1rem, env(safe-area-inset-top))' }}>
+          <motion.button
+            type="button"
+            onClick={() => setShowDotMenu((v) => !v)}
+            whileTap={{ scale: 0.88 }}
+            className="flex h-9 w-9 items-center justify-center rounded-xl text-white backdrop-blur-sm"
+            style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.15)' }}
+          >
+            <MoreVertical className="h-4 w-4" strokeWidth={2.2} />
+          </motion.button>
+        </div>
+
+        {/* Dot-menu popover (global fixed layer, always above banner/header) */}
         <AnimatePresence>
           {showDotMenu && (
             <>
@@ -2302,7 +2370,7 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                className="fixed inset-0 z-[41]"
+                className="fixed inset-0 z-[110]"
                 onClick={() => setShowDotMenu(false)}
               />
               <motion.div
@@ -2310,7 +2378,7 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.88, y: -8 }}
                 transition={{ type: 'spring', stiffness: 420, damping: 28 }}
-                className="absolute right-4 top-full z-[42] mt-2 w-52 overflow-hidden rounded-2xl border border-white/10 bg-[#1c1c1c] shadow-[0_16px_48px_-8px_rgba(0,0,0,0.9)]"
+                className="fixed right-4 top-[calc(env(safe-area-inset-top)+3.5rem)] z-[120] w-52 overflow-hidden rounded-2xl border border-white/10 bg-[#1c1c1c] shadow-[0_16px_48px_-8px_rgba(0,0,0,0.9)]"
               >
                 <button
                   type="button"
@@ -2346,37 +2414,6 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
             </>
           )}
         </AnimatePresence>
-      </motion.div>
-
-      {/* ── PARALLAX HERO ── */}
-      <div className="relative h-60 w-full overflow-hidden sm:h-72">
-        <motion.img
-          src={partner.image || 'https://images.pexels.com/photos/1640777/pexels-photo-1640777.jpeg?auto=compress&cs=tinysrgb&w=800'}
-          alt={partner.name}
-          className="absolute inset-0 h-full w-full object-cover"
-          style={{ y: heroY, scale: heroScale }}
-          draggable={false}
-          initial={{ scale: 1.08, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          transition={{ duration: 0.65, ease: 'easeOut' }}
-        />
-        <motion.div
-          className="absolute inset-0 bg-gradient-to-b from-black/55 via-black/15 to-black/90"
-          style={{ opacity: heroGradientOpacity }}
-        />
-
-        {/* Hero 3-dot button — top-right, always visible before scroll */}
-        <div className="absolute right-4 z-10" style={{ top: 'max(1rem, env(safe-area-inset-top))' }}>
-          <motion.button
-            type="button"
-            onClick={() => setShowDotMenu((v) => !v)}
-            whileTap={{ scale: 0.88 }}
-            className="flex h-9 w-9 items-center justify-center rounded-xl text-white backdrop-blur-sm"
-            style={{ background: 'rgba(0,0,0,0.45)', border: '1px solid rgba(255,255,255,0.15)' }}
-          >
-            <MoreVertical className="h-4 w-4" strokeWidth={2.2} />
-          </motion.button>
-        </div>
 
         <div className="absolute bottom-16 left-4 right-4">
           <NFCBadge entryMethod={entryMethod} />

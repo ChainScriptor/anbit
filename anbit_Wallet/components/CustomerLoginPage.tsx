@@ -45,6 +45,12 @@ const CustomerLoginPage: React.FC = () => {
     navigate('/quests', { replace: true });
   };
 
+  const continueAsGuest = () => {
+    const stored = sanitizeReturnTo(sessionStorage.getItem(LOGIN_RETURN_TO_KEY));
+    const target = returnTo ?? stored ?? '/quests';
+    navigate(target, { replace: true });
+  };
+
   const onLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -226,7 +232,7 @@ const CustomerLoginPage: React.FC = () => {
 
                 <button
                   type="button"
-                  onClick={() => navigate(returnTo, { replace: true })}
+                  onClick={continueAsGuest}
                   className="w-full flex items-center justify-center gap-3 bg-[#2a2a2a] text-white py-3 rounded-lg border border-white/20 font-semibold text-base hover:opacity-90 transition-opacity"
                 >
                   Συνέχεια ως επισκέπτης
