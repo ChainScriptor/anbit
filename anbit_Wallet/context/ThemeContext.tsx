@@ -14,10 +14,11 @@ const STORAGE_KEY = 'anbit-theme';
 
 export function ThemeProvider({ children }: { children: ReactNode }) {
   const [theme, setThemeState] = useState<Theme>(() => {
-    if (typeof window === 'undefined') return 'dark';
+    if (typeof window === 'undefined') return 'light';
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    if (stored === 'dark' || stored === 'light') return stored;
-    return 'dark';
+    // Wolt-style: default is always light; only honour an explicit 'light' stored pref
+    if (stored === 'light') return 'light';
+    return 'light';
   });
 
   useEffect(() => {

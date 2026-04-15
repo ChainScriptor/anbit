@@ -4,23 +4,27 @@ import { useTheme } from '../context/ThemeContext';
 import { useFavoriteMerchant } from '@/lib/favoriteStores';
 import type { Partner } from '../types';
 
-const NETWORK_STORE_CARD_BG_DARK = 'bg-[#1e1e1e]';
-const NETWORK_STORE_CARD_BG_LIGHT = 'bg-white';
-
-function formatDeliveryLabel(partner: Partner): string {
+function formatDeliveryTime(partner: Partner): string {
   const raw = partner.deliveryTime;
-  if (!raw || raw === '—') return '20-30 λεπτά';
+  if (!raw || raw === '—') return '20-30 λεπτ.';
   const cleaned = raw.replace(/'/g, '').replace(/\s*-\s*/g, '-');
-  return `${cleaned} λεπτά`;
+  return `${cleaned} λεπτ.`;
 }
 
-function formatFeeLabel(partner: Partner): string {
+function formatMinOrder(partner: Partner): string {
   const m = partner.minOrder;
-  if (!m || m === '—') return '0,00 €';
+  if (!m || m === '—') return '0 €';
   return m.includes('€') ? m.replace('€', ' €').trim() : `${m} €`;
 }
 
-/** Κάρτα καταστήματος — ίδιο UI με `/network`. */
+function getRatingEmoji(rating: number): string {
+  if (rating >= 9.5) return '🤩';
+  if (rating >= 9.0) return '😄';
+  if (rating >= 8.5) return '😊';
+  return '🙂';
+}
+
+/** Wolt-style vertical κάρτα καταστήματος */
 export function NetworkStoreCard({
   partner,
   xp,
@@ -33,129 +37,65 @@ export function NetworkStoreCard({
   const { theme } = useTheme();
   const isLight = theme === 'light';
   const [favorite, toggleFavorite] = useFavoriteMerchant(partner.id);
-  const img = partner.image;
   const rating = partner.rating ?? 9.2;
-
-  const activate = () => onOpen();
+  const minOrder = formatMinOrder(partner);
+  const deliveryTime = formatDeliveryTime(partner);
+  const isFreeDelivery = minOrder === '0 €' || minOrder.startsWith('0');
 
   return (
     <div
       className={cn(
-        'group relative flex w-full cursor-pointer items-stretch overflow-hidden rounded-lg border shadow-md transition-all duration-300',
+        'group relative flex flex-col cursor-pointer overflow-hidden rounded-xl transition-all duration-200',
         isLight
-          ? cn(NETWORK_STORE_CARD_BG_LIGHT, 'border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50')
-          : cn(NETWORK_STORE_CARD_BG_DARK, 'border-white/[0.08] hover:border-white/12 hover:bg-[#262626]'),
+          ? 'bg-white shadow-sm hover:shadow-md border border-[#E8E8E8]'
+          : 'bg-[#1e1e1e] border border-white/[0.08] hover:bg-[#262626]',
       )}
-      onClick={activate}
+      onClick={onOpen}
       onKeyDown={(e) => {
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          activate();
-        }
+        if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onOpen(); }
       }}
       role="button"
       tabIndex={0}
-      style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
+      style={{ fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif' }}
     >
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden sm:h-[4.5rem] sm:w-[4.5rem]">
-        {img ? (
+      {/* Εικόνα */}
+      <div className="relative w-full overflow-hidden" style={{ aspectRatio: '16/9' }}>
+        {partner.image ? (
           <img
-            src={img}
-            alt=""
+            src={partner.image}
+            alt={partner.name}
             className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             draggable={false}
           />
         ) : (
-          <div className={cn('h-full w-full', isLight ? 'bg-zinc-200' : 'bg-[#1f1f1f]')} />
+          <div className={cn('h-full w-full flex items-center justify-center', isLight ? 'bg-[#F2F2F2]' : 'bg-[#2a2a2a]')}>
+            <span className="text-4xl">🏪</span>
+          </div>
         )}
-        <div
-          className={cn(
-            'absolute inset-0 bg-gradient-to-r to-transparent',
-            isLight ? 'from-black/10' : 'from-black/25',
-          )}
-        />
-      </div>
-      <div
-        className={cn(
-          'min-w-0 flex-1 py-2.5 pl-2.5 pr-10 sm:pr-11',
-          isLight ? 'text-neutral-900' : 'text-[#e5e5e5]',
+
+        {/* Δωρεάν delivery badge */}
+        {isFreeDelivery && (
+          <div className="absolute top-2 left-2 rounded-full bg-[#EDFBEB] px-2 py-0.5 text-[10px] font-semibold text-[#1a7a4a]">
+            0 € delivery
+          </div>
         )}
-      >
-        <div className="flex items-center gap-1.5">
-          <h2
-            className={cn(
-              'truncate text-sm font-semibold uppercase leading-tight tracking-tight',
-              isLight ? 'text-neutral-900' : 'text-white',
-            )}
-          >
-            {partner.name}
-          </h2>
-          <span
-            className={cn(
-              'shrink-0 rounded-sm px-1 py-px text-[7px] font-semibold uppercase leading-none tracking-tight text-white',
-              isLight ? 'bg-[#0a0a0a]' : 'bg-anbit-brand/90',
-            )}
-          >
-            Anbit+
-          </span>
-        </div>
-        <p
-          className={cn(
-            'mt-0.5 line-clamp-1 text-[10px] font-medium',
-            isLight ? 'text-neutral-600' : 'text-[#ababab]',
-          )}
-        >
-          <span>{formatFeeLabel(partner)}</span>
-          <span
-            className={cn(
-              'mx-1 inline-block h-0.5 w-0.5 rounded-full align-middle',
-              isLight ? 'bg-zinc-400' : 'bg-[#484848]',
-            )}
-          />
-          <span>{formatDeliveryLabel(partner)}</span>
-          <span
-            className={cn(
-              'mx-1 inline-block h-0.5 w-0.5 rounded-full align-middle',
-              isLight ? 'bg-zinc-400' : 'bg-[#484848]',
-            )}
-          />
-          <span className="inline-flex items-center gap-0.5">
-            {rating.toFixed(1)}
-            <span
-              className="material-symbols-outlined text-[12px] text-sky-400"
-              style={{ fontVariationSettings: "'FILL' 1" }}
-            >
-              sentiment_satisfied
-            </span>
-          </span>
-        </p>
-        <p
-          className={cn(
-            'mt-1 text-sm font-bold leading-none',
-            isLight ? 'text-neutral-900' : 'text-white',
-          )}
-        >
-          {xp.toLocaleString()} XP
-        </p>
-      </div>
-      <div className="absolute right-1 top-1 z-10">
+
+        {/* XP badge */}
+        {xp > 0 && (
+          <div className="absolute top-2 right-10 rounded-full bg-[#009DE0] px-2 py-0.5 text-[10px] font-bold text-white">
+            +{xp.toLocaleString()} XP
+          </div>
+        )}
+
+        {/* Favorite button */}
         <button
           type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            toggleFavorite();
-          }}
+          onClick={(e) => { e.stopPropagation(); toggleFavorite(); }}
           className={cn(
-            'flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-sm transition-colors duration-300',
-            isLight
-              ? cn(
-                  'border border-zinc-200 bg-zinc-100 text-neutral-600 hover:bg-zinc-200',
-                  favorite && 'border-[#2563eb] bg-[#2563eb] text-white hover:bg-[#1d4ed8]',
-                )
-              : cn(
-                  'bg-[#262626]/80 text-white hover:bg-[#2563eb]/90',
-                  favorite && 'bg-[#2563eb]',
-                ),
+            'absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-sm transition-colors',
+            favorite
+              ? 'bg-[#009DE0] text-white'
+              : 'bg-white/90 text-[#717171] hover:text-[#009DE0]',
           )}
           aria-label={favorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
         >
@@ -166,6 +106,37 @@ export function NetworkStoreCard({
             favorite
           </span>
         </button>
+      </div>
+
+      {/* Πληροφορίες καταστήματος */}
+      <div className={cn('flex-1 px-3 py-2.5', isLight ? 'text-[#202125]' : 'text-[#e5e5e5]')}>
+        {/* Όνομα */}
+        <h2 className={cn('text-sm font-bold leading-tight truncate', isLight ? 'text-[#202125]' : 'text-white')}>
+          {partner.name}
+        </h2>
+
+        {/* Τοποθεσία / κατηγορία */}
+        {partner.location && (
+          <p className={cn('mt-0.5 text-xs line-clamp-1', isLight ? 'text-[#717171]' : 'text-[#ababab]')}>
+            📍 {partner.location}
+          </p>
+        )}
+
+        {/* Rating + delivery info */}
+        <div className={cn('mt-1.5 flex items-center gap-2 text-[11px]', isLight ? 'text-[#717171]' : 'text-[#ababab]')}>
+          <span className="flex items-center gap-0.5 font-semibold">
+            <span>{getRatingEmoji(rating)}</span>
+            <span className={isLight ? 'text-[#202125]' : 'text-white'}>{rating.toFixed(1)}</span>
+          </span>
+          <span>·</span>
+          <span>{deliveryTime}</span>
+          {!isFreeDelivery && (
+            <>
+              <span>·</span>
+              <span>ελ. {minOrder}</span>
+            </>
+          )}
+        </div>
       </div>
     </div>
   );

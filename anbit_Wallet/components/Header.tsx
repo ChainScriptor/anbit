@@ -134,11 +134,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       const itemClass = cn(
                         'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-colors',
                         isActive
-                          ? navLightNotHero
-                            ? 'bg-[#0a0a0a] text-white'
-                            : 'bg-anbit-text text-anbit-bg'
+                          ? 'bg-[#009DE0] text-white'
                           : navLightNotHero
-                            ? 'text-neutral-900 hover:bg-zinc-100'
+                            ? 'text-[#202125] hover:bg-[#EBF7FD] hover:text-[#009DE0]'
                             : 'text-white hover:bg-anbit-border/40 hover:text-white',
                       );
 
@@ -304,17 +302,8 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               aria-haspopup="dialog"
             >
               <MapPin
-                className={cn(
-                  'w-6 h-6 lg:w-8 lg:h-8 shrink-0',
-                  navLightRedBar
-                    ? 'text-white'
-                    : navLightAtTop
-                      ? 'text-anbit-text'
-                      : theme === 'dark'
-                        ? 'text-white'
-                        : 'text-anbit-yellow',
-                )}
-                strokeWidth={2}
+                className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 text-[#009DE0]"
+                strokeWidth={2.5}
               />
               <span className="truncate text-sm font-semibold lg:text-base sm:max-w-[120px]">{city.labelEl}</span>
               <ChevronDown className={cn('w-4 h-4 shrink-0 transition-transform', cityModalOpen && 'rotate-180')} />
@@ -354,17 +343,13 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 const baseClass = cn(
                   'relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all',
                   isActive
-                    ? navLightRedBar
-                      ? 'bg-white text-[#0a0a0a] shadow-sm'
-                      : navLightAtTop
-                        ? 'bg-anbit-text text-anbit-bg shadow-sm'
-                        : 'bg-anbit-text text-anbit-bg shadow-sm'
+                    ? 'bg-[#009DE0] text-white shadow-sm'
                     : isStoreProfileHeroMode
                       ? 'bg-[#121214] text-white hover:bg-[#121214] hover:text-white'
                       : navLightRedBar
-                        ? 'text-white hover:bg-white/20'
+                        ? 'text-[#202125] hover:bg-[#EBF7FD] hover:text-[#009DE0]'
                         : navLightAtTop
-                          ? 'text-anbit-text hover:bg-anbit-input'
+                          ? 'text-[#202125] hover:bg-[#EBF7FD] hover:text-[#009DE0]'
                           : 'text-white hover:bg-anbit-border/40 hover:text-white',
                 );
                 const hoverCardContent = (
@@ -435,34 +420,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
             />
             {isAuthenticated ? (
               <>
-                <div
-                  className={cn(
-                    'hidden md:flex items-center gap-2 px-3 py-2 rounded-lg',
-                    isStoreProfileRoute
-                      ? 'bg-[#121214] border border-white/15'
-                      : navLightRedBar
-                        ? 'bg-white/10 border border-white/25'
-                        : navLightAtTop
-                          ? 'bg-white border border-anbit-border'
-                          : 'bg-white/[0.03] border border-white/10',
-                  )}
-                >
-                  <Zap
-                    className={cn(
-                      'w-4 h-4 shrink-0',
-                      isStoreProfileRoute || theme === 'dark' || navLightRedBar
-                        ? 'text-white fill-white'
-                        : navLightAtTop
-                          ? 'text-anbit-text fill-anbit-text'
-                          : 'text-anbit-yellow fill-anbit-yellow',
-                    )}
-                  />
-                  <span
-                    className={cn(
-                      'anbit-tabular-nums text-lg font-bold tracking-tighter',
-                      isStoreProfileRoute || navLightRedBar ? 'text-white' : 'text-anbit-text',
-                    )}
-                  >
+                <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full bg-[#EBF7FD] border border-[#009DE0]/20">
+                  <Zap className="w-4 h-4 shrink-0 text-[#009DE0] fill-[#009DE0]" />
+                  <span className="anbit-tabular-nums text-sm font-bold tracking-tighter text-[#009DE0]">
                     {totalXP.toLocaleString()} XP
                   </span>
                 </div>
@@ -530,21 +490,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <button
                   type="button"
                   onClick={() => onOpenLogin?.()}
-                  className={cn(
-                    'px-4 py-2 text-lg font-semibold transition-colors',
-                    navLightRedBar
-                      ? 'text-white hover:text-white/85'
-                      : navLightAtTop
-                        ? 'text-anbit-text hover:text-anbit-brand-hover'
-                        : 'text-anbit-text hover:text-anbit-yellow',
-                  )}
+                  className="px-4 py-2 text-sm font-semibold text-[#009DE0] hover:text-[#007BB5] transition-colors"
                 >
                   Σύνδεση
                 </button>
                 <button
                   type="button"
                   onClick={onOpenRegister}
-                  className="px-4 py-2.5 text-lg font-semibold bg-anbit-yellow text-anbit-yellow-content rounded-lg hover:opacity-90 transition-opacity"
+                  className="px-4 py-2.5 text-sm font-bold bg-[#009DE0] text-white rounded-lg hover:bg-[#007BB5] transition-colors"
                 >
                   Εγγραφή
                 </button>
