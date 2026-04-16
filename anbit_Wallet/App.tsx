@@ -25,7 +25,6 @@ import { useLanguage } from './context/LanguageContext';
 import { ANBIT_APP_MAX_WIDTH_CLASS, MERCHANT_APPLY_URL } from './constants';
 import { Partner, UserData, Reward } from './types';
 import { useDashboardData } from './hooks/useDashboardData';
-import { WoltBottomNav } from './components/WoltBottomNav';
 import { OfferCarousel } from './components/ui/offer-carousel';
 import { GREEK_OFFERS } from './data/greekOffers';
 import ScanPage from './components/ScanPage';
@@ -324,131 +323,130 @@ const App: React.FC = () => {
         className={`flex flex-col min-h-screen ${showAuthOverlay ? 'pointer-events-none' : ''}`}
         aria-hidden={showAuthOverlay}
       >
-            {authMessage && !isLoginRoute && (
-              <div className="sticky top-0 z-[50] flex items-center justify-between gap-4 bg-amber-500/20 border-b border-amber-500/40 px-4 py-3 text-sm">
-                <p className="text-amber-200 flex-1">{authMessage}</p>
-                <div className="flex items-center gap-2 shrink-0">
-                  <button type="button" onClick={openLogin} className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 transition-colors">
-                    Σύνδεση
-                  </button>
-                  <button type="button" onClick={() => setAuthMessage(null)} className="p-1.5 text-amber-200 hover:text-white rounded transition-colors" aria-label="Κλείσιμο">
-                    ×
-                  </button>
-                </div>
-              </div>
-            )}
-            {!hideChrome && (
-              <Header
-                isAuthenticated={!!userData}
-                onOpenQR={userData ? () => setIsQRModalOpen(true) : undefined}
-                totalXP={userData?.totalXP ?? 0}
-                onOpenLogin={!userData ? openLoginPage : undefined}
-                onOpenRegister={!userData ? openRegister : undefined}
-              />
-            )}
-            <main className={hideChrome
-              ? 'flex-1 min-h-screen w-full p-0'
-              : isStoreProfileRoute
-                ? 'flex-1 min-h-screen w-full p-0 pb-20'
-                : `flex-1 w-full mx-auto pt-16 pb-24 px-0 lg:pt-20 lg:px-0 ${ANBIT_APP_MAX_WIDTH_CLASS}`}
-            >
-              <Routes>
-                <Route path="/" element={<Navigate to="/quests" replace />} />
-                <Route path="/login" element={<CustomerLoginPage />} />
-                <Route path="/dashboard" element={<Navigate to="/quests" replace />} />
-                <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
-                <Route
-                  path="/scan"
-                  element={
-                    <PwaHomeScreen
-                      totalXP={userData?.totalXP ?? 2450}
-                      isAuthenticated={!!userData}
-                      onOpenLogin={() => openLoginPage('/profile')}
-                    />
-                  }
+        {authMessage && !isLoginRoute && (
+          <div className="sticky top-0 z-[50] flex items-center justify-between gap-4 bg-amber-500/20 border-b border-amber-500/40 px-4 py-3 text-sm">
+            <p className="text-amber-200 flex-1">{authMessage}</p>
+            <div className="flex items-center gap-2 shrink-0">
+              <button type="button" onClick={openLogin} className="px-3 py-1.5 bg-amber-500 text-black font-bold rounded-lg hover:bg-amber-400 transition-colors">
+                Σύνδεση
+              </button>
+              <button type="button" onClick={() => setAuthMessage(null)} className="p-1.5 text-amber-200 hover:text-white rounded transition-colors" aria-label="Κλείσιμο">
+                ×
+              </button>
+            </div>
+          </div>
+        )}
+        {!hideChrome && (
+          <Header
+            isAuthenticated={!!userData}
+            onOpenQR={userData ? () => setIsQRModalOpen(true) : undefined}
+            totalXP={userData?.totalXP ?? 0}
+            onOpenLogin={!userData ? openLoginPage : undefined}
+            onOpenRegister={!userData ? openRegister : undefined}
+          />
+        )}
+        <main className={hideChrome
+          ? 'flex-1 min-h-screen w-full p-0'
+          : isStoreProfileRoute
+            ? 'flex-1 min-h-screen w-full p-0'
+            : `flex-1 w-full mx-auto pt-16 pb-8 px-0 lg:pt-20 lg:px-0 ${ANBIT_APP_MAX_WIDTH_CLASS}`}
+        >
+          <Routes>
+            <Route path="/" element={<Navigate to="/quests" replace />} />
+            <Route path="/login" element={<CustomerLoginPage />} />
+            <Route path="/dashboard" element={<Navigate to="/quests" replace />} />
+            <Route path="/scanner" element={<ShopScannerPage partners={dashboardFeed.partners} onOpenPartnerMenu={handleOpenPartnerMenu} />} />
+            <Route
+              path="/scan"
+              element={
+                <PwaHomeScreen
+                  totalXP={userData?.totalXP ?? 2450}
+                  isAuthenticated={!!userData}
+                  onOpenLogin={() => openLoginPage('/profile')}
                 />
-                <Route path="/scan/:shortCode" element={<ScanPage />} />
-                <Route
-                  path="/store/:shortCode"
-                  element={(
-                    <StoreFromQrPage
-                      isAuthenticated={!!userData}
-                      onOpenLogin={openLogin}
-                      onOpenRegister={openRegister}
-                      onOrderComplete={(xpEarned) => {
-                        if (userData && selectedPartner) {
-                          handleOrderComplete(xpEarned);
-                        }
-                      }}
-                    />
-                  )}
-                />
-                <Route path="/network" element={
-                  storeMenuPartner ? (
-                    <StoreMenuPage
-                      partner={storeMenuPartner}
-                      onBack={() => setStoreMenuPartner(null)}
-                      isAuthenticated={!!userData}
-                      onOpenLogin={openLogin}
-                      onOpenRegister={openRegister}
-                      onOrderComplete={(xpEarned) => {
-                        if (userData && storeMenuPartner) {
-                          handleOrderComplete(xpEarned);
-                        }
-                        setStoreMenuPartner(null);
-                      }}
-                    />
-                  ) : (
-                    <NetworkPage
-                      partners={dashboardFeed.partners}
-                      storeXP={userData?.storeXP ?? {}}
-                      onOpenQR={userData ? () => setIsQRModalOpen(true) : openLogin}
-                      onOrderComplete={userData ? handleOrderComplete : openLogin}
-                      unlockedMerchantId={session?.merchantId ?? null}
-                      onOpenStoreMenu={(partner) => {
-                        setSelectedPartner(partner);
-                        setStoreMenuPartner(partner);
-                      }}
-                      onOpenStoreProfile={handleOpenStoreProfile}
-                    />
-                  )
-                } />
-                <Route path="/store-profile/:partnerId" element={<StoreProfilePage />} />
-                <Route
-                  path="/quests"
-                  element={
-                    <QuestsPage
-                      quests={dashboardFeed.quests}
-                      partners={dashboardFeed.partners}
-                      storeXP={userData?.storeXP ?? {}}
-                      totalXP={userData?.totalXP}
-                      userName={userData?.name}
-                    />
-                  }
-                />
-                <Route
-                  path="/profile/*"
-                  element={
-                    userData
-                      ? <ProfilePage user={userData} partners={dashboardFeed.partners} />
-                      : <Navigate to="/login" replace />
-                  }
-                />
-                <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/network" replace />} />
-                <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/network" replace />} />
-                <Route path="*" element={<Navigate to="/quests" replace />} />
-              </Routes>
-            </main>
-            {!hideChrome && <WoltBottomNav />}
-            <AuthModal
-              isOpen={authModalOpen}
-              onClose={closeAuthModal}
-              mode={authModalMode}
-              onSwitchMode={setAuthModalMode}
-              onSuccess={authSuccessCallback ?? (() => navigate('/quests', { replace: true }))}
+              }
             />
-            {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
-            <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />
+            <Route path="/scan/:shortCode" element={<ScanPage />} />
+            <Route
+              path="/store/:shortCode"
+              element={(
+                <StoreFromQrPage
+                  isAuthenticated={!!userData}
+                      onOpenLogin={() => openLoginPage(`${location.pathname}${location.search}`)}
+                  onOpenRegister={openRegister}
+                  onOrderComplete={(xpEarned) => {
+                    if (userData && selectedPartner) {
+                      handleOrderComplete(xpEarned);
+                    }
+                  }}
+                />
+              )}
+            />
+            <Route path="/network" element={
+              storeMenuPartner ? (
+                <StoreMenuPage
+                  partner={storeMenuPartner}
+                  onBack={() => setStoreMenuPartner(null)}
+                  isAuthenticated={!!userData}
+                  onOpenLogin={openLogin}
+                  onOpenRegister={openRegister}
+                  onOrderComplete={(xpEarned) => {
+                    if (userData && storeMenuPartner) {
+                      handleOrderComplete(xpEarned);
+                    }
+                    setStoreMenuPartner(null);
+                  }}
+                />
+              ) : (
+                <NetworkPage
+                  partners={dashboardFeed.partners}
+                  storeXP={userData?.storeXP ?? {}}
+                  onOpenQR={userData ? () => setIsQRModalOpen(true) : openLogin}
+                  onOrderComplete={userData ? handleOrderComplete : openLogin}
+                  unlockedMerchantId={session?.merchantId ?? null}
+                  onOpenStoreMenu={(partner) => {
+                    setSelectedPartner(partner);
+                    setStoreMenuPartner(partner);
+                  }}
+                  onOpenStoreProfile={handleOpenStoreProfile}
+                />
+              )
+            } />
+            <Route path="/store-profile/:partnerId" element={<StoreProfilePage />} />
+            <Route
+              path="/quests"
+              element={
+                <QuestsPage
+                  quests={dashboardFeed.quests}
+                  partners={dashboardFeed.partners}
+                  storeXP={userData?.storeXP ?? {}}
+                  totalXP={userData?.totalXP}
+                  userName={userData?.name}
+                />
+              }
+            />
+            <Route
+              path="/profile/*"
+              element={
+                userData
+                  ? <ProfilePage user={userData} partners={dashboardFeed.partners} />
+                  : <Navigate to="/login" replace />
+              }
+            />
+            <Route path="/settings" element={userData ? <SettingsPage user={userData} /> : <Navigate to="/network" replace />} />
+            <Route path="/security" element={userData ? <SecurityPage user={userData} /> : <Navigate to="/network" replace />} />
+            <Route path="*" element={<Navigate to="/quests" replace />} />
+          </Routes>
+        </main>
+        <AuthModal
+          isOpen={authModalOpen}
+          onClose={closeAuthModal}
+          mode={authModalMode}
+          onSwitchMode={setAuthModalMode}
+          onSuccess={authSuccessCallback ?? (() => navigate('/quests', { replace: true }))}
+        />
+        {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
+        <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />
       </motion.div>
       {showAuthOverlay ? <AnbitSplashScreen key="auth-overlay" /> : null}
     </div>
