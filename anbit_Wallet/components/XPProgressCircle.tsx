@@ -1,8 +1,9 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, useScroll, useTransform, useSpring, useMotionValue } from 'framer-motion';
+import { cn } from '@/lib/utils';
+import { useTheme } from '../context/ThemeContext';
 
-const XP_GOLD = '#F5C518';
 const CARD_HEIGHT = 228;
 
 /** Animated XP counter that counts up with spring physics */
@@ -21,12 +22,14 @@ function XPCounter({ target }: { target: number }) {
 }
 
 /** Floating particle dot */
-function Particle({ x, y, delay, dur }: { x: string; y: string; delay: number; dur: number }) {
+function Particle({
+  x, y, delay, dur, color,
+}: { x: string; y: string; delay: number; dur: number; color: string }) {
   return (
     <motion.div
       className="absolute rounded-full"
-      style={{ left: x, top: y, width: 2, height: 2, background: XP_GOLD }}
-      animate={{ opacity: [0, 0.9, 0], scale: [0, 1.4, 0] }}
+      style={{ left: x, top: y, width: 2, height: 2, background: color }}
+      animate={{ opacity: [0, 0.85, 0], scale: [0, 1.35, 0] }}
       transition={{ duration: dur, repeat: Infinity, delay, ease: 'easeInOut' }}
     />
   );
@@ -61,6 +64,49 @@ const XPHeroCard: React.FC<XPHeroCardProps> = ({
   placeholderMessage,
   pageBg = '#F2F2F2',
 }) => {
+  const { theme } = useTheme();
+  const isLight = theme === 'light';
+
+  const particleColor = isLight ? 'rgba(0, 157, 224, 0.45)' : 'rgba(255, 255, 255, 0.35)';
+
+  const shellBg = useMemo(() => {
+    if (isLight) {
+      return {
+        background: `
+          linear-gradient(180deg, #ffffff 0%, #fafafa 52%, ${pageBg} 100%),
+          radial-gradient(ellipse 90% 65% at 50% -8%, rgba(0, 157, 224, 0.09) 0%, transparent 58%)
+        `,
+      };
+    }
+    return {
+      background: `
+        linear-gradient(165deg, #2c2c2c 0%, #242424 38%, #1a1a1a 100%),
+        radial-gradient(ellipse 88% 72% at 50% -18%, rgba(37, 99, 235, 0.16) 0%, transparent 55%)
+      `,
+    };
+  }, [isLight, pageBg]);
+
+  const accentLine = isLight
+    ? 'linear-gradient(90deg, transparent, rgba(0, 157, 224, 0.35), transparent)'
+    : `linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent)`;
+
+  const numberColor = isLight ? '#202125' : '#ffffff';
+  const suffixClass = isLight ? 'text-[#009DE0]' : 'text-white/55';
+  const labelClass = isLight ? 'text-neutral-500' : 'text-[color:var(--anbit-muted)]';
+  const messageClass = isLight ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]';
+
+  const numberGlow = isLight
+    ? [
+        '0 1px 0 rgba(255,255,255,0.9), 0 12px 40px rgba(0,157,224,0.12)',
+        '0 1px 0 rgba(255,255,255,0.9), 0 16px 48px rgba(0,157,224,0.18)',
+        '0 1px 0 rgba(255,255,255,0.9), 0 12px 40px rgba(0,157,224,0.12)',
+      ]
+    : [
+        '0 0 20px rgba(255,255,255,0.12), 0 0 48px rgba(37,99,235,0.18)',
+        '0 0 28px rgba(255,255,255,0.18), 0 0 64px rgba(37,99,235,0.22)',
+        '0 0 20px rgba(255,255,255,0.12), 0 0 48px rgba(37,99,235,0.18)',
+      ];
+
   // Window scroll → card collapse
   const { scrollY } = useScroll();
 
@@ -72,131 +118,110 @@ const XPHeroCard: React.FC<XPHeroCardProps> = ({
   const animOpacity  = useSpring(rawOpacity,  { stiffness: 220, damping: 32 });
   const animContentY = useSpring(rawContentY, { stiffness: 220, damping: 32 });
 
+  const topGlow = isLight
+    ? `radial-gradient(circle, rgba(0, 157, 224, 0.14) 0%, transparent 68%)`
+    : `radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 68%)`;
+
+  const cornerGlow = isLight
+    ? `radial-gradient(circle, rgba(0, 157, 224, 0.1) 0%, transparent 72%)`
+    : `radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 72%)`;
+
   return (
     <motion.div
-      style={{ height: animHeight, overflow: 'hidden' }}
-      className="relative w-full -mx-4 sm:-mx-6 lg:mx-0 lg:rounded-2xl"
+      style={{ height: animHeight, overflow: 'hidden', fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
+      className={cn(
+        'relative w-full -mx-4 sm:-mx-6 lg:mx-0 lg:rounded-2xl',
+        isLight
+          ? 'border border-zinc-200 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)]'
+          : 'border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)]',
+      )}
     >
-      {/* Dark cosmic background */}
-      <div
-        className="absolute inset-0"
-        style={{
-          background:
-            'radial-gradient(ellipse 90% 120% at 50% -10%, #1b1040 0%, #100c2a 35%, #0c0a1e 60%, #0a0a0a 100%)',
-        }}
-      />
+      {/* Card surface — ίδιο πνεύμα με profile/history (κάρτα, όχι μωβ cosmic) */}
+      <div className="absolute inset-0 overflow-hidden rounded-[inherit] lg:rounded-2xl" style={shellBg} />
 
-      {/* Animated ambient glow – centre top */}
+      {/* Soft top glow */}
       <motion.div
         className="absolute left-1/2 top-0 -translate-x-1/2 -translate-y-1/2 rounded-full pointer-events-none"
         style={{
-          width: 280,
-          height: 280,
-          background: `radial-gradient(circle, ${XP_GOLD}22 0%, transparent 68%)`,
+          width: 260,
+          height: 260,
+          background: topGlow,
         }}
-        animate={{ scale: [1, 1.18, 1], opacity: [0.55, 1, 0.55] }}
+        animate={{ scale: [1, 1.12, 1], opacity: [0.7, 1, 0.7] }}
         transition={{ duration: 3.2, repeat: Infinity, ease: 'easeInOut' }}
       />
 
-      {/* Second accent glow (blue) */}
+      {/* Corner brand accent */}
       <motion.div
         className="absolute pointer-events-none"
         style={{
-          width: 160,
-          height: 160,
-          bottom: -30,
-          right: '15%',
-          background: 'radial-gradient(circle, #2563eb22 0%, transparent 70%)',
+          width: 140,
+          height: 140,
+          bottom: -24,
+          right: '12%',
+          background: cornerGlow,
         }}
-        animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.7, 0.3] }}
-        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
+        animate={{ scale: [1, 1.2, 1], opacity: [0.35, 0.65, 0.35] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 0.8 }}
       />
 
-      {/* Particles */}
       {PARTICLES.map((p, i) => (
-        <Particle key={i} {...p} />
+        <Particle key={i} {...p} color={particleColor} />
       ))}
 
-      {/* Thin gold top line */}
       <div
         className="absolute top-0 left-0 right-0 h-px"
-        style={{ background: `linear-gradient(90deg, transparent, ${XP_GOLD}66, transparent)` }}
+        style={{ background: accentLine }}
       />
 
-      {/* Content */}
       <motion.div
         style={{ opacity: animOpacity, y: animContentY }}
-        className="absolute inset-0 flex flex-col items-center justify-center select-none"
+        className="absolute inset-0 flex flex-col items-center justify-center select-none px-4"
       >
-        {/* Label row */}
         <div className="flex items-center gap-2 mb-3">
-          <div
-            className="h-px w-10 rounded-full"
-            style={{ background: `linear-gradient(90deg, transparent, ${XP_GOLD}70)` }}
-          />
-          <span
-            className="text-[10px] font-bold tracking-[0.22em] uppercase"
-            style={{ color: 'rgba(255,255,255,0.38)' }}
-          >
+          <div className="h-px w-10 rounded-full" style={{ background: accentLine }} />
+          <span className={cn('text-[10px] font-bold tracking-[0.2em] uppercase', labelClass)}>
             {userName ? `${userName} ·` : ''} Παγκόσμιο Υπόλοιπο
           </span>
-          <div
-            className="h-px w-10 rounded-full"
-            style={{ background: `linear-gradient(90deg, ${XP_GOLD}70, transparent)` }}
-          />
+          <div className="h-px w-10 rounded-full" style={{ background: accentLine }} />
         </div>
 
-        {/* Big XP number */}
         <div className="relative flex items-end gap-2">
-          {/* Soft glow beneath the number */}
           <div
-            className="absolute inset-x-0 bottom-0 h-12 pointer-events-none"
+            className="absolute inset-x-0 bottom-0 h-10 pointer-events-none opacity-80"
             style={{
-              background: `radial-gradient(ellipse 80% 100% at 50% 100%, ${XP_GOLD}30 0%, transparent 70%)`,
-              filter: 'blur(6px)',
+              background: isLight
+                ? `radial-gradient(ellipse 75% 100% at 50% 100%, rgba(0, 157, 224, 0.12) 0%, transparent 72%)`
+                : `radial-gradient(ellipse 75% 100% at 50% 100%, rgba(37, 99, 235, 0.2) 0%, transparent 72%)`,
+              filter: 'blur(8px)',
             }}
           />
 
           <motion.span
-            className="font-black leading-none relative"
+            className="font-black leading-none relative tabular-nums"
             style={{
               fontSize: 72,
               lineHeight: 1,
-              color: XP_GOLD,
-              fontVariantNumeric: 'tabular-nums',
+              color: numberColor,
             }}
-            animate={{
-              textShadow: [
-                `0 0 24px ${XP_GOLD}90, 0 0 60px ${XP_GOLD}44`,
-                `0 0 40px ${XP_GOLD}cc, 0 0 100px ${XP_GOLD}66`,
-                `0 0 24px ${XP_GOLD}90, 0 0 60px ${XP_GOLD}44`,
-              ],
-            }}
-            transition={{ duration: 2.6, repeat: Infinity, ease: 'easeInOut' }}
+            animate={{ textShadow: numberGlow }}
+            transition={{ duration: 2.8, repeat: Infinity, ease: 'easeInOut' }}
           >
             <XPCounter target={totalXP} />
           </motion.span>
 
-          <span
-            className="font-extrabold pb-2.5 text-xl tracking-tight"
-            style={{ color: `${XP_GOLD}aa` }}
-          >
+          <span className={cn('font-extrabold pb-2.5 text-xl tracking-tight', suffixClass)}>
             XP
           </span>
         </div>
 
-        {/* Optional message */}
         {placeholderMessage && (
-          <p
-            className="mt-3 text-[11px] font-semibold tracking-wide"
-            style={{ color: `${XP_GOLD}cc` }}
-          >
+          <p className={cn('mt-3 text-center text-[11px] font-semibold tracking-wide', messageClass)}>
             {placeholderMessage}
           </p>
         )}
       </motion.div>
 
-      {/* Bottom gradient – dissolves into page background */}
       <div
         className="absolute bottom-0 left-0 right-0 h-12 pointer-events-none"
         style={{ background: `linear-gradient(to bottom, transparent, ${pageBg})` }}

@@ -1,10 +1,17 @@
-import React, { useCallback, useRef } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useTheme } from '../../context/ThemeContext';
+import { useLanguage } from '../../context/LanguageContext';
 import { offerCarouselNavButtonClass } from '../ui/offer-carousel';
-import { NetworkStoreCard } from '../NetworkStoreCard';
+import { QuestOfferCard } from '../QuestOfferCard';
+import { partnerToNetworkDisplayQuest } from '@/lib/partnerNetworkQuest';
+import {
+  loadFavoriteMerchantIds,
+  subscribeFavoriteMerchantsChanged,
+  toggleFavoriteMerchantId,
+} from '@/lib/favoriteStores';
 import type { Partner } from '../../types';
 
 const NETWORK_CAROUSEL_NAV_LIGHT =
@@ -16,9 +23,17 @@ type Props = {
 
 export function ProfileInsightsSection({ partnersWithPoints }: Props) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const isLight = theme === 'light';
   const navigate = useNavigate();
   const storesScrollRef = useRef<HTMLDivElement>(null);
+  const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
+
+  useEffect(() => {
+    return subscribeFavoriteMerchantsChanged(() => {
+      setFavoriteMerchantIds(loadFavoriteMerchantIds());
+    });
+  }, []);
 
   const scrollStoresStrip = useCallback((dir: 'left' | 'right') => {
     const el = storesScrollRef.current;
@@ -26,6 +41,9 @@ export function ProfileInsightsSection({ partnersWithPoints }: Props) {
     const step = el.clientWidth * 0.75;
     el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
   }, []);
+
+  const networkOfferCardBg = isLight ? 'bg-white' : 'bg-[color:var(--anbit-card)]';
+  const networkOfferMuted = isLight ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]';
 
   return (
     <div
@@ -48,7 +66,7 @@ export function ProfileInsightsSection({ partnersWithPoints }: Props) {
               isLight ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]',
             )}
           >
-            Κάθε συνεργαζόμενο κατάστημα κρατά ξεχωριστά XP — ίδια εμφάνιση με το δίκτυο, με τους πόντους σου.
+            Κάθε συνεργαζόμενο κατάστημα κρατά ξεχωριστά XP — ίδια κάρτα με το δίκτυο Anbit.
           </p>
         </div>
 
@@ -73,17 +91,26 @@ export function ProfileInsightsSection({ partnersWithPoints }: Props) {
             </button>
             <div
               ref={storesScrollRef}
-              className="flex gap-3 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
+              className="flex gap-4 overflow-x-auto pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory sm:gap-5"
             >
-              {partnersWithPoints.map(({ partner, xp }) => (
+              {partnersWithPoints.map(({ partner, xp }, index) => (
                 <div
                   key={partner.id}
-                  className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
+                  className="w-[min(calc(50vw-1.75rem),280px)] shrink-0 snap-start sm:w-[min(300px,calc(50vw-2rem))] md:w-[min(22rem,calc(25vw-1.5rem))]"
                 >
-                  <NetworkStoreCard
+                  <QuestOfferCard
+                    quest={partnerToNetworkDisplayQuest(partner, Math.round(xp))}
+                    index={index}
+                    t={t}
+                    questsPage
                     partner={partner}
-                    xp={Math.round(xp)}
-                    onOpen={() => navigate(`/store-profile/${partner.id}`, { state: { partner } })}
+                    cardClassName={networkOfferCardBg}
+                    mutedTextClassName={networkOfferMuted}
+                    className="h-full w-full"
+                    networkStoreCard
+                    onNetworkStoreOpen={() => navigate(`/store-profile/${partner.id}`, { state: { partner } })}
+                    isFavorite={favoriteMerchantIds.has(partner.id)}
+                    onFavoriteToggle={() => toggleFavoriteMerchantId(partner.id)}
                   />
                 </div>
               ))}

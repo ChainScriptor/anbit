@@ -3,6 +3,7 @@ import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { Copy, Facebook, Linkedin, Search, Sparkles, Star, TicketPercent } from 'lucide-react';
 import { UserData, Partner } from '../types';
 import { useTheme } from '../context/ThemeContext';
+import { useLanguage } from '../context/LanguageContext';
 import { cn } from '@/lib/utils';
 import { IconTabs3D, type ProfileTabItem } from './ui/3d-icon-tabs-1';
 import { ProfileInsightsSection } from './profile/ProfileInsightsSection';
@@ -12,9 +13,11 @@ import { GREEK_OFFERS } from '../data/greekOffers';
 import {
   loadFavoriteMerchantIds,
   subscribeFavoriteMerchantsChanged,
+  toggleFavoriteMerchantId,
   useFavoriteMerchant,
 } from '@/lib/favoriteStores';
-import { NetworkStoreCard } from './NetworkStoreCard';
+import { partnerToNetworkDisplayQuest } from '@/lib/partnerNetworkQuest';
+import { QuestOfferCard } from './QuestOfferCard';
 import { Button } from './ui/button';
 
 type OrderHistoryEntry = {
@@ -554,6 +557,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const storeXP = user.storeXP || {};
   const totalStorePoints = Object.values(storeXP).reduce((sum, v) => sum + (Number(v) || 0), 0);
 
@@ -1704,13 +1708,24 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                     {favoritePreviewStores.length === 1 ? 'κατάστημα' : 'καταστήματα'} — ίδια εμφάνιση με το δίκτυο.
                   </p>
                 </div>
-                <div className="grid w-full grid-cols-1 gap-3 sm:grid-cols-2 md:grid-cols-3">
-                  {favoritePreviewStores.map((partner) => (
-                    <div key={partner.id} className="min-w-0">
-                      <NetworkStoreCard
+                <div className="mx-auto grid w-full max-w-[1600px] grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4">
+                  {favoritePreviewStores.map((partner, index) => (
+                    <div key={partner.id} className="min-h-0 min-w-0">
+                      <QuestOfferCard
+                        quest={partnerToNetworkDisplayQuest(partner, storeXP[partner.id] ?? 0)}
+                        index={index}
+                        t={t}
+                        questsPage
                         partner={partner}
-                        xp={storeXP[partner.id] ?? 0}
-                        onOpen={() => navigate(`/store-profile/${partner.id}`, { state: { partner } })}
+                        cardClassName={theme === 'light' ? 'bg-white' : 'bg-[color:var(--anbit-card)]'}
+                        mutedTextClassName={
+                          theme === 'light' ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]'
+                        }
+                        className="h-full w-full"
+                        networkStoreCard
+                        onNetworkStoreOpen={() => navigate(`/store-profile/${partner.id}`, { state: { partner } })}
+                        isFavorite={favoriteMerchantIds.has(partner.id)}
+                        onFavoriteToggle={() => toggleFavoriteMerchantId(partner.id)}
                       />
                     </div>
                   ))}

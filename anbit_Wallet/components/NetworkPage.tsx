@@ -1,104 +1,59 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { Search, ChevronRight } from 'lucide-react';
-import { Partner } from '../types';
+import React, { useEffect, useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
+import { SlidersHorizontal } from 'lucide-react';
+import type { Partner } from '../types';
+import { partnerToNetworkDisplayQuest } from '@/lib/partnerNetworkQuest';
 import { cn } from '@/lib/utils';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
-import { loadFavoriteMerchantIds, subscribeFavoriteMerchantsChanged } from '@/lib/favoriteStores';
-import { NetworkStoreCard } from './NetworkStoreCard';
+import { DiscoverButton, type DiscoverTabId } from './ui/discover-button';
+import {
+  loadFavoriteMerchantIds,
+  subscribeFavoriteMerchantsChanged,
+  toggleFavoriteMerchantId,
+} from '@/lib/favoriteStores';
+import { QuestOfferCard } from './QuestOfferCard';
 
-/* ─── Wolt-style κατηγορίες ──────────────────────────────────── */
-interface WoltCategory {
-  id: string;
-  label: string;
-  emoji: string;
-  categoryId: string;
+/** Εμφανιζόμενο όνομα κατηγορίας δικτύου (κείμενο πάνω από τα μαγαζιά). */
+const NETWORK_CATEGORY_LABELS: Record<string, string> = {
+  coffee: 'Καφές',
+  burger: 'Burger & ψητό',
+  healthy: 'Υγεία & fitness',
+  street_food: 'Street food',
+  sandwiches: 'Σάντουιτς',
+  sweets: 'Γλυκά',
+  bar: 'Bar',
+  brunch: 'Brunch',
+  bbq: 'BBQ',
+  breakfast: 'Πρωινό',
+  italian: 'Ιταλική κουζίνα',
+  asian: 'Ασιατική κουζίνα',
+  pizza: 'Πίτσα',
+  crepe: 'Κρέπες',
+  pasta: 'Ζυμαρικά',
+  bougatsa: 'Μπουγάτσα',
+  salads: 'Σαλάτες',
+  souvlaki: 'Σουβλάκι',
+  cooked: 'Μαγειρευτό',
+};
+
+function partnerCategoryDisplayLabel(category: string): string {
+  const c = category?.trim() || 'other';
+  return NETWORK_CATEGORY_LABELS[c] ?? c.replace(/_/g, ' ');
 }
 
-const WOLT_CATEGORIES: WoltCategory[] = [
-  { id: 'all',          label: 'Όλα',           emoji: '⭐',   categoryId: 'All' },
-  { id: 'restaurants',  label: 'Εστιατόρια',    emoji: '🍽️',  categoryId: 'street_food' },
-  { id: 'grocery',      label: 'Σούπερ μάρκετ', emoji: '🛒',  categoryId: 'grocery' },
-  { id: 'drinks',       label: 'Ποτά',          emoji: '🍺',  categoryId: 'bar' },
-  { id: 'sweets',       label: 'Γλυκά',         emoji: '🍰',  categoryId: 'sweets' },
-  { id: 'healthy',      label: 'Υγεινό',        emoji: '🥗',  categoryId: 'healthy' },
-  { id: 'pets',         label: 'Κατοικίδια',    emoji: '🐶',  categoryId: 'pets' },
-  { id: 'sandwiches',   label: 'Σάντουιτς',     emoji: '🥙',  categoryId: 'sandwiches' },
+/* ─── Sort options ────────────────────────────────────────────── */
+type SortMode = 'default' | 'rating' | 'xp' | 'favorites';
+
+const SORT_OPTIONS: { id: SortMode; label: string }[] = [
+  { id: 'default',   label: 'Προεπιλογή'    },
+  { id: 'rating',    label: 'Αξιολόγηση'   },
+  { id: 'xp',        label: 'Περισσότερο XP' },
+  { id: 'favorites', label: 'Αγαπημένα'    },
 ];
 
-/* ─── Wolt section config ─────────────────────────────────────── */
-interface SectionConfig {
-  id: string;
-  title: string;
-  subtitle?: string;
-  filter: (partners: Partner[], storeXP: Record<string, number>, favIds: Set<string>) => Partner[];
-}
-
-const SECTIONS: SectionConfig[] = [
-  {
-    id: 'lunch',
-    title: 'Κοντά σου για μεσημεριανό',
-    filter: (partners) => partners.slice(0, 6),
-  },
-  {
-    id: 'fastest',
-    title: 'Γρηγορότερη παράδοση',
-    subtitle: 'Φτάνει σε λιγότερο από 30 λεπτά',
-    filter: (partners) =>
-      [...partners]
-        .filter((p) => p.deliveryTime)
-        .sort((a, b) => {
-          const getMin = (t?: string) => {
-            if (!t || t === '—') return 99;
-            const m = t.match(/\d+/);
-            return m ? parseInt(m[0], 10) : 99;
-          };
-          return getMin(a.deliveryTime) - getMin(b.deliveryTime);
-        })
-        .slice(0, 6),
-  },
-  {
-    id: 'favorites',
-    title: 'Τοπικά αγαπημένα',
-    filter: (partners, storeXP) =>
-      [...partners]
-        .sort((a, b) => (storeXP[b.id] ?? 0) - (storeXP[a.id] ?? 0))
-        .slice(0, 6),
-  },
-  {
-    id: 'toprated',
-    title: 'Κορυφαία αξιολογημένα',
-    filter: (partners) =>
-      [...partners]
-        .sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0))
-        .slice(0, 6),
-  },
-  {
-    id: 'popular',
-    title: 'Δημοφιλή αυτή την ώρα',
-    filter: (partners) => [...partners].reverse().slice(0, 6),
-  },
-];
-
-/* ─── Promo banners (static για demo) ────────────────────────── */
-const PROMO_BANNERS = [
-  { id: 1, title: 'Δωρεάν delivery',    subtitle: 'Σε εκατοντάδες καταστήματα', color: '#EBF7FD', emoji: '🚴' },
-  { id: 2, title: '20% έκπτωση',       subtitle: 'Στις πρώτες 3 παραγγελίες',   color: '#EDFBEB', emoji: '🎁' },
-  { id: 3, title: 'Κέρδισε XP',        subtitle: 'Σε κάθε παραγγελία σου',      color: '#FFF8E1', emoji: '⚡' },
-];
-
-/* ─── Grid categories ─────────────────────────────────────────── */
-const GRID_CATEGORIES = [
-  { label: 'Burger',   emoji: '🍔', categoryId: 'street_food' },
-  { label: 'Pizza',    emoji: '🍕', categoryId: 'street_food' },
-  { label: 'Sushi',    emoji: '🍣', categoryId: 'street_food' },
-  { label: 'Κρέας',   emoji: '🥩', categoryId: 'street_food' },
-  { label: 'Σαλάτες', emoji: '🥗', categoryId: 'healthy'     },
-  { label: 'Χυμοί',   emoji: '🧃', categoryId: 'bar'         },
-  { label: 'Παγωτό',  emoji: '🍦', categoryId: 'sweets'      },
-  { label: 'Καφές',   emoji: '☕', categoryId: 'sweets'      },
-];
+/** ≥md: κεντρικό modal ταξινόμησης · <md: bottom sheet */
+const SORT_SHEET_DESKTOP_MQ = '(min-width: 768px)';
 
 /* ─── Props ───────────────────────────────────────────────────── */
 interface NetworkPageProps {
@@ -111,60 +66,6 @@ interface NetworkPageProps {
   unlockedMerchantId?: string | null;
 }
 
-/* ─── Horizontal section component ───────────────────────────── */
-function WoltSection({
-  title,
-  subtitle,
-  partners,
-  storeXP,
-  onOpenStoreProfile,
-  isLight,
-}: {
-  title: string;
-  subtitle?: string;
-  partners: Partner[];
-  storeXP: Record<string, number>;
-  onOpenStoreProfile: (p: Partner) => void;
-  isLight: boolean;
-}) {
-  const scrollRef = useRef<HTMLDivElement>(null);
-  if (partners.length === 0) return null;
-
-  return (
-    <section className="space-y-3">
-      <div className="flex items-end justify-between px-4">
-        <div>
-          <h2 className={cn('text-lg font-bold leading-tight', isLight ? 'text-[#202125]' : 'text-white')}>
-            {title}
-          </h2>
-          {subtitle && (
-            <p className={cn('text-xs mt-0.5', isLight ? 'text-[#717171]' : 'text-[#aaa]')}>
-              {subtitle}
-            </p>
-          )}
-        </div>
-        <button className="flex items-center gap-0.5 text-[13px] font-semibold text-[#009DE0] shrink-0">
-          Δες όλα <ChevronRight className="h-4 w-4" />
-        </button>
-      </div>
-      <div
-        ref={scrollRef}
-        className="flex gap-3 overflow-x-auto px-4 pb-1 no-scrollbar snap-x snap-mandatory"
-      >
-        {partners.map((partner) => (
-          <div key={partner.id} className="w-[200px] shrink-0 snap-start sm:w-[220px]">
-            <NetworkStoreCard
-              partner={partner}
-              xp={storeXP[partner.id] ?? 0}
-              onOpen={() => onOpenStoreProfile(partner)}
-            />
-          </div>
-        ))}
-      </div>
-    </section>
-  );
-}
-
 /* ─── Main NetworkPage ────────────────────────────────────────── */
 const NetworkPage: React.FC<NetworkPageProps> = ({
   partners,
@@ -172,11 +73,18 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
   onOpenStoreProfile,
 }) => {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const isLight = theme === 'light';
-  const [activeCategory, setActiveCategory] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
+  const [discoverTab, setDiscoverTab] = useState<DiscoverTabId>('popular');
+  const [sortMode, setSortMode] = useState<SortMode>('default');
+  const [showSortSheet, setShowSortSheet] = useState(false);
   const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
-  const [promoBannerIdx, setPromoBannerIdx] = useState(0);
+  const [isSortSheetDesktop, setIsSortSheetDesktop] = useState(
+    () => typeof window !== 'undefined' && window.matchMedia(SORT_SHEET_DESKTOP_MQ).matches,
+  );
+  /** 'all' = όλες οι κατηγορίες · αλλιώς id κατηγορίας partner */
+  const [categoryFilter, setCategoryFilter] = useState<string>('all');
 
   useEffect(() => {
     return subscribeFavoriteMerchantsChanged(() => {
@@ -184,227 +92,375 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
     });
   }, []);
 
-  /* Auto-rotate promo banners */
   useEffect(() => {
-    const t = setInterval(() => setPromoBannerIdx((i) => (i + 1) % PROMO_BANNERS.length), 3500);
-    return () => clearInterval(t);
+    const mq = window.matchMedia(SORT_SHEET_DESKTOP_MQ);
+    const onChange = () => setIsSortSheetDesktop(mq.matches);
+    onChange();
+    mq.addEventListener('change', onChange);
+    return () => mq.removeEventListener('change', onChange);
   }, []);
 
-  /* Filtered partners by category */
-  const categoryFilteredPartners = useMemo(() => {
-    const cat = WOLT_CATEGORIES.find((c) => c.id === activeCategory);
-    if (!cat || cat.categoryId === 'All') return partners;
-    return partners.filter((p) => p.category === cat.categoryId);
-  }, [partners, activeCategory]);
+  /* Φίλτρο Discover: αγαπημένα (όπως /quests) */
+  const discoverFiltered = useMemo(() => {
+    if (discoverTab !== 'favorites') return partners;
+    return partners.filter((p) => favoriteMerchantIds.has(p.id));
+  }, [partners, discoverTab, favoriteMerchantIds]);
 
-  /* Search filter */
-  const searchFilteredPartners = useMemo(() => {
-    const q = searchQuery.trim().toLowerCase();
-    if (!q) return categoryFilteredPartners;
-    return categoryFilteredPartners.filter((p) =>
-      p.name.toLowerCase().includes(q) || p.location?.toLowerCase().includes(q),
+  /** Κατηγορίες που υπάρχουν στα τρέχοντα (μετά discover) δεδομένα — για chips φίλτρου */
+  const categoryChips = useMemo(() => {
+    const ids = new Set<string>();
+    for (const p of discoverFiltered) {
+      ids.add((p.category ?? 'other').trim() || 'other');
+    }
+    return [...ids].sort((a, b) =>
+      partnerCategoryDisplayLabel(a).localeCompare(partnerCategoryDisplayLabel(b), 'el', { sensitivity: 'base' }),
     );
-  }, [categoryFilteredPartners, searchQuery]);
+  }, [discoverFiltered]);
 
-  /* Show sections only when no search/category filter active */
-  const showSections = !searchQuery && activeCategory === 'all';
+  useEffect(() => {
+    if (categoryFilter !== 'all' && !categoryChips.includes(categoryFilter)) {
+      setCategoryFilter('all');
+    }
+  }, [categoryFilter, categoryChips]);
+
+  const categoryFiltered = useMemo(() => {
+    if (categoryFilter === 'all') return discoverFiltered;
+    return discoverFiltered.filter((p) => ((p.category ?? 'other').trim() || 'other') === categoryFilter);
+  }, [discoverFiltered, categoryFilter]);
+
+  /* Filter by search (Discover search bar) */
+  const searchFiltered = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    if (!q) return categoryFiltered;
+    return categoryFiltered.filter(
+      (p) => p.name.toLowerCase().includes(q) || p.location?.toLowerCase().includes(q),
+    );
+  }, [categoryFiltered, searchQuery]);
+
+  /* Sort */
+  const sortedPartners = useMemo(() => {
+    const arr = [...searchFiltered];
+    if (sortMode === 'rating') return arr.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+    if (sortMode === 'xp')     return arr.sort((a, b) => (storeXP[b.id] ?? 0) - (storeXP[a.id] ?? 0));
+    if (sortMode === 'favorites') {
+      return arr.sort((a, b) => {
+        const fa = favoriteMerchantIds.has(a.id) ? 1 : 0;
+        const fb = favoriteMerchantIds.has(b.id) ? 1 : 0;
+        return fb - fa;
+      });
+    }
+    return arr;
+  }, [searchFiltered, sortMode, storeXP, favoriteMerchantIds]);
+
+  /** Τμήματα ανά κατηγορία: τίτλος κειμένου + πλέγμα καταστημάτων από κάτω. */
+  const categorySections = useMemo(() => {
+    const map = new Map<string, Partner[]>();
+    for (const p of sortedPartners) {
+      const key = (p.category ?? 'other').trim() || 'other';
+      const list = map.get(key);
+      if (list) list.push(p);
+      else map.set(key, [p]);
+    }
+    const entries = [...map.entries()].map(([category, partners]) => ({
+      category,
+      label: partnerCategoryDisplayLabel(category),
+      partners,
+    }));
+    entries.sort((a, b) => a.label.localeCompare(b.label, 'el', { sensitivity: 'base' }));
+    let index = 0;
+    return entries.map((e) => ({
+      ...e,
+      rows: e.partners.map((partner) => ({ partner, index: index++ })),
+    }));
+  }, [sortedPartners]);
+
+  const bgPage  = isLight ? 'bg-[#F2F2F2]' : 'bg-[#0a0a0a]';
+  const bgSticky = isLight ? 'bg-[#F2F2F2]' : 'bg-[#0a0a0a]';
+  /** Ίδιο card shell με QuestOfferCard στο /quests */
+  const networkOfferCardBg = isLight ? 'bg-white' : 'bg-[color:var(--anbit-card)]';
+  const networkOfferMuted = isLight ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]';
+
+  const sortSheetPanelClass = cn(
+    'z-50 p-5 shadow-2xl',
+    isLight ? 'bg-white' : 'bg-[#1e1e1e]',
+  );
+
+  const sortSheetOptions = (
+    <div className="space-y-1">
+      {SORT_OPTIONS.map((opt) => (
+        <button
+          key={opt.id}
+          type="button"
+          onClick={() => {
+            setSortMode(opt.id);
+            setShowSortSheet(false);
+          }}
+          className={cn(
+            'flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors',
+            sortMode === opt.id
+              ? 'bg-[#009DE0]/10 text-[#009DE0]'
+              : isLight
+                ? 'text-[#202125] hover:bg-[#F2F2F2]'
+                : 'text-white hover:bg-white/[0.06]',
+          )}
+        >
+          {opt.label}
+          {sortMode === opt.id && <span className="h-2 w-2 shrink-0 rounded-full bg-[#009DE0]" />}
+        </button>
+      ))}
+    </div>
+  );
 
   return (
     <div
-      className={cn('min-h-screen pb-28', isLight ? 'bg-[#F2F2F2]' : 'bg-[#0a0a0a]')}
+      className={cn('min-h-screen pb-8', bgPage)}
       style={{ fontFamily: '-apple-system, BlinkMacSystemFont, Roboto, "Segoe UI", sans-serif' }}
     >
-      {/* ── Search bar ── */}
-      <div className={cn('sticky top-0 z-30 px-4 py-3', isLight ? 'bg-[#F2F2F2]' : 'bg-[#0a0a0a]')}>
-        <div className={cn(
-          'flex items-center gap-2 rounded-full px-4 py-2.5 border',
-          isLight ? 'bg-white border-[#E8E8E8] shadow-sm' : 'bg-[#1e1e1e] border-white/[0.08]',
-        )}>
-          <Search className={cn('h-4 w-4 shrink-0', isLight ? 'text-[#717171]' : 'text-[#888]')} />
-          <input
-            type="text"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder="Αναζήτηση καταστήματος ή πιάτου"
+      {/* ── Sticky: τίτλος (όπως Προφίλ) + Discover δεξιά ── */}
+      <div className={cn('sticky top-0 z-30 px-4 pt-3 pb-3', bgSticky)}>
+        <div className="flex min-w-0 items-center justify-between gap-3">
+          <h1
             className={cn(
-              'flex-1 bg-transparent text-sm outline-none',
-              isLight ? 'text-[#202125] placeholder:text-[#717171]' : 'text-white placeholder:text-[#888]',
+              'playpen-sans min-w-0 flex-1 truncate text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]',
+              isLight ? 'text-[#202125]' : 'text-white',
             )}
-          />
-          {searchQuery && (
+          >
+            {searchQuery || discoverTab === 'favorites' || categoryFilter !== 'all'
+              ? 'Αποτελέσματα'
+              : 'Καταστήματα'}
+          </h1>
+          <div className="flex shrink-0 items-center gap-2">
+            <DiscoverButton
+              compact
+              className="h-full shrink-0 justify-end p-1"
+              searchQuery={searchQuery}
+              onSearchChange={setSearchQuery}
+              activeDiscoverTab={discoverTab}
+              onDiscoverTabChange={setDiscoverTab}
+              labels={{
+                popular: t('discoverPopular'),
+                favorites: t('discoverFavorites'),
+                searchPlaceholder: t('searchPartners'),
+              }}
+            />
             <button
               type="button"
-              onClick={() => setSearchQuery('')}
-              className={cn('text-sm', isLight ? 'text-[#717171]' : 'text-[#888]')}
-            >
-              ✕
-            </button>
-          )}
-        </div>
-      </div>
-
-      {/* ── Category pills ── */}
-      <div className="flex gap-2 overflow-x-auto px-4 pb-3 no-scrollbar">
-        {WOLT_CATEGORIES.map((cat) => {
-          const active = activeCategory === cat.id;
-          return (
-            <button
-              key={cat.id}
-              type="button"
-              onClick={() => setActiveCategory(cat.id)}
+              onClick={() => setShowSortSheet(true)}
               className={cn(
-                'flex shrink-0 items-center gap-1.5 rounded-full px-3.5 py-2 text-sm font-semibold transition-colors whitespace-nowrap',
-                active
-                  ? 'bg-[#009DE0] text-white shadow-sm'
+                'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors',
+                sortMode !== 'default'
+                  ? 'bg-[#009DE0] border-[#009DE0] text-white'
                   : isLight
-                    ? 'bg-white text-[#202125] border border-[#E8E8E8] hover:border-[#009DE0]/40'
-                    : 'bg-[#1e1e1e] text-[#e5e5e5] border border-white/[0.08] hover:border-[#009DE0]/40',
+                    ? 'bg-white border-[#E8E8E8] text-[#717171] shadow-sm'
+                    : 'bg-[#1e1e1e] border-white/[0.08] text-[#888]',
               )}
             >
-              <span>{cat.emoji}</span>
-              <span>{cat.label}</span>
+              <SlidersHorizontal className="h-4 w-4" />
             </button>
-          );
-        })}
+          </div>
+        </div>
+        {categoryChips.length > 0 && (
+          <div
+            className="mt-3 -mx-1 flex gap-2 overflow-x-auto px-1 pb-0.5 no-scrollbar scroll-smooth"
+            role="tablist"
+            aria-label={t('filterBy')}
+          >
+            <button
+              type="button"
+              role="tab"
+              aria-selected={categoryFilter === 'all'}
+              onClick={() => setCategoryFilter('all')}
+              className={cn(
+                'shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                categoryFilter === 'all'
+                  ? 'border-[#009DE0]/40 bg-[#009DE0]/15 text-[#009DE0]'
+                  : isLight
+                    ? 'border-[#E8E8E8] bg-white text-[#717171] hover:border-[#009DE0]/30 hover:text-[#202125]'
+                    : 'border-white/[0.1] bg-[#1e1e1e] text-[#aaa] hover:border-[#009DE0]/25 hover:text-white',
+              )}
+            >
+              {t('all')}
+            </button>
+            {categoryChips.map((catId) => {
+              const active = categoryFilter === catId;
+              return (
+                <button
+                  key={catId}
+                  type="button"
+                  role="tab"
+                  aria-selected={active}
+                  onClick={() => setCategoryFilter(active ? 'all' : catId)}
+                  className={cn(
+                    'shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
+                    active
+                      ? 'border-[#009DE0]/40 bg-[#009DE0]/15 text-[#009DE0]'
+                      : isLight
+                        ? 'border-[#E8E8E8] bg-white text-[#717171] hover:border-[#009DE0]/30 hover:text-[#202125]'
+                        : 'border-white/[0.1] bg-[#1e1e1e] text-[#aaa] hover:border-[#009DE0]/25 hover:text-white',
+                  )}
+                >
+                  {partnerCategoryDisplayLabel(catId)}
+                </button>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* ─── Search results ─────────────────────────────────────── */}
-      {(searchQuery || activeCategory !== 'all') && (
-        <div className="px-4 space-y-3 mt-2">
-          <p className={cn('text-sm font-medium', isLight ? 'text-[#717171]' : 'text-[#aaa]')}>
-            {searchFilteredPartners.length} αποτελέσματα
+      {/* ── No results ── */}
+      {sortedPartners.length === 0 && (
+        <div className="flex flex-col items-center justify-center py-24 px-8 text-center">
+          <span className="text-5xl mb-4">🔍</span>
+          <p className={cn('text-base font-semibold', isLight ? 'text-[#202125]' : 'text-white')}>
+            Δεν βρέθηκαν καταστήματα
           </p>
-          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-            {searchFilteredPartners.map((partner) => (
-              <NetworkStoreCard
-                key={partner.id}
-                partner={partner}
-                xp={storeXP[partner.id] ?? 0}
-                onOpen={() => onOpenStoreProfile(partner)}
-              />
-            ))}
-            {searchFilteredPartners.length === 0 && (
-              <p className={cn('col-span-2 py-12 text-center text-sm', isLight ? 'text-[#717171]' : 'text-[#888]')}>
-                Δεν βρέθηκαν καταστήματα.
-              </p>
-            )}
-          </div>
+          <p className={cn('mt-1 text-sm', isLight ? 'text-[#717171]' : 'text-[#888]')}>
+            {discoverTab === 'favorites' && favoriteMerchantIds.size === 0
+              ? t('favoriteStoresAddSome')
+              : discoverTab === 'favorites'
+                ? t('favoriteStoresNoOffers')
+                : categoryFilter !== 'all'
+                  ? 'Δοκίμασε άλλη κατηγορία ή αναζήτηση.'
+                  : 'Δοκίμασε διαφορετική αναζήτηση.'}
+          </p>
         </div>
       )}
 
-      {/* ─── Discovery sections (only when no filter) ───────────── */}
-      {showSections && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.3 }}
-          className="space-y-6"
-        >
-          {/* Promo banners */}
-          <div className="px-4">
-            <div className="relative overflow-hidden rounded-2xl" style={{ height: 120 }}>
-              {PROMO_BANNERS.map((banner, idx) => (
-                <motion.div
-                  key={banner.id}
-                  initial={false}
-                  animate={{ opacity: idx === promoBannerIdx ? 1 : 0 }}
-                  transition={{ duration: 0.5 }}
-                  className="absolute inset-0 flex items-center px-5"
-                  style={{ backgroundColor: banner.color }}
-                >
-                  <div className="flex-1">
-                    <p className="text-xl font-black text-[#202125] leading-tight">{banner.title}</p>
-                    <p className="text-sm text-[#717171] mt-0.5">{banner.subtitle}</p>
-                  </div>
-                  <span className="text-5xl">{banner.emoji}</span>
-                </motion.div>
-              ))}
-              {/* Dots */}
-              <div className="absolute bottom-2.5 left-1/2 -translate-x-1/2 flex gap-1.5">
-                {PROMO_BANNERS.map((_, i) => (
-                  <button
-                    key={i}
-                    type="button"
-                    onClick={() => setPromoBannerIdx(i)}
-                    className={cn(
-                      'h-1.5 rounded-full transition-all',
-                      i === promoBannerIdx ? 'w-4 bg-[#009DE0]' : 'w-1.5 bg-[#202125]/20',
-                    )}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-
-          {/* Discovery sections */}
-          {SECTIONS.map((section) => {
-            const sectionPartners = section.filter(searchFilteredPartners, storeXP, favoriteMerchantIds);
-            return (
-              <WoltSection
-                key={section.id}
-                title={section.title}
-                subtitle={section.subtitle}
-                partners={sectionPartners}
-                storeXP={storeXP}
-                onOpenStoreProfile={onOpenStoreProfile}
-                isLight={isLight}
-              />
-            );
-          })}
-
-          {/* ── Category grid ── */}
-          <section className="px-4 space-y-3">
-            <h2 className={cn('text-lg font-bold', isLight ? 'text-[#202125]' : 'text-white')}>
-              Κατηγορίες
-            </h2>
-            <div className="grid grid-cols-4 gap-2 sm:grid-cols-8">
-              {GRID_CATEGORIES.map((cat) => (
-                <button
-                  key={cat.label}
-                  type="button"
-                  onClick={() => {
-                    const wc = WOLT_CATEGORIES.find((c) => c.categoryId === cat.categoryId);
-                    if (wc) setActiveCategory(wc.id);
-                  }}
-                  className={cn(
-                    'flex flex-col items-center gap-1.5 rounded-xl p-2.5 transition-colors',
-                    isLight
-                      ? 'bg-white border border-[#E8E8E8] hover:border-[#009DE0]/50'
-                      : 'bg-[#1e1e1e] border border-white/[0.08] hover:border-[#009DE0]/40',
-                  )}
-                >
-                  <span className="text-2xl">{cat.emoji}</span>
-                  <span className={cn('text-[10px] font-medium text-center', isLight ? 'text-[#202125]' : 'text-[#e5e5e5]')}>
-                    {cat.label}
-                  </span>
-                </button>
-              ))}
-            </div>
-          </section>
-
-          {/* ── Όλα τα καταστήματα (grid) ── */}
-          <section className="px-4 space-y-3 pb-4">
-            <div className="flex items-center justify-between">
-              <h2 className={cn('text-lg font-bold', isLight ? 'text-[#202125]' : 'text-white')}>
-                Όλα τα καταστήματα
+      {/* ── Store grid (όλα σε ενιαίο πλέγμα, χωρίς hero banner) ── */}
+      {sortedPartners.length > 0 && (
+        <div className="space-y-10 px-4 pb-4">
+          {categorySections.map((section, sectionIndex) => (
+            <section key={section.category} className="mx-auto w-full max-w-[1600px]">
+              <h2
+                className={cn(
+                  'mb-3 text-lg font-black tracking-tight',
+                  isLight ? 'text-[#202125]' : 'text-white',
+                )}
+              >
+                {section.label}
               </h2>
-              <span className={cn('text-sm', isLight ? 'text-[#717171]' : 'text-[#aaa]')}>
-                {partners.length} διαθέσιμα
-              </span>
-            </div>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-              {partners.map((partner) => (
-                <NetworkStoreCard
-                  key={partner.id}
-                  partner={partner}
-                  xp={storeXP[partner.id] ?? 0}
-                  onOpen={() => onOpenStoreProfile(partner)}
-                />
-              ))}
-            </div>
-          </section>
-        </motion.div>
+              <motion.div
+                initial="hidden"
+                animate="show"
+                variants={{
+                  hidden: { opacity: 0 },
+                  show: {
+                    opacity: 1,
+                    transition: {
+                      staggerChildren: 0.06,
+                      delayChildren: 0.02 + sectionIndex * 0.04,
+                    },
+                  },
+                }}
+                className="grid w-full grid-cols-2 gap-4 sm:gap-5 lg:grid-cols-4"
+              >
+                {section.rows.map(({ partner, index }) => (
+                  <motion.div
+                    key={partner.id}
+                    className="min-h-0"
+                    variants={{
+                      hidden: { opacity: 0, y: 14, scale: 0.97 },
+                      show: {
+                        opacity: 1,
+                        y: 0,
+                        scale: 1,
+                        transition: { type: 'spring', stiffness: 380, damping: 28 },
+                      },
+                    }}
+                  >
+                    <QuestOfferCard
+                      quest={partnerToNetworkDisplayQuest(partner, storeXP[partner.id] ?? 0)}
+                      index={index}
+                      t={t}
+                      questsPage
+                      partner={partner}
+                      cardClassName={networkOfferCardBg}
+                      mutedTextClassName={networkOfferMuted}
+                      className="h-full w-full"
+                      networkStoreCard
+                      onNetworkStoreOpen={() => onOpenStoreProfile(partner)}
+                      isFavorite={favoriteMerchantIds.has(partner.id)}
+                      onFavoriteToggle={() => {
+                        toggleFavoriteMerchantId(partner.id);
+                      }}
+                    />
+                  </motion.div>
+                ))}
+              </motion.div>
+            </section>
+          ))}
+        </div>
       )}
+
+      {/* ── Ταξινόμηση: modal (web md+) · bottom sheet (mobile) ── */}
+      <AnimatePresence>
+        {showSortSheet && (
+          <>
+            <motion.div
+              key="sort-backdrop"
+              className="fixed inset-0 z-40 bg-black/50"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              onClick={() => setShowSortSheet(false)}
+            />
+            {isSortSheetDesktop ? (
+              <div
+                key="sort-modal-wrap"
+                className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-none"
+              >
+                <motion.div
+                  key="sort-modal-panel"
+                  role="dialog"
+                  aria-modal="true"
+                  aria-labelledby="network-sort-title"
+                  className={cn(
+                    sortSheetPanelClass,
+                    'pointer-events-auto w-full max-w-sm rounded-2xl',
+                  )}
+                  initial={{ opacity: 0, scale: 0.94 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.94 }}
+                  transition={{ type: 'spring', stiffness: 420, damping: 30 }}
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <h3
+                    id="network-sort-title"
+                    className={cn('mb-4 text-base font-bold', isLight ? 'text-[#202125]' : 'text-white')}
+                  >
+                    Ταξινόμηση
+                  </h3>
+                  {sortSheetOptions}
+                </motion.div>
+              </div>
+            ) : (
+              <motion.div
+                key="sort-sheet-panel"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="network-sort-title-mobile"
+                className={cn(
+                  sortSheetPanelClass,
+                  'fixed bottom-0 left-0 right-0 rounded-t-2xl',
+                )}
+                initial={{ y: '100%' }}
+                animate={{ y: 0 }}
+                exit={{ y: '100%' }}
+                transition={{ type: 'spring', stiffness: 320, damping: 32 }}
+              >
+                <div className="mx-auto mb-4 h-1 w-10 rounded-full bg-gray-300" />
+                <h3
+                  id="network-sort-title-mobile"
+                  className={cn('mb-4 text-base font-bold', isLight ? 'text-[#202125]' : 'text-white')}
+                >
+                  Ταξινόμηση
+                </h3>
+                {sortSheetOptions}
+              </motion.div>
+            )}
+          </>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

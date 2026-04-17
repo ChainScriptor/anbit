@@ -33,6 +33,7 @@ import { api } from './services/api';
 import PwaHomeScreen from './components/PwaHomeScreen';
 import CustomerLoginPage from './components/CustomerLoginPage';
 import AnbitSplashScreen from './components/AnbitSplashScreen';
+import { FooterTaped } from './components/ui/FooterTaped';
 
 const App: React.FC = () => {
   const { isAuthenticated, user, isLoading: isAuthLoading, logout } = useAuth();
@@ -419,9 +420,6 @@ const App: React.FC = () => {
                 <QuestsPage
                   quests={dashboardFeed.quests}
                   partners={dashboardFeed.partners}
-                  storeXP={userData?.storeXP ?? {}}
-                  totalXP={userData?.totalXP}
-                  userName={userData?.name}
                 />
               }
             />
@@ -438,6 +436,7 @@ const App: React.FC = () => {
             <Route path="*" element={<Navigate to="/quests" replace />} />
           </Routes>
         </main>
+        {!hideChrome && <FooterTaped t={t} className="shrink-0" />}
         <AuthModal
           isOpen={authModalOpen}
           onClose={closeAuthModal}
@@ -448,7 +447,7 @@ const App: React.FC = () => {
         {userData && <UserQRModal isOpen={isQRModalOpen} onClose={() => setIsQRModalOpen(false)} user={userData} />}
         <RedemptionActiveModal isOpen={isRedemptionModalOpen} onClose={() => setIsRedemptionModalOpen(false)} rewardName={selectedReward?.title || ''} partnerName={selectedReward?.partner || ''} />
       </motion.div>
-      {showAuthOverlay ? <AnbitSplashScreen key="auth-overlay" /> : null}
+      {showAuthOverlay ? <AnbitSplashScreen /> : null}
     </div>
   );
 };
