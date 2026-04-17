@@ -7,6 +7,8 @@ import { Quest, Partner } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
 import { cn } from '@/lib/utils';
+import { DiscoverButton } from './ui/discover-button';
+import { loadFavoriteMerchantIds, subscribeFavoriteMerchantsChanged } from '@/lib/favoriteStores';
 const DEAL_CARD_IMAGE_FALLBACK =
   'https://images.unsplash.com/photo-1544025162-766942260318?auto=format&fit=crop&q=80&w=1200&h=900';
 
@@ -221,7 +223,42 @@ const QuestsPage: React.FC<{
 }> = ({ quests, partners }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const sortedByXp = useMemo(() => [...quests].sort((a, b) => b.reward - a.reward), [quests]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [discoverTab, setDiscoverTab] = useState<'popular' | 'favorites'>('popular');
+  const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
+
+  React.useEffect(() => {
+    return subscribeFavoriteMerchantsChanged(() => {
+      setFavoriteMerchantIds(loadFavoriteMerchantIds());
+    });
+  }, []);
+
+  const filteredQuests = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase();
+    let list = [...quests];
+
+    if (q) {
+      list = list.filter((quest) => {
+        const partner = resolveQuestPartner(quest, partners);
+        const partnerName = (partner?.name ?? quest.storeName ?? '').toLowerCase();
+        const title = (quest.title ?? '').toLowerCase();
+        const description = (quest.description ?? '').toLowerCase();
+        return partnerName.includes(q) || title.includes(q) || description.includes(q);
+      });
+    }
+
+    if (discoverTab === 'favorites') {
+      list = list.filter((quest) => {
+        const partner = resolveQuestPartner(quest, partners);
+        if (!partner) return false;
+        return favoriteMerchantIds.has(partner.id);
+      });
+    }
+
+    return list;
+  }, [discoverTab, favoriteMerchantIds, partners, quests, searchQuery]);
+
+  const sortedByXp = useMemo(() => [...filteredQuests].sort((a, b) => b.reward - a.reward), [filteredQuests]);
   const topXpBoosters = useMemo(() => sortedByXp.filter((q) => q.reward >= 80), [sortedByXp]);
   const flashDeals = useMemo(
     () => [...quests]
@@ -248,15 +285,32 @@ const QuestsPage: React.FC<{
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
       <section className="space-y-1">
-        <h2
-          className={cn(
-            'playpen-sans text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]',
-            theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
-          )}
-        >
-          Deals
-        </h2>
-        <p className={cn('text-sm', theme === 'light' ? 'text-zinc-600' : 'text-white/55')}>{t('quests')}</p>
+        <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="min-w-0">
+            <h2
+              className={cn(
+                'playpen-sans text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]',
+                theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
+              )}
+            >
+              Deals
+            </h2>
+            <p className={cn('text-sm', theme === 'light' ? 'text-zinc-600' : 'text-white/55')}>{t('quests')}</p>
+          </div>
+          <DiscoverButton
+            compact
+            className="w-full max-w-md justify-start md:w-auto md:max-w-[min(100%,30rem)] md:justify-end"
+            searchQuery={searchQuery}
+            onSearchChange={setSearchQuery}
+            activeDiscoverTab={discoverTab}
+            onDiscoverTabChange={(tab) => setDiscoverTab(tab)}
+            labels={{
+              popular: t('discoverPopular'),
+              favorites: t('discoverFavorites'),
+              searchPlaceholder: t('searchPartners'),
+            }}
+          />
+        </div>
       </section>
 
       <div className="space-y-8">
