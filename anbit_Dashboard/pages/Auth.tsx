@@ -1,7 +1,7 @@
 import React from 'react';
 import { motion } from 'framer-motion';
 import { AuthTabs } from '@/components/auth/AuthTabs';
-import { PawPrint, X } from 'lucide-react';
+import { Store, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { HandWrittenTitle } from '@/components/ui/hand-writing-text';
 
@@ -90,7 +90,7 @@ const AuthPage: React.FC = () => {
         <header className="flex h-16 w-full items-center justify-between px-6">
           <div className="flex items-center gap-2">
             <div className="flex h-8 w-8 items-center justify-center rounded-full bg-white">
-              <PawPrint className="h-4.5 w-4.5 text-[#0a0a0a]" strokeWidth={2.4} />
+              <Store className="h-4.5 w-4.5 text-[#0a0a0a]" strokeWidth={2.4} />
             </div>
             <span className="font-semibold tracking-tight text-white">
               <span className="font-anbit-brand text-base">Anbit</span> Merchant

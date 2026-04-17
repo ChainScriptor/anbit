@@ -26,6 +26,12 @@ const STATUS_MAP: Record<number, string> = {
 };
 
 type FlowKey = 'new' | 'inProgress' | 'ready' | 'other';
+type BoardEntry = { order: ApiOrder; flow: FlowKey; customerName: string };
+type InProgressBoardEntry = {
+  order: ApiOrder;
+  customerName: string;
+  addedProductsCount: number;
+};
 
 function getStatusLabel(status: string | number | undefined): string {
   if (status == null) return 'Pending';
@@ -80,6 +86,11 @@ function formatSentTime(createdAt: string): string {
   });
 }
 
+function getTableMergeKey(order: ApiOrder): string {
+  if (order.tableNumber != null) return `table:${order.tableNumber}`;
+  return `order:${order.id}`;
+}
+
 const OrdersDashboard: React.FC = () => {
   const { user } = useAuth();
   const canManageOrders = Boolean(user?.roles?.includes('Merchant'));
@@ -88,6 +99,7 @@ const OrdersDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [expandedOrderId, setExpandedOrderId] = useState<string | null>(null);
   const [actionOrderId, setActionOrderId] = useState<string | null>(null);
+  const [preparedItemsByOrder, setPreparedItemsByOrder] = useState<Record<string, Record<string, boolean>>>({});
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedDate, setSelectedDate] = useState('');
   const [fromTime, setFromTime] = useState('');
@@ -98,24 +110,32 @@ const OrdersDashboard: React.FC = () => {
     try {
       setError(null);
       const data = await api.getOrders();
+      const isMerchant = user.roles?.includes('Merchant') ?? false;
+      const normalizedUserId = String(user.id).toLowerCase();
       const filtered = data.filter(
-        (o) => o.merchantId && String(o.merchantId).toLowerCase() === String(user.id).toLowerCase(),
+        (o) => o.merchantId && String(o.merchantId).toLowerCase() === normalizedUserId,
       );
+      /**
+       * Some deployments return auth userId that does not match order.merchantId.
+       * In that case, keep orders visible instead of showing an empty board.
+       */
+      const effectiveOrders =
+        isMerchant && filtered.length === 0 && data.length > 0 ? data : filtered;
 
       // Backend list might not be sorted. Sort client-side by `createdAt` descending
       // so new Pending orders appear first in "Incoming".
-      filtered.sort((a, b) => {
+      effectiveOrders.sort((a, b) => {
         const at = new Date(a.createdAt ?? 0).getTime();
         const bt = new Date(b.createdAt ?? 0).getTime();
         return bt - at;
       });
 
-      setOrders(filtered);
+      setOrders(effectiveOrders);
     } catch (e) {
       console.error(e);
       setError('Αποτυχία φόρτωσης παραγγελιών.');
     }
-  }, [user?.id]);
+  }, [user?.id, user?.roles]);
 
   const loadProducts = useCallback(async () => {
     try {
@@ -127,6 +147,12 @@ const OrdersDashboard: React.FC = () => {
         }, {}),
       );
     } catch (e) {
+      // Products are enrichments for names/images only.
+      // Keep the board functional even when Products endpoint is unauthorized.
+      if (isAxiosError(e) && e.response?.status === 401) {
+        setProductsById({});
+        return;
+      }
       console.error(e);
     }
   }, []);
@@ -140,6 +166,19 @@ const OrdersDashboard: React.FC = () => {
 
   const updateOrderStatus = useCallback((orderId: string, newStatus: string | number) => {
     setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o)));
+  }, []);
+
+  const togglePreparedItem = useCallback((orderId: string, itemKey: string) => {
+    setPreparedItemsByOrder((prev) => {
+      const orderItems = prev[orderId] ?? {};
+      return {
+        ...prev,
+        [orderId]: {
+          ...orderItems,
+          [itemKey]: !orderItems[itemKey],
+        },
+      };
+    });
   }, []);
 
   const handleAccept = useCallback(
@@ -196,10 +235,60 @@ const OrdersDashboard: React.FC = () => {
         setError('Το Complete επιτρέπεται μόνο σε λογαριασμό Merchant.');
         return;
       }
+      const targetOrder = orders.find((o) => o.id === orderId);
+      if (targetOrder?.tableNumber != null) {
+        const hasPendingForSameTable = orders.some(
+          (o) =>
+            o.id !== orderId &&
+            o.tableNumber != null &&
+            getTableMergeKey(o) === getTableMergeKey(targetOrder) &&
+            toFlow(o.status) === 'new',
+        );
+        if (hasPendingForSameTable) {
+          setError(
+            `Τραπέζι ${targetOrder.tableNumber}: έχετε έξτρα παραγγελία στο Incoming που περιμένει αποδοχή.`,
+          );
+          return;
+        }
+      }
       setActionOrderId(orderId);
       try {
-        await api.completeOrder(orderId);
-        updateOrderStatus(orderId, 4);
+        const orderIdsToComplete = targetOrder?.tableNumber != null
+          ? Array.from(
+              new Set(
+                orders
+                  .filter(
+                    (o) =>
+                      o.tableNumber != null &&
+                      getTableMergeKey(o) === getTableMergeKey(targetOrder) &&
+                      toFlow(o.status) === 'inProgress',
+                  )
+                  .map((o) => o.id),
+              ),
+            )
+          : [orderId];
+
+        const results = await Promise.allSettled(
+          orderIdsToComplete.map((id) => api.completeOrder(id)),
+        );
+        const succeededIds = orderIdsToComplete.filter(
+          (_, idx) => results[idx]?.status === 'fulfilled',
+        );
+        const failedCount = results.length - succeededIds.length;
+
+        if (succeededIds.length > 0) {
+          setOrders((prev) =>
+            prev.map((o) =>
+              succeededIds.includes(o.id) ? { ...o, status: 4 } : o,
+            ),
+          );
+        }
+
+        if (failedCount > 0) {
+          setError(
+            `Ολοκληρώθηκαν ${succeededIds.length}/${orderIdsToComplete.length} παραγγελίες για το τραπέζι. Δοκίμασε ξανά.`,
+          );
+        }
       } catch (e) {
         console.error(e);
         if (isAxiosError(e) && e.response?.status === 403) {
@@ -211,7 +300,7 @@ const OrdersDashboard: React.FC = () => {
         setActionOrderId(null);
       }
     },
-    [canManageOrders, updateOrderStatus],
+    [canManageOrders, orders, updateOrderStatus],
   );
 
   const visibleOrders = useMemo(() => {
@@ -260,15 +349,53 @@ const OrdersDashboard: React.FC = () => {
   }, [orders, searchQuery, selectedDate, fromTime, toTime]);
 
   const board = useMemo(() => {
-    const mapped = visibleOrders.map((order) => ({
+    const mapped: BoardEntry[] = visibleOrders.map((order) => ({
       order,
       flow: toFlow(order.status),
       customerName: getCustomerName(order),
     }));
+
+    const rawNewOrders = mapped.filter((x) => x.flow === 'new');
+    const rawInProgressOrders = mapped.filter((x) => x.flow === 'inProgress');
+
+    const inProgressByTable = new Map<string, BoardEntry[]>();
+    rawInProgressOrders.forEach((entry) => {
+      const key = getTableMergeKey(entry.order);
+      const current = inProgressByTable.get(key) ?? [];
+      current.push(entry);
+      inProgressByTable.set(key, current);
+    });
+
+    const inProgressOrders: InProgressBoardEntry[] = Array.from(inProgressByTable.values()).map((entries) => {
+      const sorted = sortByCreatedAtAsc(entries);
+      const primary = sorted[0];
+      const allOrdersForTable = sorted.map((x) => x.order);
+
+      const mergedItems = allOrdersForTable.flatMap((order) => order.items ?? []);
+      const mergedTotalPrice = allOrdersForTable.reduce((sum, order) => sum + Number(order.totalPrice ?? 0), 0);
+      const mergedTotalXp = allOrdersForTable.reduce((sum, order) => sum + Number(order.totalXp ?? 0), 0);
+      // "Νέα προϊόντα" = accepted extra orders for the same open table, beyond the first one.
+      const addedProductsCount = sorted.slice(1).reduce(
+        (sum, entry) => sum + (entry.order.items ?? []).reduce((qty, item) => qty + Number(item.quantity ?? 0), 0),
+        0,
+      );
+
+      return {
+        ...primary,
+        order: {
+          ...primary.order,
+          items: mergedItems,
+          totalPrice: mergedTotalPrice,
+          totalXp: mergedTotalXp,
+        },
+        addedProductsCount,
+      };
+    });
+
     return {
-      newOrders: sortByCreatedAtDesc(mapped.filter((x) => x.flow === 'new')),
+      newOrders: sortByCreatedAtDesc(rawNewOrders),
       // In Progress: oldest first, so newly accepted orders appear at the bottom.
-      inProgressOrders: sortByCreatedAtAsc(mapped.filter((x) => x.flow === 'inProgress')),
+      inProgressOrders: sortByCreatedAtAsc(inProgressOrders),
       readyOrders: sortByCreatedAtDesc(mapped.filter((x) => x.flow === 'ready')),
     };
   }, [visibleOrders]);
@@ -380,19 +507,32 @@ const OrdersDashboard: React.FC = () => {
                         {(order.items ?? []).map((item, idx) => {
                           const product = productsById[item.productId];
                           const qty = Number(item.quantity ?? 0);
+                          const itemKey = `${item.productId}-${idx}`;
+                          const isPrepared = !!preparedItemsByOrder[order.id]?.[itemKey];
                           return (
-                            <div key={`${item.productId}-${idx}`} className="flex items-center gap-3">
+                            <div key={itemKey} className="flex items-center gap-3">
+                              <label className="inline-flex items-center">
+                                <input
+                                  type="checkbox"
+                                  checked={isPrepared}
+                                  onChange={() => togglePreparedItem(order.id, itemKey)}
+                                  className="h-4 w-4 rounded border-slate-300 text-blue-600 focus:ring-blue-500"
+                                  aria-label={`Έτοιμο: ${product?.name ?? 'Product'}`}
+                                />
+                              </label>
                               <img
                                 src={
                                   product?.imageUrl ||
                                   'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400'
                                 }
                                 alt=""
-                                className="h-12 w-12 rounded-lg object-cover"
+                                className={`h-12 w-12 rounded-lg object-cover ${isPrepared ? 'opacity-60' : ''}`}
                               />
                               <div className="min-w-0 flex-1">
-                                <p className="truncate text-sm font-bold text-slate-900">{qty}x {product?.name ?? 'Product'}</p>
-                                <p className="truncate text-xs text-slate-400">
+                                <p className={`truncate text-sm font-bold text-slate-900 ${isPrepared ? 'line-through opacity-60' : ''}`}>
+                                  {qty}x {product?.name ?? 'Product'}
+                                </p>
+                                <p className={`truncate text-xs text-slate-400 ${isPrepared ? 'opacity-60' : ''}`}>
                                   {product?.description?.slice(0, 42) || 'No modifiers'}
                                 </p>
                               </div>
@@ -458,7 +598,7 @@ const OrdersDashboard: React.FC = () => {
             <span className="text-xs font-bold text-slate-400">{board.inProgressOrders.length} Order</span>
           </div>
           <div className="no-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto pr-1">
-            {board.inProgressOrders.map(({ order, customerName }) => {
+            {board.inProgressOrders.map(({ order, customerName, addedProductsCount }) => {
               const isExpanded = expandedOrderId === order.id;
               return (
                 <article key={order.id} className="overflow-hidden rounded-xl border-l-4 border-blue-600 bg-white shadow-sm">
@@ -476,6 +616,11 @@ const OrdersDashboard: React.FC = () => {
                         </p>
                       </div>
                       <div className="flex items-center gap-3">
+                        {addedProductsCount > 0 ? (
+                          <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">
+                            +{addedProductsCount} νέα προϊόντα
+                          </span>
+                        ) : null}
                         <div className="text-right">
                           <p className="text-[10px] font-bold uppercase text-slate-400">Sent At</p>
                           <p className="anbit-tabular-nums text-sm font-bold text-slate-800">{formatSentTime(order.createdAt)}</p>

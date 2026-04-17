@@ -55,6 +55,7 @@ import {
   Tag,
   ChefHat,
   LogOut,
+  Heart,
 } from 'lucide-react';
 import type { Quest } from '../types';
 import type { Partner, UserData } from '../types';
@@ -68,6 +69,7 @@ import { cn } from '@/lib/utils';
 const XP_GOLD = '#F5C518';
 const ACCENT = '#2563eb';
 const XP_PER_EUR = 100; // 100 XP = €1 → 1 XP = €0.01 (1 λεπτό)
+const FAVORITES_CATEGORY_LABEL = 'Αγαπημένα πιάτα';
 const LOOT_REWARDS = [
   { emoji: '☕', title: 'Δωρεάν Καφές', subtitle: 'Ισχύει στην επόμενη επίσκεψή σου' },
   { emoji: '🍕', title: 'Pizza 1+1', subtitle: '15% έκπτωση στην επόμενη παραγγελία' },
@@ -360,12 +362,15 @@ function CategoryPills({
   categories,
   active,
   onSelect,
+  favoritesCount,
 }: {
   categories: string[];
   active: string;
   onSelect: (c: string) => void;
+  favoritesCount: number;
 }) {
   const scrollRef = useRef<HTMLDivElement>(null);
+  const tabs = ['Όλα', FAVORITES_CATEGORY_LABEL, ...categories];
 
   // Auto-scroll active pill into view
   useEffect(() => {
@@ -378,7 +383,7 @@ function CategoryPills({
   return (
     <LayoutGroup id="category-pills">
       <div ref={scrollRef} className="flex gap-1 overflow-x-auto px-4 pb-0 pt-3 no-scrollbar">
-        {['Όλα', ...categories].map((cat) => (
+        {tabs.map((cat) => (
           <button
             key={cat}
             data-cat={cat}
@@ -391,9 +396,12 @@ function CategoryPills({
               active === cat ? 'text-white' : 'text-white/45',
             )}>
               <span className="text-sm leading-none">
-                {cat === 'Όλα' ? '✦' : getCategoryEmoji(cat)}
+                {cat === 'Όλα' ? '✦' : cat === FAVORITES_CATEGORY_LABEL ? '❤' : getCategoryEmoji(cat)}
               </span>
-              <span>{cat}</span>
+              <span>
+                {cat}
+                {cat === FAVORITES_CATEGORY_LABEL ? ` (${favoritesCount})` : ''}
+              </span>
             </span>
             {active === cat && (
               <motion.div
@@ -417,6 +425,8 @@ function ProductCard({
   onAdd,
   onRemove,
   onOpen,
+  isFavorite,
+  onToggleFavorite,
   mode,
   storeXpBalance,
 }: {
@@ -425,6 +435,8 @@ function ProductCard({
   onAdd: () => void;
   onRemove: () => void;
   onOpen: () => void;
+  isFavorite: boolean;
+  onToggleFavorite: () => void;
   mode: 'eur' | 'xp';
   storeXpBalance: number;
 }) {
@@ -481,6 +493,23 @@ function ProductCard({
           loading="lazy"
           draggable={false}
         />
+        <button
+          type="button"
+          aria-label={isFavorite ? 'Αφαίρεση από αγαπημένα' : 'Προσθήκη στα αγαπημένα'}
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite();
+          }}
+          className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full border border-white/20 bg-black/55 backdrop-blur-sm transition hover:bg-black/75"
+        >
+          <Heart
+            className={cn(
+              'h-3.5 w-3.5',
+              isFavorite ? 'fill-[#ff4d6d] text-[#ff4d6d]' : 'text-white/75',
+            )}
+            strokeWidth={2.2}
+          />
+        </button>
         {/* XP earn badge */}
         {mode === 'eur' && product.xpReward > 0 && (
           <div className="absolute bottom-1 left-1 flex items-center gap-0.5 rounded-md bg-black/75 px-1.5 py-0.5 backdrop-blur-sm">
@@ -1425,7 +1454,7 @@ function OrderPendingScreen({
         const latest = await api.getLatestOrder({ userId, merchantId, tableNumber });
         if (!latest) return;
         const s = String(latest.status ?? '').toLowerCase();
-        if (s === '3' || s.includes('ready') || s.includes('done')) {
+        if (s === '3' || s === '4' || s.includes('ready') || s.includes('done') || s.includes('complet')) {
           clearInterval(poll);
           setStatus('ready');
         } else if (s === '2' || s.includes('prepar') || s.includes('accept')) {
@@ -1974,6 +2003,7 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
   const [showDotMenu, setShowDotMenu] = useState(false);
   const [showTranslate, setShowTranslate] = useState(false);
   const [showInfo, setShowInfo] = useState(false);
+  const [favoriteProductIds, setFavoriteProductIds] = useState<Set<string>>(new Set());
 
   // Refs for each category section (for scroll-to + IntersectionObserver)
   const sectionRefs = useRef<Map<string, HTMLElement>>(new Map());
@@ -2008,7 +2038,41 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
   }, [user, partner.id]);
 
   const menu = partner.menu ?? [];
+  const favoriteStorageKey = useMemo(
+    () => `anbit-favorite-products:${String(partner.id).toLowerCase()}`,
+    [partner.id],
+  );
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    try {
+      const raw = localStorage.getItem(favoriteStorageKey);
+      const parsed = raw ? (JSON.parse(raw) as string[]) : [];
+      setFavoriteProductIds(new Set(parsed));
+    } catch {
+      setFavoriteProductIds(new Set());
+    }
+  }, [favoriteStorageKey]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    localStorage.setItem(favoriteStorageKey, JSON.stringify(Array.from(favoriteProductIds)));
+  }, [favoriteStorageKey, favoriteProductIds]);
+
+  const toggleFavoriteProduct = useCallback((productId: string) => {
+    setFavoriteProductIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(productId)) next.delete(productId);
+      else next.add(productId);
+      return next;
+    });
+  }, []);
+
   const categories = useMemo(() => [...new Set(menu.map((p) => p.category).filter(Boolean))], [menu]);
+  const favoriteProducts = useMemo(
+    () => menu.filter((product) => favoriteProductIds.has(product.id)),
+    [menu, favoriteProductIds],
+  );
 
   // Products grouped by category for section-based layout
   const productsByCategory = useMemo(
@@ -2023,6 +2087,7 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
 
     const observer = new IntersectionObserver(
       (entries) => {
+        if (activeCategory === FAVORITES_CATEGORY_LABEL) return;
         // Skip during programmatic scroll OR when we're at the very top ("Όλα")
         if (isScrollingProgrammatically.current) return;
         if (root.scrollTop < 60) return;
@@ -2047,6 +2112,7 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
 
     // Always check for top position — not blocked by programmatic flag
     const handleScroll = () => {
+      if (activeCategory === FAVORITES_CATEGORY_LABEL) return;
       if (root.scrollTop < 60) setActiveCategory('Όλα');
     };
     root.addEventListener('scroll', handleScroll, { passive: true });
@@ -2055,12 +2121,17 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
       observer.disconnect();
       root.removeEventListener('scroll', handleScroll);
     };
-  }, [categories]);
+  }, [categories, activeCategory]);
 
   // Category selection → smooth scroll to section
   const handleCategorySelect = useCallback((cat: string) => {
     // Set the pill immediately
     setActiveCategory(cat);
+
+    if (cat === FAVORITES_CATEGORY_LABEL) {
+      // Keep "Favorites dishes" sticky and do not let top-scroll logic flip to "Όλα".
+      return;
+    }
 
     // Block IntersectionObserver for the duration of the smooth scroll (~700ms)
     isScrollingProgrammatically.current = true;
@@ -2073,7 +2144,7 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
       const root = scrollRef.current;
       if (!root) return;
 
-      if (cat === 'Όλα') {
+      if (cat === 'Όλα' || cat === FAVORITES_CATEGORY_LABEL) {
         root.scrollTo({ top: 0, behavior: 'smooth' });
         return;
       }
@@ -2459,7 +2530,12 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
           style={{ background: '#0a0a0a', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
         >
           {mode === 'eur' ? (
-            <CategoryPills categories={categories} active={activeCategory} onSelect={handleCategorySelect} />
+            <CategoryPills
+              categories={categories}
+              active={activeCategory}
+              onSelect={handleCategorySelect}
+              favoritesCount={favoriteProducts.length}
+            />
           ) : (
             <LayoutGroup id="shop-category-pills">
               <div className="flex gap-1 overflow-x-auto px-4 pb-0 pt-3 no-scrollbar">
@@ -2763,11 +2839,15 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
               <p className="py-16 text-center text-sm text-white/30">Δεν βρέθηκαν προϊόντα.</p>
             )}
 
-            {productsByCategory.map(({ cat, products }, sectionIndex) => (
+            {(activeCategory === FAVORITES_CATEGORY_LABEL
+              ? [{ cat: FAVORITES_CATEGORY_LABEL, products: favoriteProducts }]
+              : productsByCategory
+            ).map(({ cat, products }, sectionIndex) => (
               <section
                 key={cat}
                 data-category={cat}
                 ref={(el) => {
+                  if (cat === FAVORITES_CATEGORY_LABEL) return;
                   if (el) sectionRefs.current.set(cat, el);
                   else sectionRefs.current.delete(cat);
                 }}
@@ -2782,6 +2862,14 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
                   <div className="flex-1 h-px bg-white/[0.07]" />
                   <span className="text-[11px] font-medium text-white/30">{products.length} προϊόντα</span>
                 </motion.div>
+
+                {cat === FAVORITES_CATEGORY_LABEL && products.length === 0 ? (
+                  <div className="px-4 pb-6">
+                    <p className="rounded-2xl border border-white/[0.08] bg-white/[0.02] px-4 py-6 text-center text-sm text-white/45">
+                      Δεν έχεις προσθέσει ακόμα αγαπημένα πιάτα.
+                    </p>
+                  </div>
+                ) : null}
 
                 <motion.div
                   initial="hidden"
@@ -2798,6 +2886,8 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
                       onAdd={() => addToCart(product.id)}
                       onRemove={() => removeFromCart(product.id)}
                       onOpen={() => setSelectedProduct(product)}
+                      isFavorite={favoriteProductIds.has(product.id)}
+                      onToggleFavorite={() => toggleFavoriteProduct(product.id)}
                       mode={mode}
                       storeXpBalance={storeXpBalance}
                     />

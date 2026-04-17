@@ -55,7 +55,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
   const notifNavButtonClass = isStoreProfileRoute
     ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg bg-[#121214] border border-white/15 text-white hover:text-white transition-colors shadow-none'
     : navLightRedBar
-      ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg border border-white/30 bg-white/15 text-white hover:bg-white/25 transition-colors shadow-none'
+      ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input transition-colors shadow-none'
       : navLightAtTop
         ? 'relative w-10 h-10 lg:w-11 lg:h-11 rounded-lg border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input transition-colors shadow-none'
         : undefined;
@@ -109,7 +109,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 onOpenChange={setIsMobileMenuOpen}
                 className={
                   navLightRedBar
-                    ? '!border-white/35 !bg-white/15 !text-white hover:!bg-white/25 hover:!text-white'
+                    ? '!border-anbit-border !bg-white !text-anbit-text hover:!bg-anbit-input hover:!text-anbit-text'
                     : navLightAtTop
                       ? '!border-anbit-border !bg-white !text-anbit-text hover:!bg-anbit-input hover:!text-anbit-text'
                       : undefined
@@ -134,9 +134,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       const itemClass = cn(
                         'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-colors',
                         isActive
-                          ? 'bg-[#009DE0] text-white'
+                          ? 'bg-[#0a0a0a] text-white'
                           : navLightNotHero
-                            ? 'text-[#202125] hover:bg-[#EBF7FD] hover:text-[#009DE0]'
+                            ? 'text-[#202125] hover:bg-[#f3f4f6] hover:text-[#0a0a0a]'
                             : 'text-white hover:bg-anbit-border/40 hover:text-white',
                       );
 
@@ -302,7 +302,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               aria-haspopup="dialog"
             >
               <MapPin
-                className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 text-[#009DE0]"
+                className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 text-[#0a0a0a]"
                 strokeWidth={2.5}
               />
               <span className="truncate text-sm font-semibold lg:text-base sm:max-w-[120px]">{city.labelEl}</span>
@@ -343,13 +343,13 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 const baseClass = cn(
                   'relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all',
                   isActive
-                    ? 'bg-[#009DE0] text-white shadow-sm'
+                    ? 'bg-[#0a0a0a] text-white shadow-sm'
                     : isStoreProfileHeroMode
                       ? 'bg-[#121214] text-white hover:bg-[#121214] hover:text-white'
                       : navLightRedBar
-                        ? 'text-[#202125] hover:bg-[#EBF7FD] hover:text-[#009DE0]'
+                        ? 'text-[#202125] hover:bg-[#f3f4f6] hover:text-[#0a0a0a]'
                         : navLightAtTop
-                          ? 'text-[#202125] hover:bg-[#EBF7FD] hover:text-[#009DE0]'
+                          ? 'text-[#202125] hover:bg-[#f3f4f6] hover:text-[#0a0a0a]'
                           : 'text-white hover:bg-anbit-border/40 hover:text-white',
                 );
                 const hoverCardContent = (
@@ -379,7 +379,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                         className={cn(
                           'w-5 h-5 lg:w-6 lg:h-6',
                           isActive &&
-                          (navLightRedBar ? 'text-[#0a0a0a]' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
+                          (navLightRedBar ? 'text-white' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
                         )}
                       />
                       {hoverCardContent}
@@ -396,7 +396,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       className={cn(
                         'w-5 h-5 lg:w-6 lg:h-6',
                         isActive &&
-                          (navLightRedBar ? 'text-[#0a0a0a]' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
+                          (navLightRedBar ? 'text-white' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
                       )}
                     />
                     {hoverCardContent}
@@ -412,7 +412,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 isStoreProfileHeroMode
                   ? '!bg-[#121214] !border-white/15 !text-white'
                   : navLightRedBar
-                    ? '!border-white/35 !bg-white/15 !text-white hover:!bg-white/25'
+                    ? '!border-anbit-border !bg-white !text-anbit-text hover:!bg-anbit-input'
                     : navLightAtTop
                       ? '!border-anbit-border !bg-white !text-anbit-text hover:!bg-anbit-input'
                       : undefined
@@ -420,9 +420,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
             />
             {isAuthenticated ? (
               <>
-                <div className="hidden md:flex items-center gap-2 px-3 py-2 rounded-full bg-[#EBF7FD] border border-[#009DE0]/20">
-                  <Zap className="w-4 h-4 shrink-0 text-[#009DE0] fill-[#009DE0]" />
-                  <span className="anbit-tabular-nums text-sm font-bold tracking-tighter text-[#009DE0]">
+                <div className="hidden md:flex items-center gap-2 rounded-lg px-3 py-2 border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)]/90 text-[color:var(--anbit-xp-accent)]">
+                  <Zap className="w-4 h-4 shrink-0 text-[color:var(--anbit-xp-accent)] fill-[color:var(--anbit-xp-accent)]" />
+                  <span className="anbit-tabular-nums text-sm font-bold tracking-tighter text-[color:var(--anbit-xp-accent)]">
                     {totalXP.toLocaleString()} XP
                   </span>
                 </div>
@@ -433,7 +433,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                     isStoreProfileHeroMode
                       ? 'bg-[#121214] border border-white/15 backdrop-blur-sm text-white hover:text-white'
                       : navLightRedBar
-                        ? 'border border-white/35 bg-white/15 text-white hover:bg-white/25'
+                        ? 'border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input'
                         : navLightAtTop
                           ? 'border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input'
                           : 'bg-white/[0.05] border border-anbit-border text-white hover:text-white',
@@ -458,7 +458,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                     isStoreProfileRoute
                       ? 'border-white/15 bg-[#121214] text-white hover:text-red-300 hover:border-red-300/60 hover:bg-[#121214]'
                       : navLightRedBar
-                        ? 'border-white/35 bg-white/10 text-white hover:text-red-100 hover:border-red-200/80 hover:bg-red-600/30'
+                        ? 'border-anbit-border bg-white text-anbit-text hover:text-red-600 hover:border-red-300 hover:bg-red-50'
                         : navLightAtTop
                           ? 'border-anbit-border bg-white text-anbit-text hover:text-red-600 hover:border-red-300 hover:bg-red-50'
                           : 'border-anbit-border bg-white/[0.03] text-anbit-muted hover:text-red-400 hover:border-red-400/50 hover:bg-red-500/5',
@@ -478,7 +478,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                     isStoreProfileHeroMode
                       ? 'bg-[#121214] border border-white/15 backdrop-blur-sm text-white hover:text-white'
                       : navLightRedBar
-                        ? 'border border-white/35 bg-white/15 text-white hover:bg-white/25'
+                        ? 'border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input'
                         : navLightAtTop
                           ? 'border border-anbit-border bg-white text-anbit-text hover:bg-anbit-input'
                           : 'bg-white/[0.05] border border-anbit-border text-white hover:text-white',
@@ -490,14 +490,14 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 <button
                   type="button"
                   onClick={() => onOpenLogin?.()}
-                  className="px-4 py-2 text-sm font-semibold text-[#009DE0] hover:text-[#007BB5] transition-colors"
+                  className="px-4 py-2 text-sm font-semibold text-[#0a0a0a] hover:text-[#262626] transition-colors"
                 >
                   Σύνδεση
                 </button>
                 <button
                   type="button"
                   onClick={onOpenRegister}
-                  className="px-4 py-2.5 text-sm font-bold bg-[#009DE0] text-white rounded-lg hover:bg-[#007BB5] transition-colors"
+                  className="px-4 py-2.5 text-sm font-bold bg-[#0a0a0a] text-white rounded-lg hover:bg-[#262626] transition-colors"
                 >
                   Εγγραφή
                 </button>

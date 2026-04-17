@@ -1,28 +1,14 @@
 
-import React, { useState, useMemo, useRef, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Search } from 'lucide-react';
+import React, { useMemo, useRef, useState } from 'react';
+import { motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Quest, Partner } from '../types';
-import { containerVariants, itemVariants } from '../constants';
 import { useLanguage } from '../context/LanguageContext';
 import { useTheme } from '../context/ThemeContext';
-import { OfferCarousel, offerCarouselNavButtonClass } from './ui/offer-carousel';
-import { OfferFilterSelect } from './ui/offer-filter-select';
-import { DiscoverButton } from './ui/discover-button';
-import { GREEK_OFFERS } from '../data/greekOffers';
 import { cn } from '@/lib/utils';
-import { loadFavoriteMerchantIds, subscribeFavoriteMerchantsChanged } from '@/lib/favoriteStores';
-import { QuestOfferCard } from './QuestOfferCard';
-
-const questMuted = 'text-[color:var(--anbit-muted)]';
-
-/** Φόντο καρτών deals + προσφορών quest μόνο στη σελίδα /quests — ευθυγραμμισμένο με `--anbit-card` (πιο ήρεμο από #131313) */
-const QUESTS_OFFER_CARD_BG = 'bg-[color:var(--anbit-card)]';
-/** Light mode /quests: λευκή κάρτα, μαύρο κείμενο στο σώμα */
-const QUESTS_OFFER_CARD_BG_LIGHT = 'bg-white';
-
-type FilterValue = '' | 'highest-xp' | 'expiring-soon' | 'favorite-stores';
+const DEAL_CARD_IMAGE_FALLBACK =
+  'https://images.unsplash.com/photo-1544025162-766942260318?auto=format&fit=crop&q=80&w=1200&h=900';
 
 function resolveQuestPartner(quest: Quest, partners: Partner[]): Partner | undefined {
   if (quest.partnerId) return partners.find((p) => p.id === quest.partnerId);
@@ -30,93 +16,204 @@ function resolveQuestPartner(quest: Quest, partners: Partner[]): Partner | undef
   return undefined;
 }
 
-/** Σταθερό κλειδί ομάδας merchant (ίδιο με το grouping των προσφορών). */
-function merchantGroupKey(quest: Quest, partners: Partner[]): string {
-  const p = resolveQuestPartner(quest, partners);
-  if (p) return p.id;
-  return `__name:${quest.storeName ?? quest.id}`;
+function getExpiresInDays(expiresIn: string): number {
+  const days = parseInt(String(expiresIn).replace(/\D/g, ''), 10);
+  return Number.isNaN(days) ? 999 : days;
 }
 
-function MerchantOffersRow({
-  quests,
+function buildPricingFromReward(rewardXP: number): { discounted: number; old: number } {
+  const discounted = Math.max(2.99, Number((rewardXP / 55 + 4.5).toFixed(2)));
+  const old = Number((discounted * 1.28).toFixed(2));
+  return { discounted, old };
+}
+
+function BrandedOfferCard({
+  quest,
   partner,
-  onOpenPartner,
-  t,
-  offerCardClassName,
-  mutedTextClassName = questMuted,
-  questsPage = true,
+  cardWidthClassName,
 }: {
-  quests: Quest[];
-  partner?: Partner | null;
-  onOpenPartner?: (p: Partner) => void;
-  t: (key: string) => string;
-  offerCardClassName?: string;
-  mutedTextClassName?: string;
-  questsPage?: boolean;
+  quest: Quest;
+  partner?: Partner;
+  cardWidthClassName: string;
+}) {
+  const { theme } = useTheme();
+  const navigate = useNavigate();
+  const partnerName = partner?.name ?? quest.storeName ?? 'Partner Store';
+  const partnerImage = partner?.image || quest.storeImage || DEAL_CARD_IMAGE_FALLBACK;
+  const offerImage = quest.bannerImage || quest.storeImage || partner?.image || DEAL_CARD_IMAGE_FALLBACK;
+  const pricing = buildPricingFromReward(quest.reward);
+  const isXpHeavy = quest.reward >= 120;
+  const lightAccentBg = theme === 'light' ? '#0a0a0a' : '#009DE0';
+  const lightAccentHoverBg = theme === 'light' ? '#171717' : '#007BB5';
+  const lightAccentText = theme === 'light' ? '#0a0a0a' : '#009DE0';
+
+  return (
+    <motion.article
+      whileHover={{ scale: 1.02, y: -4 }}
+      transition={{ type: 'spring', stiffness: 260, damping: 22 }}
+      className={cn(
+        'shrink-0 rounded-2xl border border-white/10 bg-[#141414] p-3 shadow-[0_12px_24px_rgba(0,0,0,0.24)]',
+        theme === 'light' &&
+          'border-zinc-200/90 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:border-zinc-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]',
+        cardWidthClassName,
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => {
+          if (!partner) return;
+          navigate(`/store-profile/${partner.id}`, { state: { partner } });
+        }}
+        className="relative block w-full overflow-hidden rounded-xl text-left"
+        disabled={!partner}
+      >
+        <img src={offerImage} alt={quest.title} className="h-40 w-full rounded-xl object-cover" />
+        <div className="absolute inset-x-0 top-2 z-10 flex flex-col items-center justify-center gap-1 text-center">
+          <img
+            src={partnerImage}
+            alt={partnerName}
+            className="h-10 w-10 rounded-full bg-white object-cover shadow-md"
+            style={{ border: `1px solid ${lightAccentBg}` }}
+          />
+          <p className="max-w-[90%] truncate rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)] backdrop-blur-sm">
+            {partnerName}
+          </p>
+        </div>
+        <span
+          className="absolute left-2 top-2 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
+          style={{ background: lightAccentBg }}
+        >
+          {isXpHeavy ? '+XP' : 'Deal'}
+        </span>
+      </button>
+
+      <div className="mt-3 space-y-2">
+        <h4 className={cn('line-clamp-2 text-sm font-bold leading-snug', theme === 'light' ? 'text-zinc-900' : 'text-white')}>
+          {quest.title}
+        </h4>
+        <div className="flex items-center gap-2">
+          <span className="text-base font-extrabold" style={{ color: lightAccentText }}>€{pricing.discounted.toFixed(2)}</span>
+          <span className={cn('text-xs line-through', theme === 'light' ? 'text-zinc-500' : 'text-white/45')}>
+            €{pricing.old.toFixed(2)}
+          </span>
+        </div>
+        <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: lightAccentText }}>
+          <Star className="h-3.5 w-3.5" style={{ fill: lightAccentText, color: lightAccentText }} strokeWidth={0} />
+          +{quest.reward} XP
+        </div>
+        <div className="flex gap-2 pt-1">
+          <button
+            type="button"
+            className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition-colors"
+            style={{
+              background: lightAccentBg,
+              boxShadow: theme === 'light'
+                ? '0 8px 18px rgba(10,10,10,0.24)'
+                : '0 8px 18px rgba(0,157,224,0.28)',
+            }}
+            onMouseEnter={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = lightAccentHoverBg;
+            }}
+            onMouseLeave={(e) => {
+              (e.currentTarget as HTMLButtonElement).style.background = lightAccentBg;
+            }}
+          >
+            Claim Offer
+          </button>
+          <button
+            type="button"
+            className={cn(
+              'rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors',
+              theme === 'light'
+                ? 'border-zinc-300 bg-zinc-50 text-neutral-900 hover:bg-zinc-100'
+                : 'border-white/20 text-white hover:bg-white/10',
+            )}
+          >
+            View Rules
+          </button>
+        </div>
+      </div>
+    </motion.article>
+  );
+}
+
+function CarouselSection({
+  title,
+  offers,
+  partners,
+}: {
+  title: string;
+  offers: Quest[];
+  partners: Partner[];
 }) {
   const { theme } = useTheme();
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const navLight =
-    theme === 'light' ? 'border-zinc-200 bg-white/95 text-neutral-900 hover:border-[#0a0a0a]/25 hover:bg-[#0a0a0a]/[0.06]' : '';
+  const [expanded, setExpanded] = useState(false);
+  const navClass = theme === 'light'
+    ? 'border-zinc-200 bg-white text-zinc-900 shadow-sm hover:bg-zinc-100'
+    : 'border-white/15 bg-black/45 text-white hover:bg-black/65';
 
-  const scrollOffers = (dir: 'left' | 'right') => {
+  const displayOffers = useMemo(
+    () => (expanded ? offers : offers.slice(0, 8)),
+    [expanded, offers],
+  );
+  const cardWidth = offers.length <= 1 ? 'w-[min(86vw,26rem)]' : 'w-[min(82vw,18rem)]';
+
+  const scrollBy = (dir: 'left' | 'right') => {
     const el = scrollRef.current;
     if (!el) return;
-    const step = Math.min(el.clientWidth * 0.85, 360);
+    const step = Math.min(el.clientWidth * 0.8, 420);
     el.scrollBy({ left: dir === 'left' ? -step : step, behavior: 'smooth' });
   };
 
   return (
-    <div className="min-w-0 w-full">
-      <div className="group relative w-full min-w-0">
+    <section className="space-y-3">
+      <div className="flex items-center justify-between gap-3">
+        <h3 className={cn('text-lg font-bold', theme === 'light' ? 'text-zinc-900' : 'text-white')}>{title}</h3>
         <button
           type="button"
-          onClick={() => scrollOffers('left')}
-          className={cn(offerCarouselNavButtonClass, navLight, 'left-0')}
-          aria-label="Προηγούμενες προσφορές"
+          onClick={() => setExpanded((prev) => !prev)}
+          className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
+          style={{
+            borderColor: theme === 'light' ? 'rgba(10,10,10,0.25)' : 'rgba(0,157,224,0.35)',
+            color: theme === 'light' ? '#0a0a0a' : '#009DE0',
+            background: 'transparent',
+          }}
         >
-          <ChevronLeft className="h-6 w-6" />
+          {expanded ? 'Show Less' : 'View All'}
         </button>
-        <div
-          ref={scrollRef}
-          className="-mx-1 flex gap-4 overflow-x-auto px-1 pb-2 no-scrollbar scroll-smooth snap-x snap-mandatory"
+      </div>
+      <div className="relative">
+        <button
+          type="button"
+          onClick={() => scrollBy('left')}
+          className={cn('absolute left-0 top-1/2 z-10 -translate-y-1/2 rounded-full border p-2', navClass)}
+          aria-label={`Scroll ${title} left`}
         >
-          {quests.map((quest, index) => (
-            <div
+          <ChevronLeft className="h-4 w-4" />
+        </button>
+        <div ref={scrollRef} className="flex gap-3 overflow-x-auto px-8 pb-2 no-scrollbar scroll-smooth">
+          {displayOffers.map((quest) => (
+            <BrandedOfferCard
               key={quest.id}
-              className="w-[min(100vw-2.5rem,280px)] shrink-0 snap-start sm:w-[300px] md:w-[min(22rem,85vw)]"
-            >
-              <QuestOfferCard
-                quest={quest}
-                index={index}
-                t={t}
-                mutedTextClassName={mutedTextClassName}
-                cardClassName={offerCardClassName}
-                questsPage={questsPage}
-                partner={partner ?? null}
-                onOpenPartner={onOpenPartner}
-              />
-            </div>
+              quest={quest}
+              partner={resolveQuestPartner(quest, partners)}
+              cardWidthClassName={cardWidth}
+            />
           ))}
         </div>
         <button
           type="button"
-          onClick={() => scrollOffers('right')}
-          className={cn(offerCarouselNavButtonClass, navLight, 'right-0')}
-          aria-label="Επόμενες προσφορές"
+          onClick={() => scrollBy('right')}
+          className={cn('absolute right-0 top-1/2 z-10 -translate-y-1/2 rounded-full border p-2', navClass)}
+          aria-label={`Scroll ${title} right`}
         >
-          <ChevronRight className="h-6 w-6" />
+          <ChevronRight className="h-4 w-4" />
         </button>
       </div>
-    </div>
+    </section>
   );
 }
-
-type MerchantSectionGroup = {
-  partner?: Partner;
-  quests: Quest[];
-  representative: Quest;
-};
 
 const QuestsPage: React.FC<{
   quests: Quest[];
@@ -124,213 +221,48 @@ const QuestsPage: React.FC<{
 }> = ({ quests, partners }) => {
   const { theme } = useTheme();
   const { t } = useLanguage();
-  const questsOfferShell =
-    theme === 'light' ? QUESTS_OFFER_CARD_BG_LIGHT : QUESTS_OFFER_CARD_BG;
-  const navigate = useNavigate();
-  const [offerFilter, setOfferFilter] = useState<FilterValue>('');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
-
-  useEffect(() => {
-    return subscribeFavoriteMerchantsChanged(() => {
-      setFavoriteMerchantIds(loadFavoriteMerchantIds());
-    });
-  }, []);
-
-  const sortedAndFilteredQuests = useMemo(() => {
-    let list = [...quests];
-    const q = searchQuery.trim().toLowerCase();
-    if (q) {
-      list = list.filter((quest) => {
-        const storeName = (quest.storeName ?? '').toLowerCase();
-        const title = (quest.title ?? '').toLowerCase();
-        const description = (quest.description ?? '').toLowerCase();
-        return storeName.includes(q) || title.includes(q) || description.includes(q);
-      });
-    }
-    if (offerFilter === 'favorite-stores') {
-      list = list.filter((quest) => favoriteMerchantIds.has(merchantGroupKey(quest, partners)));
-    }
-    if (offerFilter === 'highest-xp') list.sort((a, b) => b.reward - a.reward);
-    else if (offerFilter === 'expiring-soon') {
-      list.sort((a, b) => {
-        const daysA = parseInt(a.expiresIn, 10) || 999;
-        const daysB = parseInt(b.expiresIn, 10) || 999;
-        return daysA - daysB;
-      });
-    }
-    return list;
-  }, [quests, partners, offerFilter, searchQuery, favoriteMerchantIds]);
-
-  const merchantSections = useMemo(() => {
-    const map = new Map<
-      string,
-      { partner?: Partner; quests: Quest[]; representative: Quest }
-    >();
-    for (const quest of sortedAndFilteredQuests) {
-      const partner = resolveQuestPartner(quest, partners);
-      const key = merchantGroupKey(quest, partners);
-      const existing = map.get(key);
-      if (!existing) {
-        map.set(key, { partner, quests: [quest], representative: quest });
-      } else {
-        existing.quests.push(quest);
-      }
-    }
-    const list = Array.from(map.values());
-    const orderIndex = (id: string) => {
-      const i = partners.findIndex((p) => p.id === id);
-      return i === -1 ? 999 : i;
-    };
-    list.sort((a, b) => {
-      const ia = a.partner ? orderIndex(a.partner.id) : 999;
-      const ib = b.partner ? orderIndex(b.partner.id) : 999;
-      if (ia !== ib) return ia - ib;
-      return (a.partner?.name ?? '').localeCompare(b.partner?.name ?? '');
-    });
-    return list;
-  }, [sortedAndFilteredQuests, partners]);
-
-  const emptyQuestsMessage = useMemo(() => {
-    if (offerFilter === 'favorite-stores') {
-      if (favoriteMerchantIds.size === 0) return t('favoriteStoresAddSome');
-      return t('favoriteStoresNoOffers');
-    }
-    return t('questsFilterEmpty');
-  }, [offerFilter, favoriteMerchantIds.size, t]);
-
-  const offerFilterOptions = useMemo(
-    () => [
-      { value: '', label: t('allOffers') },
-      { value: 'favorite-stores', label: t('favoriteStoresFilter') },
-      { value: 'highest-xp', label: t('highestXP') },
-      { value: 'expiring-soon', label: t('expiringSoon') },
-    ],
-    [t],
+  const sortedByXp = useMemo(() => [...quests].sort((a, b) => b.reward - a.reward), [quests]);
+  const topXpBoosters = useMemo(() => sortedByXp.filter((q) => q.reward >= 80), [sortedByXp]);
+  const flashDeals = useMemo(
+    () => [...quests]
+      .filter((q) => getExpiresInDays(q.expiresIn) <= 3)
+      .sort((a, b) => getExpiresInDays(a.expiresIn) - getExpiresInDays(b.expiresIn)),
+    [quests],
   );
-
-  const discoverButtonEl = (
-    <DiscoverButton
-      compact
-      className="w-full max-w-md justify-start sm:max-w-lg md:justify-end"
-      searchQuery={searchQuery}
-      onSearchChange={setSearchQuery}
-      activeDiscoverTab={offerFilter === 'favorite-stores' ? 'favorites' : 'popular'}
-      onDiscoverTabChange={(tab) => {
-        setOfferFilter(tab === 'favorites' ? 'favorite-stores' : 'highest-xp');
-      }}
-      labels={{
-        popular: t('discoverPopular'),
-        favorites: t('discoverFavorites'),
-        searchPlaceholder: t('searchPartners'),
-      }}
-    />
-  );
-
-  const questsMutedForTheme = theme === 'light' ? 'text-neutral-600' : questMuted;
+  const exclusiveForYou = useMemo(() => {
+    const used = new Set<string>([...topXpBoosters.map((q) => q.id), ...flashDeals.map((q) => q.id)]);
+    return sortedByXp.filter((q) => !used.has(q.id)).slice(0, 14);
+  }, [sortedByXp, topXpBoosters, flashDeals]);
 
   return (
     <motion.div
-      className="space-y-8 md:space-y-10 pb-8"
-      initial="hidden"
-      animate="visible"
-      variants={containerVariants}
+      className={cn(
+        'space-y-8 rounded-2xl p-4 pb-10 md:space-y-10 md:p-6',
+        theme === 'light'
+          ? 'border border-zinc-200 bg-[#f6f7f9]'
+          : 'bg-[#0a0a0a]',
+      )}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.25 }}
       style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
-      <section className="min-w-0 space-y-4">
+      <section className="space-y-1">
         <h2
           className={cn(
-            'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px]',
+            'playpen-sans text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]',
             theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
           )}
         >
-          {t('dealsOfTheDay')}
+          Deals
         </h2>
-        <OfferCarousel
-          offers={GREEK_OFFERS}
-          mutedTextClassName={questsMutedForTheme}
-          cardClassName={questsOfferShell}
-          questsDealSurface
-        />
+        <p className={cn('text-sm', theme === 'light' ? 'text-zinc-600' : 'text-white/55')}>{t('quests')}</p>
       </section>
 
-      <div className="min-w-0 space-y-4">
-        <div className="flex min-w-0 flex-col gap-4 md:flex-row md:items-start md:justify-between md:gap-4">
-          <h2
-            className={cn(
-              'playpen-sans min-w-0 text-[26px] font-bold leading-tight tracking-tight sm:text-[28px] md:min-w-0 md:flex-1 md:pr-4',
-              theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
-            )}
-          >
-            {t('quests')}
-          </h2>
-          <motion.div variants={itemVariants} className="w-full min-w-0 shrink-0 md:w-auto md:max-w-[min(100%,28rem)]">
-            {discoverButtonEl}
-          </motion.div>
-        </div>
-        <div className="flex min-w-0 flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center sm:justify-between sm:gap-3">
-          <div className="flex w-full min-w-0 flex-col items-start gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
-            <span className={`w-full text-sm font-medium sm:w-auto sm:shrink-0 sm:whitespace-nowrap ${questsMutedForTheme}`}>{t('filterBy')}</span>
-            <OfferFilterSelect
-              className="w-full max-w-[min(100%,22rem)] sm:max-w-none md:w-auto"
-              value={offerFilter}
-              onChange={(v) => setOfferFilter(v as FilterValue)}
-              options={offerFilterOptions}
-              aria-label={t('filterBy')}
-              triggerClassName="w-full sm:w-auto md:min-w-[15rem]"
-            />
-          </div>
-          <label className="relative block w-full min-w-0 max-w-[min(100%,22rem)] sm:min-w-[12rem] sm:max-w-[20rem] sm:flex-1 md:w-56 md:max-w-none md:shrink-0 md:flex-none">
-              <Search
-                className={cn(
-                  'pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2',
-                  theme === 'light' ? 'text-zinc-400' : 'text-[#9a9a9a]',
-                )}
-                aria-hidden
-              />
-              <input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Αναζήτηση καταστήματος ή προσφοράς..."
-                className={cn(
-                  'h-10 w-full rounded-lg border pl-9 pr-3 text-sm focus:outline-none focus:ring-2',
-                  theme === 'light'
-                    ? 'border-zinc-200 bg-white text-neutral-900 placeholder:text-zinc-400 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
-                    : 'border-anbit-border bg-anbit-card text-anbit-text placeholder:text-anbit-muted/80 focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
-                )}
-                aria-label="Αναζήτηση καταστήματος ή προσφοράς"
-              />
-            </label>
-          </div>
-        <div className="space-y-10">
-          <AnimatePresence mode="popLayout">
-            {merchantSections.length === 0 ? (
-              <p className={`text-center text-sm ${questsMutedForTheme}`}>{emptyQuestsMessage}</p>
-            ) : (
-              merchantSections.map(({ partner, quests: mq, representative }) => (
-                <motion.section
-                  key={partner?.id ?? representative.storeName ?? representative.id}
-                  layout
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0 }}
-                  className="flex flex-col items-stretch"
-                >
-                  <MerchantOffersRow
-                    quests={mq}
-                    partner={partner}
-                    onOpenPartner={(p) => navigate(`/store-profile/${p.id}`, { state: { partner: p } })}
-                    t={t}
-                    offerCardClassName={questsOfferShell}
-                    mutedTextClassName={questsMutedForTheme}
-                    questsPage
-                  />
-                </motion.section>
-              ))
-            )}
-          </AnimatePresence>
-        </div>
+      <div className="space-y-8">
+        <CarouselSection title="Top XP Boosters" offers={topXpBoosters} partners={partners} />
+        <CarouselSection title="Flash Deals (Expiring Soon)" offers={flashDeals} partners={partners} />
+        <CarouselSection title="Exclusive for You" offers={exclusiveForYou} partners={partners} />
       </div>
     </motion.div>
   );

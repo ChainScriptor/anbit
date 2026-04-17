@@ -20,9 +20,16 @@ apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
     if (error.response?.status === 401) {
-      localStorage.removeItem('anbit_dashboard_token');
-      localStorage.removeItem('anbit_dashboard_user');
-      window.location.href = '/#/auth';
+      const requestUrl = String(error.config?.url ?? '');
+      const isProductsRequest = requestUrl.includes('/Products');
+      const isAuthLoginRequest = requestUrl.includes('/Auth/login');
+
+      // Product list can be unauthorized for some roles; do not hard-redirect from orders flow.
+      if (!isProductsRequest && !isAuthLoginRequest) {
+        localStorage.removeItem('anbit_dashboard_token');
+        localStorage.removeItem('anbit_dashboard_user');
+        window.location.href = '/#/auth';
+      }
     }
     return Promise.reject(error);
   },

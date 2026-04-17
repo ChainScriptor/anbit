@@ -139,7 +139,7 @@ export const LoginForm: React.FC<LoginFormProps> = ({ onSwitchToRegister }) => {
         type="submit"
         whileTap={{ scale: 0.97 }}
         disabled={isSubmitting}
-        className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-xl bg-[#e63533] px-4 text-xl font-bold text-white transition hover:brightness-95 disabled:cursor-not-allowed disabled:opacity-70"
+        className="mt-1 inline-flex h-14 w-full items-center justify-center rounded-xl bg-[#009DE0] px-4 text-xl font-bold text-white transition hover:bg-[#007BB5] disabled:cursor-not-allowed disabled:opacity-70"
       >
         {isSubmitting ? (
           <div className="flex items-center gap-2">
