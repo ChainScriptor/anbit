@@ -176,6 +176,8 @@ export interface ApiOrderListItem {
   items: { productId: string; quantity: number; unitPrice?: number; unitXp?: number }[];
   totalPrice: number;
   totalXp: number;
+  /** Αν το backend το στέλνει (π.χ. εξαργύρωση XP στην παραγγελία). */
+  spentXp?: number;
   status: number | string;
   createdAt: string;
   updatedAt?: string;
@@ -339,11 +341,11 @@ class ApiService {
   }
 
   async getOrders(params?: { limit?: number; offset?: number }): Promise<ApiOrderListItem[]> {
+    // Backend: limit must be ≤ 100 (validation).
+    const limit = Math.min(Math.max(params?.limit ?? 100, 1), 100);
+    const offset = Math.max(params?.offset ?? 0, 0);
     const { data } = await apiClient.get<ApiOrderListItem[]>('/Orders', {
-      params: {
-        limit: params?.limit ?? 100,
-        offset: params?.offset ?? 0,
-      },
+      params: { limit, offset },
     });
     return data;
   }

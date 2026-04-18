@@ -27,7 +27,7 @@ export function NetworkStoreCard({
         'group relative cursor-pointer overflow-hidden rounded-2xl transition-all duration-500 ease-out',
         'hover:-translate-y-1 hover:scale-[1.02] active:scale-[0.98]',
         isLight
-          ? 'shadow-[0_12px_40px_-12px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] hover:shadow-[0_24px_48px_-12px_rgba(0,157,224,0.22)] hover:ring-[#009DE0]/35'
+          ? 'shadow-[0_12px_40px_-12px_rgba(0,0,0,0.18)] ring-1 ring-black/[0.06] hover:shadow-[0_24px_48px_-12px_rgba(36,36,36,0.22)] hover:ring-[#242424]/35'
           : 'shadow-[0_16px_48px_-12px_rgba(0,0,0,0.75)] ring-1 ring-white/[0.12] hover:shadow-[0_28px_56px_-8px_rgba(0,157,224,0.28)] hover:ring-[#009DE0]/45',
       )}
       style={{ aspectRatio: '4/5' }}
@@ -47,7 +47,12 @@ export function NetworkStoreCard({
           draggable={false}
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#0c1220] via-[#1a2440] to-[#009DE0]/25">
+        <div
+          className={cn(
+            'absolute inset-0 flex items-center justify-center bg-gradient-to-br from-[#0c1220] via-[#1a2440]',
+            isLight ? 'to-[#242424]/25' : 'to-[#009DE0]/25',
+          )}
+        >
           <span className="text-5xl opacity-90 drop-shadow-lg">🏪</span>
         </div>
       )}
@@ -58,7 +63,12 @@ export function NetworkStoreCard({
         aria-hidden
       />
       <div
-        className="absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100 bg-[radial-gradient(ellipse_120%_80%_at_50%_0%,rgba(0,157,224,0.22),transparent_55%)]"
+        className={cn(
+          'absolute inset-0 opacity-0 transition-opacity duration-500 group-hover:opacity-100',
+          isLight
+            ? 'bg-[radial-gradient(ellipse_120%_80%_at_50%_0%,rgba(36,36,36,0.22),transparent_55%)]'
+            : 'bg-[radial-gradient(ellipse_120%_80%_at_50%_0%,rgba(0,157,224,0.22),transparent_55%)]',
+        )}
         aria-hidden
       />
 
@@ -72,7 +82,12 @@ export function NetworkStoreCard({
       <div className="absolute top-2.5 left-2.5 right-2.5 flex items-start justify-between gap-2">
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-1.5">
           {xp > 0 && (
-            <div className="flex items-center gap-1 rounded-full bg-[#009DE0] px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-lg shadow-[#009DE0]/40">
+            <div
+              className={cn(
+                'flex items-center gap-1 rounded-full px-2 py-1 text-[10px] font-black uppercase tracking-wide text-white shadow-lg',
+                isLight ? 'bg-[#242424] shadow-[#242424]/40' : 'bg-[#009DE0] shadow-[#009DE0]/40',
+              )}
+            >
               <Zap className="h-3 w-3 shrink-0 fill-white" />
               +{xp.toLocaleString()} XP
             </div>
@@ -90,7 +105,9 @@ export function NetworkStoreCard({
           className={cn(
             'flex h-9 w-9 shrink-0 items-center justify-center rounded-full backdrop-blur-md transition-all duration-200',
             favorite
-              ? 'bg-[#009DE0] text-white shadow-lg shadow-[#009DE0]/35 scale-105'
+              ? isLight
+                ? 'bg-[#242424] text-white shadow-lg shadow-[#242424]/35 scale-105'
+                : 'bg-[#e63533] text-white shadow-lg shadow-[#e63533]/40 scale-105'
               : 'bg-black/45 text-white/85 ring-1 ring-white/15 hover:bg-black/55 hover:scale-105',
           )}
           aria-label={favorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένο'}
@@ -122,7 +139,10 @@ export function NetworkStoreCard({
               )}
             </div>
             <ChevronRight
-              className="ml-auto h-4 w-4 text-white/40 transition-all duration-300 group-hover:translate-x-0.5 group-hover:text-[#009DE0]"
+              className={cn(
+                'ml-auto h-4 w-4 text-white/40 transition-all duration-300 group-hover:translate-x-0.5',
+                isLight ? 'group-hover:text-[#242424]' : 'group-hover:text-[#009DE0]',
+              )}
               aria-hidden
             />
           </div>
@@ -133,7 +153,7 @@ export function NetworkStoreCard({
 
           {partner.location && (
             <div className="mt-1 flex items-center gap-1">
-              <MapPin className="h-3 w-3 shrink-0 text-[#009DE0]" />
+              <MapPin className={cn('h-3 w-3 shrink-0', isLight ? 'text-[#242424]' : 'text-[#009DE0]')} />
               <p className="truncate text-[11px] font-medium text-white/75">
                 {partner.location}
               </p>

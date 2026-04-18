@@ -216,7 +216,7 @@ function StoreProfilePanel({
       setOrderHistoryLoading(true);
       setOrderHistoryError(null);
       try {
-        const data = await api.getOrders({ limit: 150, offset: 0 });
+        const data = await api.getOrders({ limit: 100, offset: 0 });
         if (!isActive) return;
         const filtered = (Array.isArray(data) ? data : [])
           .filter((order) => String(order.userId).toLowerCase() === String(user.id).toLowerCase())

@@ -197,22 +197,22 @@ const Orders: React.FC = () => {
         {/* CONTROLS ROW */}
         <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-3">
           <div className="flex flex-wrap items-center gap-2">
-            <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm">
+            <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-playpen-sans text-xs font-extrabold text-slate-700 shadow-sm">
               Board View
               <ChevronDown className="h-3 w-3" />
             </button>
-            <button className="inline-flex items-center gap-1 rounded-lg border border-transparent bg-slate-50 px-3 py-1.5 text-xs font-medium text-slate-500">
+            <button className="inline-flex items-center gap-1 rounded-lg border border-transparent bg-slate-50 px-3 py-1.5 font-playpen-sans text-xs font-extrabold text-slate-500">
               This Week
               <ChevronDown className="h-3 w-3" />
             </button>
           </div>
 
           <div className="flex items-center gap-2">
-            <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-700 shadow-sm">
+            <button className="inline-flex items-center gap-1 rounded-lg border border-slate-200 bg-white px-3 py-1.5 font-playpen-sans text-xs font-extrabold text-slate-700 shadow-sm">
               Export
               <ChevronDown className="h-3 w-3" />
             </button>
-            <button className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3.5 py-1.5 text-xs font-medium text-white shadow-sm">
+            <button className="inline-flex items-center gap-1 rounded-lg bg-slate-900 px-3.5 py-1.5 font-playpen-sans text-xs font-extrabold text-white shadow-sm">
               + Add Orders
             </button>
           </div>

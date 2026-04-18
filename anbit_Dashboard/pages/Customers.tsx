@@ -70,7 +70,7 @@ const Customers: React.FC = () => {
                   type="button"
                   onClick={() => setSelectedCustomerId(customer.id)}
                   className={cn(
-                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm transition-colors',
+                    'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm font-playpen-sans font-extrabold transition-colors',
                     isActive ? 'text-white' : 'text-slate-700 hover:bg-slate-100',
                   )}
                   style={
@@ -90,10 +90,10 @@ const Customers: React.FC = () => {
                     />
                   </div>
                   <div className="min-w-0 flex-1">
-                    <p className="truncate font-medium">{customer.name}</p>
+                    <p className="truncate">{customer.name}</p>
                     <p
                       className={cn(
-                        'text-xs',
+                        'text-xs font-normal',
                         isActive ? 'text-white' : 'text-slate-500',
                       )}
                     >

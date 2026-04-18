@@ -67,14 +67,14 @@ const XPHeroCard: React.FC<XPHeroCardProps> = ({
   const { theme } = useTheme();
   const isLight = theme === 'light';
 
-  const particleColor = isLight ? 'rgba(0, 157, 224, 0.45)' : 'rgba(255, 255, 255, 0.35)';
+  const particleColor = isLight ? 'rgba(36, 36, 36, 0.45)' : 'rgba(255, 255, 255, 0.35)';
 
   const shellBg = useMemo(() => {
     if (isLight) {
       return {
         background: `
           linear-gradient(180deg, #ffffff 0%, #fafafa 52%, ${pageBg} 100%),
-          radial-gradient(ellipse 90% 65% at 50% -8%, rgba(0, 157, 224, 0.09) 0%, transparent 58%)
+          radial-gradient(ellipse 90% 65% at 50% -8%, rgba(36, 36, 36, 0.09) 0%, transparent 58%)
         `,
       };
     }
@@ -87,19 +87,19 @@ const XPHeroCard: React.FC<XPHeroCardProps> = ({
   }, [isLight, pageBg]);
 
   const accentLine = isLight
-    ? 'linear-gradient(90deg, transparent, rgba(0, 157, 224, 0.35), transparent)'
+    ? 'linear-gradient(90deg, transparent, rgba(36, 36, 36, 0.35), transparent)'
     : `linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.22), transparent)`;
 
   const numberColor = isLight ? '#202125' : '#ffffff';
-  const suffixClass = isLight ? 'text-[#009DE0]' : 'text-white/55';
+  const suffixClass = isLight ? 'text-[#242424]' : 'text-white/55';
   const labelClass = isLight ? 'text-neutral-500' : 'text-[color:var(--anbit-muted)]';
   const messageClass = isLight ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]';
 
   const numberGlow = isLight
     ? [
-        '0 1px 0 rgba(255,255,255,0.9), 0 12px 40px rgba(0,157,224,0.12)',
-        '0 1px 0 rgba(255,255,255,0.9), 0 16px 48px rgba(0,157,224,0.18)',
-        '0 1px 0 rgba(255,255,255,0.9), 0 12px 40px rgba(0,157,224,0.12)',
+        '0 1px 0 rgba(255,255,255,0.9), 0 12px 40px rgba(36,36,36,0.12)',
+        '0 1px 0 rgba(255,255,255,0.9), 0 16px 48px rgba(36,36,36,0.18)',
+        '0 1px 0 rgba(255,255,255,0.9), 0 12px 40px rgba(36,36,36,0.12)',
       ]
     : [
         '0 0 20px rgba(255,255,255,0.12), 0 0 48px rgba(37,99,235,0.18)',
@@ -119,11 +119,11 @@ const XPHeroCard: React.FC<XPHeroCardProps> = ({
   const animContentY = useSpring(rawContentY, { stiffness: 220, damping: 32 });
 
   const topGlow = isLight
-    ? `radial-gradient(circle, rgba(0, 157, 224, 0.14) 0%, transparent 68%)`
+    ? `radial-gradient(circle, rgba(36, 36, 36, 0.14) 0%, transparent 68%)`
     : `radial-gradient(circle, rgba(255, 255, 255, 0.08) 0%, transparent 68%)`;
 
   const cornerGlow = isLight
-    ? `radial-gradient(circle, rgba(0, 157, 224, 0.1) 0%, transparent 72%)`
+    ? `radial-gradient(circle, rgba(36, 36, 36, 0.1) 0%, transparent 72%)`
     : `radial-gradient(circle, rgba(37, 99, 235, 0.2) 0%, transparent 72%)`;
 
   return (
@@ -191,7 +191,7 @@ const XPHeroCard: React.FC<XPHeroCardProps> = ({
             className="absolute inset-x-0 bottom-0 h-10 pointer-events-none opacity-80"
             style={{
               background: isLight
-                ? `radial-gradient(ellipse 75% 100% at 50% 100%, rgba(0, 157, 224, 0.12) 0%, transparent 72%)`
+                ? `radial-gradient(ellipse 75% 100% at 50% 100%, rgba(36, 36, 36, 0.12) 0%, transparent 72%)`
                 : `radial-gradient(ellipse 75% 100% at 50% 100%, rgba(37, 99, 235, 0.2) 0%, transparent 72%)`,
               filter: 'blur(8px)',
             }}

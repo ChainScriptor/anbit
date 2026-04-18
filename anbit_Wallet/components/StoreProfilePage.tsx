@@ -189,13 +189,13 @@ const StoreProfilePage: React.FC = () => {
             </div>
           </div>
           <div className="mt-3 flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] font-medium text-white/85 sm:text-xs">
-            <span className="text-[#009DE0]">Επιλογή τοποθεσίας</span>
+            <span className={theme === 'light' ? 'text-[#242424]' : 'text-[#009DE0]'}>Επιλογή τοποθεσίας</span>
             <span>•</span>
             <span>Ανοιχτό μέχρι 12:00 μ.μ.</span>
             <span>•</span>
             <span>Ελάχιστη παραγγελία {partner.minOrder ?? '6,00 €'}</span>
             <span>•</span>
-            <span className="text-[#009DE0]">Λεπτομέρειες εστιατορίου</span>
+            <span className={theme === 'light' ? 'text-[#242424]' : 'text-[#009DE0]'}>Λεπτομέρειες εστιατορίου</span>
           </div>
         </div>
       </section>

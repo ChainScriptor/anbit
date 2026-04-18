@@ -757,7 +757,7 @@ const Products: React.FC = () => {
           </Button>
         </div>
 
-        <div className="inline-flex w-fit items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5">
+        <div className="inline-flex w-fit items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5 font-playpen-sans font-extrabold">
           {[
             { key: 'listing' as const, label: `Products (${items.length})` },
             { key: 'options' as const, label: `Options (${optionsCount})` },
@@ -768,7 +768,7 @@ const Products: React.FC = () => {
               type="button"
               onClick={() => setActiveTab(tab.key)}
               className={cn(
-                'rounded-xl px-6 py-2.5 text-sm font-semibold transition-all',
+                'rounded-xl px-6 py-2.5 text-sm font-extrabold transition-all',
                 activeTab === tab.key
                   ? 'bg-white text-[#0a0a0a] shadow-sm'
                   : 'text-slate-500 hover:text-slate-700',
@@ -928,8 +928,8 @@ const Products: React.FC = () => {
             {isLoadingCategories && <p className="text-sm text-slate-500">Φόρτωση κατηγοριών...</p>}
             {categoriesError && <p className="text-sm text-red-600">{categoriesError}</p>}
             <div className="flex items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5">
-                <span className="rounded-xl bg-white px-4 py-2 text-xs font-semibold text-slate-600">
+              <div className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5 font-playpen-sans font-extrabold">
+                <span className="rounded-xl bg-white px-4 py-2 text-xs font-extrabold text-slate-600">
                   Categories ({categories.length - 1})
                 </span>
               </div>

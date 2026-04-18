@@ -155,7 +155,9 @@ export const QuestOfferCard: React.FC<QuestOfferCardProps> = ({
               className={cn(
                 'absolute right-2 top-2 z-20 flex h-9 w-9 items-center justify-center rounded-full shadow-md backdrop-blur-md transition-transform duration-200 hover:scale-105 active:scale-95',
                 isFavorite
-                  ? 'bg-[#009DE0] text-white ring-2 ring-white/25'
+                  ? theme === 'light'
+                    ? 'bg-[#242424] text-white ring-2 ring-white/25'
+                    : 'bg-[#e63533] text-white ring-2 ring-white/20 shadow-lg shadow-[#e63533]/35'
                   : 'bg-black/45 text-white ring-1 ring-white/15 hover:bg-black/60',
               )}
               aria-label={isFavorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένο'}

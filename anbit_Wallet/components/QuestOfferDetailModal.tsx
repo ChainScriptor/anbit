@@ -7,7 +7,7 @@ import { cn } from '@/lib/utils';
 const defaultBanner =
   'https://images.unsplash.com/photo-1544025162-766942260318?auto=format&fit=crop&q=80&w=1200&h=480';
 
-const WOLT_CTA = '#009DE0';
+const WOLT_CTA = '#242424';
 
 type QuestOfferDetailModalProps = {
   quest: Quest;

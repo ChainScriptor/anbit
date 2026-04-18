@@ -1,6 +1,18 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
-import { Copy, Facebook, Linkedin, Search, Sparkles, Star, TicketPercent } from 'lucide-react';
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+  ChevronDown,
+  ChevronRight,
+  Copy,
+  Facebook,
+  Linkedin,
+  Search,
+  Sparkles,
+  Star,
+  TicketPercent,
+  X,
+} from 'lucide-react';
 import { UserData, Partner } from '../types';
 import { useTheme } from '../context/ThemeContext';
 import { useLanguage } from '../context/LanguageContext';
@@ -19,17 +31,40 @@ import {
 import { partnerToNetworkDisplayQuest } from '@/lib/partnerNetworkQuest';
 import { QuestOfferCard } from './QuestOfferCard';
 import { Button } from './ui/button';
+import { api, type ApiOrderListItem } from '../services/api';
+
+type OrderHistoryLineItem = {
+  productId: string;
+  productName: string;
+  quantity: number;
+  unitPrice?: number;
+  unitXp?: number;
+};
 
 type OrderHistoryEntry = {
   id: string;
   storeName: string;
   storeImage: string;
   dateTime: string;
+  /** ISO 8601 για φίλτρα ημερομηνίας στο modal */
+  createdAtIso: string;
   status: 'completed' | 'cancelled';
   price: string;
   itemsSummary: string;
   xp?: number;
+  lineItems: OrderHistoryLineItem[];
+  xpEarned: number;
+  /** XP που ξοδεύτηκαν (αν το API τα στέλνει· αλλιώς 0). */
+  xpSpent: number;
   category: 'supermarket' | 'food';
+};
+
+type OrderHistoryStoreGroup = {
+  merchantId: string;
+  partner?: Partner;
+  storeName: string;
+  storeImage: string;
+  orders: OrderHistoryEntry[];
 };
 
 type ClaimedCardEntry = {
@@ -42,43 +77,8 @@ type ClaimedCardEntry = {
 };
 type ClaimedStatusFilter = 'all' | ClaimedCardEntry['status'];
 
-const ORDER_HISTORY_MOCK: OrderHistoryEntry[] = [
-  {
-    id: '1',
-    storeName: 'Anbit Market',
-    storeImage:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuA1R3KTvL-Zjrr9zGyuScQJcSY0KkyFxF-hXC36_5EA_BEpjUdTyed8t6ueWdwYazjt0TXPhs3Uv_Z9yfy2SPOdNsc_T7d1dze7SJwhTfqSBc_feLSBGxGeUc_z2NSGFce762-vxmSs3ZXmdQ8ETS5NLBqos3Vxz1z9z5r4Mu9qRiz9EBfO6fLykl3HLnPTtSQQS2zy86aDb7_xIOnHnkN6wfSEJDVcyp5c1sRHFqO-J6Vk0ftTS52DLTMKMgCMsLlK2frWs5L826k',
-    dateTime: '10 Απριλίου, 20:30',
-    status: 'completed',
-    price: '24.50 €',
-    itemsSummary: '1x Γάλα Φρέσκο, 2x Μπανάνες, 1x Ψωμί',
-    xp: 150,
-    category: 'supermarket',
-  },
-  {
-    id: '2',
-    storeName: 'Meat the King',
-    storeImage:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuA_WiKyEt4PbNC2i15LG1PRA9qoOBdxQKfEvDbhNXm3awPcKOpYyNohg7v2rBY49oBf5UEYGsYQmSGIK-g6lJa0MX3jsXNTwdYJElzazCS41MbMDqOEVBZpOtXlzvXbaDbAdiYUhXtLv8BH_qrHvhIFIuQzNn8kHkPDYRy7G5acg_m-ZJqtStIhCzGnzcUJeoBuO550BYrA-BljIi7-UmPJvecy-0xihUM5lT_3B-rY9aswUf5nLPQ2U7WRCLiFy3zVD0ds6hpRxp0',
-    dateTime: '08 Απριλίου, 14:15',
-    status: 'completed',
-    price: '42.80 €',
-    itemsSummary: '2x Μπριζόλες Μοσχαρίσιες, 1x Χοιρινό Σουβλάκι (5 τμχ)',
-    xp: 280,
-    category: 'food',
-  },
-  {
-    id: '3',
-    storeName: 'Pizza Squad',
-    storeImage:
-      'https://lh3.googleusercontent.com/aida-public/AB6AXuBH8r80SC7C60gnIrADg_DLZf60pxDunUx0v14lfoeuF8_187xj5DZdIgmpAciyaPfOBnEHkEh9AfCqWnROiL3h2Mi-FpXSpQ9wkp89o1RSdN-Ewt971H-lBqvE0nrGxJm7jWxPBO5aOZq3xbMFTMsCeCihkHz6_A8mgvQaJIQ-A1nQ-d0E6Sdh9TBqTf3BNgoS53XW7vjXDQufMrl2FFMjlFNYOo_gXsj0zU20PoEkEst76nnkKHnWePV_3XjBO0o4Uxy61pRoFM0',
-    dateTime: '05 Απριλίου, 21:05',
-    status: 'cancelled',
-    price: '18.20 €',
-    itemsSummary: '1x Pizza Special (Μεγάλη), 1x Coca Cola 500ml',
-    category: 'food',
-  },
-];
+const ORDER_HISTORY_STORE_FALLBACK_IMAGE =
+  'https://images.unsplash.com/photo-1556742111-a301076d9d18?auto=format&fit=crop&q=80&w=800&h=400';
 
 const CLAIMED_CARDS_MOCK: ClaimedCardEntry[] = [
   {
@@ -160,197 +160,201 @@ function resolvePartnerForOrderHistory(storeName: string, partners: Partner[]): 
   return partners.find((p) => p.name.trim().toLowerCase() === q);
 }
 
-/** Κεφαλίδα καταστήματος — ίδιο visual language με QuestMerchantBanner / Network chips. */
-function OrderHistoryMerchantHeader({
-  order,
-  partner,
-}: {
-  order: OrderHistoryEntry;
-  partner?: Partner;
-}) {
-  const { theme } = useTheme();
-  const navigate = useNavigate();
-  const isLight = theme === 'light';
-  const merchantId = partner?.id ?? '';
-  const [favorite, toggleFavorite] = useFavoriteMerchant(merchantId);
-  const img = partner?.image ?? order.storeImage;
-  const rating = partner?.rating ?? 9.2;
-  const isCancelled = order.status === 'cancelled';
-  const statusLabel = isCancelled ? 'Ακυρώθηκε' : 'Ολοκληρώθηκε';
+function resolvePartnerByMerchantId(merchantId: string, partners: Partner[]): Partner | undefined {
+  const mid = String(merchantId ?? '').trim().toLowerCase();
+  if (!mid) return undefined;
+  return partners.find((p) => p.id.trim().toLowerCase() === mid);
+}
 
-  const goStore = () => {
-    if (!partner) return;
-    navigate(`/store-profile/${partner.id}`, { state: { partner } });
+function mapApiOrderStatusToHistory(status: number | string): OrderHistoryEntry['status'] {
+  const s = String(status ?? '').toLowerCase();
+  if (s === '3' || s.includes('rejected') || s.includes('cancel')) return 'cancelled';
+  return 'completed';
+}
+
+function historyCategoryFromPartner(partner: Partner | undefined): OrderHistoryEntry['category'] {
+  if (!partner) return 'food';
+  const n = partner.name.toLowerCase();
+  if (n.includes('market') || n.includes('μάρκετ') || n.includes('μαρκετ')) return 'supermarket';
+  return 'food';
+}
+
+function startOfDayMs(d: Date): number {
+  const x = new Date(d);
+  x.setHours(0, 0, 0, 0);
+  return x.getTime();
+}
+
+function endOfDayMs(d: Date): number {
+  const x = new Date(d);
+  x.setHours(23, 59, 59, 999);
+  return x.getTime();
+}
+
+function parseDateInputYmd(s: string): Date | null {
+  const t = s.trim();
+  if (!t) return null;
+  const parts = t.split('-').map((p) => Number(p));
+  if (parts.length !== 3 || parts.some((n) => Number.isNaN(n))) return null;
+  const [y, m, d] = parts;
+  return new Date(y, m - 1, d);
+}
+
+function sumLineItemsXp(items: { quantity: number; unitXp?: number }[]): number {
+  return items.reduce((s, i) => s + Number(i.quantity ?? 0) * Number(i.unitXp ?? 0), 0);
+}
+
+function productLabelFromMenu(productId: string, partner: Partner | undefined): string {
+  const id = productId.trim();
+  if (!id) return '—';
+  const menu = partner?.menu;
+  if (!menu?.length) return id;
+  const p = menu.find((m) => m.id.trim().toLowerCase() === id.toLowerCase());
+  return p?.name?.trim() || id;
+}
+
+function formatOrderHistoryDateTime(iso: string, lang: 'el' | 'en'): string {
+  const d = new Date(iso);
+  if (Number.isNaN(d.getTime())) return '—';
+  return d.toLocaleString(lang === 'el' ? 'el-GR' : 'en-US', {
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
+function buildOrderItemsSummary(
+  items: { productId?: string; quantity?: number }[],
+  t: (k: string) => string,
+): string {
+  const lines = Array.isArray(items) ? items.length : 0;
+  const pieces = Array.isArray(items) ? items.reduce((s, i) => s + Number(i.quantity ?? 0), 0) : 0;
+  return t('orderHistoryItemsSummary').replace('{{lines}}', String(lines)).replace('{{pieces}}', String(pieces));
+}
+
+function normalizeApiOrderRow(raw: unknown): ApiOrderListItem | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const id = String(r.id ?? r.Id ?? '').trim();
+  if (!id) return null;
+  const itemsRaw = r.items ?? r.Items;
+  const items = Array.isArray(itemsRaw)
+    ? itemsRaw.map((it) => {
+        const x = it as Record<string, unknown>;
+        return {
+          productId: String(x.productId ?? x.ProductId ?? ''),
+          quantity: Number(x.quantity ?? x.Quantity ?? 0),
+          unitPrice: x.unitPrice != null || x.UnitPrice != null ? Number(x.unitPrice ?? x.UnitPrice) : undefined,
+          unitXp: x.unitXp != null || x.UnitXp != null ? Number(x.unitXp ?? x.UnitXp) : undefined,
+        };
+      })
+    : [];
+  const spentRaw =
+    r.spentXp ?? r.SpentXp ?? r.xpSpent ?? r.XpSpent ?? r.redeemedXp ?? r.RedeemedXp ?? r.usedXp ?? r.UsedXp;
+  const spentNum = spentRaw != null && spentRaw !== '' ? Number(spentRaw) : NaN;
+  const spentXp = Number.isFinite(spentNum) ? Math.max(0, spentNum) : undefined;
+
+  return {
+    id,
+    userId: String(r.userId ?? r.UserId ?? '').trim(),
+    merchantId: String(r.merchantId ?? r.MerchantId ?? '').trim(),
+    tableNumber: Number(r.tableNumber ?? r.TableNumber ?? 0),
+    items,
+    totalPrice: Number(r.totalPrice ?? r.TotalPrice ?? 0),
+    totalXp: Number(r.totalXp ?? r.TotalXp ?? 0),
+    spentXp,
+    status: (r.status ?? r.Status ?? 0) as number | string,
+    createdAt: String(r.createdAt ?? r.CreatedAt ?? ''),
+    updatedAt:
+      r.updatedAt != null
+        ? String(r.updatedAt)
+        : r.UpdatedAt != null
+          ? String(r.UpdatedAt)
+          : undefined,
   };
+}
+
+function mapApiOrderToHistoryEntry(
+  order: ApiOrderListItem,
+  partners: Partner[],
+  lang: 'el' | 'en',
+  t: (k: string) => string,
+): OrderHistoryEntry {
+  const partner = resolvePartnerByMerchantId(order.merchantId, partners);
+  const storeName = partner?.name?.trim() || `Κατάστημα ${String(order.merchantId).slice(0, 8)}`;
+  const xpEarned = Number(order.totalXp ?? 0);
+  const xpSpent = Math.max(0, Number(order.spentXp ?? 0));
+  const lineItems: OrderHistoryLineItem[] = (order.items ?? []).map((it) => ({
+    productId: it.productId,
+    quantity: Number(it.quantity ?? 0),
+    unitPrice: it.unitPrice,
+    unitXp: it.unitXp,
+    productName: productLabelFromMenu(it.productId, partner),
+  }));
+  return {
+    id: order.id,
+    storeName,
+    storeImage: partner?.image || ORDER_HISTORY_STORE_FALLBACK_IMAGE,
+    dateTime: formatOrderHistoryDateTime(order.createdAt, lang),
+    createdAtIso: order.createdAt,
+    status: mapApiOrderStatusToHistory(order.status),
+    price: `${Number(order.totalPrice ?? 0).toFixed(2)} €`,
+    itemsSummary: buildOrderItemsSummary(order.items ?? [], t),
+    xp: xpEarned > 0 ? xpEarned : undefined,
+    lineItems,
+    xpEarned,
+    xpSpent,
+    category: historyCategoryFromPartner(partner),
+  };
+}
+
+function OrderHistoryStoreCard({
+  group,
+  theme,
+  onOpen,
+  t,
+}: {
+  group: OrderHistoryStoreGroup;
+  theme: 'light' | 'dark';
+  onOpen: () => void;
+  t: (k: string) => string;
+}) {
+  const isLight = theme === 'light';
+  const count = group.orders.length;
+  const countLabel = t('orderHistoryStoreOrderCount').replace('{{count}}', String(count));
+  const last = group.orders[0]?.dateTime ?? '—';
 
   return (
-    <div
+    <button
+      type="button"
+      onClick={onOpen}
       className={cn(
-        'group relative flex w-full cursor-pointer items-stretch overflow-hidden rounded-lg border shadow-md transition-all duration-300',
+        'flex w-full min-w-0 items-center gap-3 rounded-xl border p-3 text-left transition-colors sm:gap-4 sm:p-4',
         isLight
-          ? cn(NETWORK_STORE_CARD_BG_LIGHT, 'border-zinc-200 hover:border-zinc-300 hover:bg-zinc-50')
-          : cn(NETWORK_STORE_CARD_BG_DARK, 'border-white/[0.08] hover:border-white/12 hover:bg-[#262626]'),
-        partner ? '' : 'cursor-default',
+          ? 'border-zinc-200 bg-white hover:border-zinc-300 hover:bg-zinc-50'
+          : 'border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] hover:border-anbit-brand/30',
       )}
-      onClick={() => goStore()}
-      onKeyDown={(e) => {
-        if (!partner) return;
-        if (e.key === 'Enter' || e.key === ' ') {
-          e.preventDefault();
-          goStore();
-        }
-      }}
-      role={partner ? 'button' : undefined}
-      tabIndex={partner ? 0 : undefined}
-      style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
     >
-      <div className="relative h-16 w-16 shrink-0 overflow-hidden sm:h-[4.5rem] sm:w-[4.5rem]">
-        {img ? (
-          <img
-            src={img}
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-            draggable={false}
-          />
-        ) : (
-          <div className={cn('h-full w-full', isLight ? 'bg-zinc-200' : 'bg-[#1f1f1f]')} />
-        )}
-        <div
-          className={cn(
-            'absolute inset-0 bg-gradient-to-r to-transparent',
-            isLight ? 'from-black/10' : 'from-black/25',
-          )}
-        />
+      <div className="relative h-14 w-14 shrink-0 overflow-hidden rounded-lg sm:h-16 sm:w-16">
+        <img src={group.storeImage} alt="" className="h-full w-full object-cover" draggable={false} />
       </div>
-      <div
-        className={cn(
-          'min-w-0 flex-1 py-2.5 pl-2.5 pr-2 sm:pr-3',
-          isLight ? 'text-neutral-900' : 'text-[#e5e5e5]',
-        )}
-      >
-        <div className="flex items-center gap-1.5">
-          <h2
-            className={cn(
-              'truncate text-sm font-semibold uppercase leading-tight tracking-tight',
-              isLight ? 'text-neutral-900' : 'text-white',
-            )}
-          >
-            {order.storeName}
-          </h2>
-          <span
-            className={cn(
-              'shrink-0 rounded-sm px-1 py-px text-[7px] font-semibold uppercase leading-none tracking-tight text-white',
-              isLight ? 'bg-[#0a0a0a]' : 'bg-anbit-brand/90',
-            )}
-          >
-            Anbit+
-          </span>
-        </div>
-        <p
-          className={cn(
-            'mt-0.5 line-clamp-1 text-[10px] font-medium',
-            isLight ? 'text-neutral-600' : 'text-[#ababab]',
-          )}
-        >
-          {partner ? (
-            <>
-              <span>{formatFeeLabel(partner)}</span>
-              <span
-                className={cn(
-                  'mx-1 inline-block h-0.5 w-0.5 rounded-full align-middle',
-                  isLight ? 'bg-zinc-400' : 'bg-[#484848]',
-                )}
-              />
-              <span>{formatDeliveryLabel(partner)}</span>
-              <span
-                className={cn(
-                  'mx-1 inline-block h-0.5 w-0.5 rounded-full align-middle',
-                  isLight ? 'bg-zinc-400' : 'bg-[#484848]',
-                )}
-              />
-              <span className="inline-flex items-center gap-0.5">
-                {rating.toFixed(1)}
-                <span
-                  className="material-symbols-outlined text-[12px] text-sky-400"
-                  style={{ fontVariationSettings: "'FILL' 1" }}
-                >
-                  sentiment_satisfied
-                </span>
-              </span>
-            </>
-          ) : (
-            <>
-              {order.dateTime}
-              <span
-                className={cn(
-                  'mx-1 inline-block h-0.5 w-0.5 rounded-full align-middle',
-                  isLight ? 'bg-zinc-400' : 'bg-[#484848]',
-                )}
-              />
-              <span className={isCancelled ? 'text-anbit-brand' : ''}>{statusLabel}</span>
-            </>
-          )}
+      <div className="min-w-0 flex-1">
+        <p className={cn('truncate text-sm font-semibold sm:text-base', isLight ? 'text-neutral-900' : 'text-anbit-text')}>
+          {group.storeName}
         </p>
-        {partner ? (
-          <p
-            className={cn(
-              'mt-1 line-clamp-1 text-[10px] font-medium',
-              isLight ? 'text-neutral-500' : 'text-[#7a7a7a]',
-            )}
-          >
-            {order.dateTime}
-            <span className="mx-1">•</span>
-            <span className={isCancelled ? 'text-anbit-brand' : ''}>{statusLabel}</span>
-          </p>
-        ) : null}
+        <p className={cn('mt-0.5 text-xs sm:text-sm', isLight ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]')}>
+          {countLabel}
+          <span className="mx-1">·</span>
+          {last}
+        </p>
       </div>
-      <div
-        className={cn(
-          'flex shrink-0 flex-col items-end justify-center px-2 py-2.5 sm:px-3',
-          partner ? 'pr-10 sm:pr-11' : 'pr-3',
-        )}
-      >
-        <span
-          className={cn(
-            'text-base font-bold leading-none sm:text-lg',
-            isCancelled ? (isLight ? 'text-neutral-400 line-through' : 'text-[color:var(--anbit-muted)] line-through') : isLight ? 'text-neutral-900' : 'text-white',
-          )}
-        >
-          {order.price}
-        </span>
-      </div>
-      {partner ? (
-        <div className="absolute right-1 top-1 z-10">
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleFavorite();
-            }}
-            className={cn(
-              'flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-sm transition-colors duration-300',
-              isLight
-                ? cn(
-                    'border border-zinc-200 bg-zinc-100 text-neutral-600 hover:bg-zinc-200',
-                    favorite && 'border-[#0a0a0a] bg-[#0a0a0a] text-white hover:bg-[#171717]',
-                  )
-                : cn(
-                    'bg-[#262626]/80 text-white hover:bg-[#2563eb]/90',
-                    favorite && 'bg-[#2563eb]',
-                  ),
-            )}
-            aria-label={favorite ? 'Αφαίρεση από αγαπημένα' : 'Αγαπημένα'}
-          >
-            <span
-              className="material-symbols-outlined text-[16px]"
-              style={favorite ? { fontVariationSettings: "'FILL' 1" } : undefined}
-            >
-              favorite
-            </span>
-          </button>
-        </div>
-      ) : null}
-    </div>
+      <ChevronRight
+        className={cn('h-5 w-5 shrink-0', isLight ? 'text-zinc-400' : 'text-[color:var(--anbit-muted)]')}
+        aria-hidden
+      />
+    </button>
   );
 }
 
@@ -557,7 +561,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
   const navigate = useNavigate();
   const location = useLocation();
   const { theme } = useTheme();
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const storeXP = user.storeXP || {};
   const totalStorePoints = Object.values(storeXP).reduce((sum, v) => sum + (Number(v) || 0), 0);
 
@@ -571,6 +575,9 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
 
   const [orderHistoryCategoryFilter, setOrderHistoryCategoryFilter] = useState<string>('all');
   const [orderHistoryStoreSearch, setOrderHistoryStoreSearch] = useState('');
+  const [orderHistoryRaw, setOrderHistoryRaw] = useState<ApiOrderListItem[]>([]);
+  const [orderHistoryLoading, setOrderHistoryLoading] = useState(false);
+  const [orderHistoryError, setOrderHistoryError] = useState<string | null>(null);
   const [selectedClaimedStoreId, setSelectedClaimedStoreId] = useState<string | null>(null);
   const [claimedStatusFilter, setClaimedStatusFilter] = useState<ClaimedStatusFilter>('all');
   const [favoriteMerchantIds, setFavoriteMerchantIds] = useState<Set<string>>(() => loadFavoriteMerchantIds());
@@ -596,6 +603,14 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
     setRedeemCode('');
   }, [redeemCode]);
 
+  const orderHistoryEntries = useMemo(
+    () =>
+      orderHistoryRaw.map((o) =>
+        mapApiOrderToHistoryEntry(o, partners, language === 'en' ? 'en' : 'el', t),
+      ),
+    [orderHistoryRaw, partners, language, t],
+  );
+
   const orderHistoryCategoryOptions = useMemo(() => {
     const base: { value: string; label: string }[] = [
       { value: 'all', label: 'Όλες οι κατηγορίες' },
@@ -603,7 +618,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
       { value: 'food', label: 'Φαγητό & delivery' },
     ];
     const seen = new Set(base.map((b) => b.value));
-    for (const o of ORDER_HISTORY_MOCK) {
+    for (const o of orderHistoryEntries) {
       const p = resolvePartnerForOrderHistory(o.storeName, partners);
       const cat = p?.category;
       if (cat && !seen.has(cat)) {
@@ -612,30 +627,143 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
       }
     }
     return base;
-  }, [partners]);
+  }, [orderHistoryEntries, partners]);
 
-  const filteredOrderHistory = useMemo(() => {
-    let list = [...ORDER_HISTORY_MOCK];
+  const orderHistoryStoreGroups = useMemo((): OrderHistoryStoreGroup[] => {
+    const byMid = new Map<string, ApiOrderListItem[]>();
+    for (const row of orderHistoryRaw) {
+      const k = String(row.merchantId ?? '').trim().toLowerCase();
+      if (!k) continue;
+      const list = byMid.get(k) ?? [];
+      list.push(row);
+      byMid.set(k, list);
+    }
+    const lang = language === 'en' ? 'en' : 'el';
+    const tuples: { lastAt: string; group: OrderHistoryStoreGroup }[] = [];
+    for (const [, rawList] of byMid) {
+      rawList.sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+      const orders = rawList.map((o) => mapApiOrderToHistoryEntry(o, partners, lang, t));
+      const partner = resolvePartnerByMerchantId(rawList[0].merchantId, partners);
+      tuples.push({
+        lastAt: rawList[0].createdAt,
+        group: {
+          merchantId: rawList[0].merchantId,
+          partner,
+          storeName: orders[0]?.storeName ?? '—',
+          storeImage: orders[0]?.storeImage ?? ORDER_HISTORY_STORE_FALLBACK_IMAGE,
+          orders,
+        },
+      });
+    }
+    tuples.sort((a, b) => new Date(b.lastAt).getTime() - new Date(a.lastAt).getTime());
+    return tuples.map((x) => x.group);
+  }, [orderHistoryRaw, partners, language, t]);
+
+  const filteredOrderHistoryStores = useMemo(() => {
+    let list = [...orderHistoryStoreGroups];
     if (orderHistoryCategoryFilter !== 'all') {
-      if (orderHistoryCategoryFilter === 'supermarket' || orderHistoryCategoryFilter === 'food') {
-        list = list.filter((o) => o.category === orderHistoryCategoryFilter);
-      } else {
-        list = list.filter((o) => {
+      list = list.filter((g) =>
+        g.orders.some((o) => {
+          if (orderHistoryCategoryFilter === 'supermarket' || orderHistoryCategoryFilter === 'food') {
+            return o.category === orderHistoryCategoryFilter;
+          }
           const p = resolvePartnerForOrderHistory(o.storeName, partners);
           return p?.category === orderHistoryCategoryFilter;
-        });
-      }
+        }),
+      );
     }
     const q = orderHistoryStoreSearch.trim().toLowerCase();
     if (q) {
-      list = list.filter((o) => {
-        const p = resolvePartnerForOrderHistory(o.storeName, partners);
-        const name = (p?.name ?? o.storeName).toLowerCase();
-        return name.includes(q);
-      });
+      list = list.filter((g) => g.storeName.toLowerCase().includes(q));
     }
     return list;
-  }, [orderHistoryCategoryFilter, orderHistoryStoreSearch, partners]);
+  }, [orderHistoryStoreGroups, orderHistoryCategoryFilter, orderHistoryStoreSearch, partners]);
+
+  const [orderHistoryModalMerchantId, setOrderHistoryModalMerchantId] = useState<string | null>(null);
+  const [orderHistoryModalDateFrom, setOrderHistoryModalDateFrom] = useState('');
+  const [orderHistoryModalDateTo, setOrderHistoryModalDateTo] = useState('');
+  const [orderHistoryModalExpandedOrderId, setOrderHistoryModalExpandedOrderId] = useState<string | null>(null);
+
+  const orderHistoryModalGroup = useMemo(() => {
+    if (!orderHistoryModalMerchantId) return null;
+    const mid = orderHistoryModalMerchantId.trim().toLowerCase();
+    return orderHistoryStoreGroups.find((g) => g.merchantId.trim().toLowerCase() === mid) ?? null;
+  }, [orderHistoryModalMerchantId, orderHistoryStoreGroups]);
+
+  const orderHistoryModalOrdersFiltered = useMemo(() => {
+    if (!orderHistoryModalGroup) return [];
+    let list = [...orderHistoryModalGroup.orders];
+    const fromD = parseDateInputYmd(orderHistoryModalDateFrom);
+    const toD = parseDateInputYmd(orderHistoryModalDateTo);
+    if (fromD) {
+      const lo = startOfDayMs(fromD);
+      list = list.filter((o) => new Date(o.createdAtIso).getTime() >= lo);
+    }
+    if (toD) {
+      const hi = endOfDayMs(toD);
+      list = list.filter((o) => new Date(o.createdAtIso).getTime() <= hi);
+    }
+    return list;
+  }, [orderHistoryModalGroup, orderHistoryModalDateFrom, orderHistoryModalDateTo]);
+
+  useEffect(() => {
+    if (!orderHistoryModalMerchantId) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOrderHistoryModalMerchantId(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [orderHistoryModalMerchantId]);
+
+  useEffect(() => {
+    if (orderHistoryModalMerchantId) return;
+    setOrderHistoryModalDateFrom('');
+    setOrderHistoryModalDateTo('');
+    setOrderHistoryModalExpandedOrderId(null);
+  }, [orderHistoryModalMerchantId]);
+
+  useEffect(() => {
+    if (!orderHistoryModalExpandedOrderId) return;
+    if (!orderHistoryModalOrdersFiltered.some((o) => o.id === orderHistoryModalExpandedOrderId)) {
+      setOrderHistoryModalExpandedOrderId(null);
+    }
+  }, [orderHistoryModalOrdersFiltered, orderHistoryModalExpandedOrderId]);
+
+  useEffect(() => {
+    if (!location.pathname.startsWith('/profile/history')) return;
+    let cancelled = false;
+    setOrderHistoryLoading(true);
+    setOrderHistoryError(null);
+    void (async () => {
+      try {
+        const data = await api.getOrders({ limit: 100, offset: 0 });
+        if (cancelled) return;
+        const uid = String(user.id).toLowerCase();
+        const rows = (Array.isArray(data) ? data : [])
+          .map(normalizeApiOrderRow)
+          .filter((x): x is ApiOrderListItem => x != null);
+        const mine = rows
+          .filter((o) => String(o.userId ?? '').toLowerCase() === uid)
+          .sort((a, b) => new Date(b.createdAt ?? 0).getTime() - new Date(a.createdAt ?? 0).getTime());
+        setOrderHistoryRaw(mine);
+      } catch {
+        if (!cancelled) {
+          setOrderHistoryError(t('orderHistoryLoadError'));
+          setOrderHistoryRaw([]);
+        }
+      } finally {
+        if (!cancelled) setOrderHistoryLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [location.pathname, user.id, t]);
   const claimedStores = useMemo(() => {
     const claimsPerStore = CLAIMED_CARDS_MOCK.reduce<Record<string, number>>((acc, entry) => {
       acc[entry.storeName] = (acc[entry.storeName] ?? 0) + 1;
@@ -746,7 +874,7 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
                   theme === 'light' ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]',
                 )}
               >
-                Οι αγορές σου σε μορφή παρόμοια με τις προσφορές στο Anbit — κατάστημα, είδη και XP.
+                {t('orderHistoryStoresHint')}
               </p>
             </div>
 
@@ -794,105 +922,352 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
               </div>
             </div>
 
-            <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3 lg:gap-6 xl:grid-cols-4">
-              {filteredOrderHistory.length === 0 ? (
+            {orderHistoryLoading ? (
+              <p
+                className={cn(
+                  'rounded-xl border px-4 py-6 text-center text-sm',
+                  theme === 'light'
+                    ? 'border-zinc-200 bg-zinc-50 text-neutral-600'
+                    : 'border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] text-[color:var(--anbit-muted)]',
+                )}
+              >
+                {t('orderHistoryLoading')}
+              </p>
+            ) : null}
+
+            {orderHistoryError && !orderHistoryLoading ? (
+              <p
+                className={cn(
+                  'rounded-xl border px-4 py-4 text-center text-sm',
+                  theme === 'light'
+                    ? 'border-red-200 bg-red-50 text-red-800'
+                    : 'border-red-500/35 bg-red-500/10 text-red-200',
+                )}
+              >
+                {orderHistoryError}
+              </p>
+            ) : null}
+
+            {!orderHistoryLoading && !orderHistoryError && orderHistoryStoreGroups.length === 0 ? (
+              <p
+                className={cn(
+                  'rounded-xl border px-4 py-10 text-center text-sm',
+                  theme === 'light'
+                    ? 'border-zinc-200 bg-white text-neutral-600'
+                    : 'border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] text-[color:var(--anbit-muted)]',
+                )}
+              >
+                {t('orderHistoryEmpty')}
+              </p>
+            ) : null}
+
+            {!orderHistoryLoading && orderHistoryStoreGroups.length > 0 ? (
+            <div className="grid min-w-0 grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3 lg:gap-5">
+              {!orderHistoryError && filteredOrderHistoryStores.length === 0 ? (
                 <p
                   className={cn(
                     'col-span-full py-12 text-center text-sm',
                     theme === 'light' ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]',
                   )}
                 >
-                  Δεν βρέθηκαν παραγγελίες με αυτά τα κριτήρια. Δοκίμασε άλλη κατηγορία ή άλλο όνομα καταστήματος.
+                  Δεν βρέθηκαν καταστήματα με αυτά τα κριτήρια. Δοκίμασε άλλη κατηγορία ή άλλο όνομα.
                 </p>
               ) : null}
-              {filteredOrderHistory.map((order) => {
-                const isCancelled = order.status === 'cancelled';
-                const partner = resolvePartnerForOrderHistory(order.storeName, partners);
-                const lightQuests = theme === 'light';
-                const detailShell = cn(
-                  'flex min-h-0 flex-1 flex-col overflow-hidden rounded-xl border transition-colors',
-                  lightQuests
-                    ? 'border-zinc-200 hover:border-zinc-300 bg-white'
-                    : 'border-[color:var(--anbit-border)] hover:border-anbit-brand/25 bg-[color:var(--anbit-card)]',
-                );
-                const mutedBody = theme === 'light' ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]';
+              {filteredOrderHistoryStores.map((group) => (
+                <OrderHistoryStoreCard
+                  key={group.merchantId}
+                  group={group}
+                  theme={theme === 'light' ? 'light' : 'dark'}
+                  t={t}
+                  onOpen={() => {
+                    setOrderHistoryModalDateFrom('');
+                    setOrderHistoryModalDateTo('');
+                    setOrderHistoryModalExpandedOrderId(null);
+                    setOrderHistoryModalMerchantId(group.merchantId);
+                  }}
+                />
+              ))}
+            </div>
+            ) : null}
 
-                return (
-                  <section key={order.id} className="flex h-full min-h-0 min-w-0 flex-col gap-3">
-                    <OrderHistoryMerchantHeader order={order} partner={partner} />
-                    <div className={detailShell}>
-                      <div className="relative h-28 w-full shrink-0 sm:h-32">
-                        <img
-                          src={order.storeImage}
-                          alt=""
-                          className={cn('h-full w-full object-cover', isCancelled && 'opacity-60 grayscale')}
-                          draggable={false}
-                        />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-black/8 to-transparent" />
-                        {!isCancelled && order.xp != null ? (
-                          <span
-                            className={cn(
-                              'absolute right-3 top-3 inline-flex items-center gap-1 rounded-md px-2 py-1 text-xs font-bold shadow-sm backdrop-blur-sm',
-                              lightQuests
-                                ? 'border border-zinc-200 bg-zinc-50 text-neutral-900'
-                                : 'border border-[color:var(--anbit-xp-surface-border)] bg-[color:var(--anbit-xp-surface)]/90 text-[color:var(--anbit-xp-accent)]',
-                            )}
-                          >
-                            <Star className={cn('h-3 w-3', lightQuests && 'text-[#0a0a0a]')} aria-hidden />
-                            +{order.xp} XP
-                          </span>
-                        ) : null}
-                      </div>
-                      <div className="flex min-h-0 flex-1 flex-col gap-3 p-4">
-                        <p className={cn('line-clamp-4 text-xs leading-relaxed sm:text-sm', mutedBody)}>
-                          {order.itemsSummary}
+            <AnimatePresence>
+              {orderHistoryModalGroup ? (
+                <motion.div
+                  key={orderHistoryModalGroup.merchantId}
+                  role="presentation"
+                  className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-0 font-sans backdrop-blur-sm sm:items-center sm:p-4"
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.2 }}
+                  onClick={() => setOrderHistoryModalMerchantId(null)}
+                >
+                  <motion.div
+                    role="dialog"
+                    aria-modal="true"
+                    aria-labelledby="order-history-store-modal-title"
+                    className={cn(
+                      'relative flex max-h-[min(92dvh,820px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] shadow-2xl sm:max-h-[min(88dvh,720px)] sm:rounded-2xl',
+                    )}
+                    initial={{ opacity: 0, y: 28 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--anbit-border)] px-4 pb-3 pt-4 sm:px-5">
+                      <div className="min-w-0 pr-2">
+                        <p className="text-[11px] font-semibold uppercase tracking-wider text-anbit-muted">
+                          {t('orderHistoryModalAllOrders')}
                         </p>
-                        <div className="mt-auto flex flex-col gap-2 pt-1">
-                          {isCancelled ? (
-                            <>
-                              <button
-                                type="button"
-                                className={cn(
-                                  'w-full rounded-lg py-2.5 text-xs font-semibold transition-colors sm:text-sm',
-                                  lightQuests
-                                    ? 'bg-[#0a0a0a] text-white hover:bg-[#171717]'
-                                    : 'bg-anbit-brand text-anbit-brand-foreground hover:bg-anbit-brand-hover',
-                                )}
-                              >
-                                Αναφορά προβλήματος
-                              </button>
-                              <button
-                                type="button"
-                                className={cn(
-                                  'w-full rounded-lg px-3 py-2.5 text-xs font-medium transition-colors sm:text-sm',
-                                  lightQuests
-                                    ? 'border border-zinc-300 text-neutral-900 hover:bg-zinc-100'
-                                    : 'border border-[color:var(--anbit-border)] text-[color:var(--anbit-text)] hover:bg-white/5',
-                                )}
-                              >
-                                Αρχεία παραγγελίας
-                              </button>
-                            </>
-                          ) : (
-                            <button
-                              type="button"
-                              className={cn(
-                                'w-full rounded-lg py-2.5 text-xs font-semibold transition-colors sm:text-sm',
-                                lightQuests
-                                  ? 'bg-[#0a0a0a] text-white hover:bg-[#171717]'
-                                  : 'bg-anbit-brand text-anbit-brand-foreground hover:bg-anbit-brand-hover',
-                              )}
-                            >
-                              Λεπτομέρειες
-                            </button>
-                          )}
-                        </div>
+                        <h2
+                          id="order-history-store-modal-title"
+                          className="playpen-sans mt-0.5 text-xl font-bold leading-tight text-[color:var(--anbit-text)] sm:text-2xl"
+                        >
+                          {orderHistoryModalGroup.storeName}
+                        </h2>
+                        <p className="mt-1 text-xs text-anbit-muted">
+                          {t('orderHistoryModalOrderCount')
+                            .replace('{{shown}}', String(orderHistoryModalOrdersFiltered.length))
+                            .replace('{{total}}', String(orderHistoryModalGroup.orders.length))}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => setOrderHistoryModalMerchantId(null)}
+                        className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] text-[color:var(--anbit-text)] transition-colors hover:bg-[color:var(--anbit-border)]/40"
+                        aria-label={t('close')}
+                      >
+                        <X className="h-4 w-4" strokeWidth={2.5} />
+                      </button>
+                    </div>
+                    <div className="shrink-0 space-y-2 border-b border-[color:var(--anbit-border)] px-4 py-3 sm:px-5">
+                      <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-end sm:gap-3">
+                        <label className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-[11rem]">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-anbit-muted">
+                            {t('orderHistoryFilterDateFrom')}
+                          </span>
+                          <input
+                            type="date"
+                            value={orderHistoryModalDateFrom}
+                            onChange={(e) => setOrderHistoryModalDateFrom(e.target.value)}
+                            className={cn(
+                              'h-9 w-full rounded-lg border px-2 text-sm focus:outline-none focus:ring-2',
+                              theme === 'light'
+                                ? 'border-zinc-200 bg-white text-neutral-900 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
+                                : 'border-anbit-border bg-anbit-card text-anbit-text focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
+                            )}
+                          />
+                        </label>
+                        <label className="flex min-w-0 flex-1 flex-col gap-1 sm:max-w-[11rem]">
+                          <span className="text-[11px] font-semibold uppercase tracking-wide text-anbit-muted">
+                            {t('orderHistoryFilterDateTo')}
+                          </span>
+                          <input
+                            type="date"
+                            value={orderHistoryModalDateTo}
+                            onChange={(e) => setOrderHistoryModalDateTo(e.target.value)}
+                            className={cn(
+                              'h-9 w-full rounded-lg border px-2 text-sm focus:outline-none focus:ring-2',
+                              theme === 'light'
+                                ? 'border-zinc-200 bg-white text-neutral-900 focus:border-[#0a0a0a]/45 focus:ring-[#0a0a0a]/12'
+                                : 'border-anbit-border bg-anbit-card text-anbit-text focus:border-anbit-brand/40 focus:ring-anbit-brand/15',
+                            )}
+                          />
+                        </label>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setOrderHistoryModalDateFrom('');
+                            setOrderHistoryModalDateTo('');
+                          }}
+                          className="h-9 shrink-0 rounded-lg border border-[color:var(--anbit-border)] px-3 text-xs font-semibold text-[color:var(--anbit-text)] transition-colors hover:bg-[color:var(--anbit-border)]/25"
+                        >
+                          {t('orderHistoryFilterDateClear')}
+                        </button>
                       </div>
                     </div>
-                  </section>
-                );
-              })}
-            </div>
+                    <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
+                      <div className="space-y-3">
+                        {orderHistoryModalOrdersFiltered.length === 0 ? (
+                          <p
+                            className={cn(
+                              'py-8 text-center text-sm',
+                              theme === 'light' ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]',
+                            )}
+                          >
+                            {t('orderHistoryNoOrdersInRange')}
+                          </p>
+                        ) : null}
+                        {orderHistoryModalOrdersFiltered.map((order) => {
+                          const isCancelled = order.status === 'cancelled';
+                          const light = theme === 'light';
+                          const expanded = orderHistoryModalExpandedOrderId === order.id;
+                          const lineXpSum = sumLineItemsXp(order.lineItems);
+                          return (
+                            <div
+                              key={order.id}
+                              className={cn(
+                                'rounded-xl border',
+                                light ? 'border-zinc-200 bg-white' : 'border-[color:var(--anbit-border)] bg-[color:var(--anbit-bg)]',
+                              )}
+                            >
+                              <button
+                                type="button"
+                                className={cn(
+                                  'flex w-full items-start gap-2 rounded-xl p-4 text-left transition-colors',
+                                  light ? 'hover:bg-zinc-50' : 'hover:bg-white/5',
+                                )}
+                                aria-expanded={expanded}
+                                onClick={() =>
+                                  setOrderHistoryModalExpandedOrderId((prev) => (prev === order.id ? null : order.id))
+                                }
+                              >
+                                <div className="min-w-0 flex-1">
+                                  <div className="flex flex-wrap items-start justify-between gap-2">
+                                    <p
+                                      className={cn('text-xs font-medium', light ? 'text-neutral-600' : 'text-anbit-muted')}
+                                    >
+                                      {order.dateTime}
+                                    </p>
+                                    <span
+                                      className={cn(
+                                        'inline-flex shrink-0 items-center justify-center rounded-md px-2 py-0.5 text-base leading-none',
+                                        isCancelled
+                                          ? light
+                                            ? 'bg-red-100 text-red-800'
+                                            : 'bg-red-500/15 text-red-300'
+                                          : light
+                                            ? 'bg-emerald-100 text-emerald-900'
+                                            : 'bg-emerald-500/15 text-emerald-200',
+                                      )}
+                                      title={isCancelled ? 'Ακυρώθηκε' : 'Ολοκληρώθηκε'}
+                                      aria-label={isCancelled ? 'Ακυρώθηκε' : 'Ολοκληρώθηκε'}
+                                    >
+                                      {isCancelled ? '❌' : '✅'}
+                                    </span>
+                                  </div>
+                                  <p
+                                    className={cn('mt-2 text-lg font-bold', light ? 'text-neutral-900' : 'text-anbit-text')}
+                                  >
+                                    {order.price}
+                                  </p>
+                                  <div
+                                    className={cn(
+                                      'mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs',
+                                      light ? 'text-neutral-700' : 'text-[color:var(--anbit-muted)]',
+                                    )}
+                                  >
+                                    <span>
+                                      {t('orderHistoryXpEarned')}:{' '}
+                                      <span className="font-semibold text-anbit-brand">+{order.xpEarned}</span>
+                                    </span>
+                                    <span>
+                                      {t('orderHistoryXpSpent')}:{' '}
+                                      <span className="font-semibold text-amber-600 dark:text-amber-400">
+                                        −{order.xpSpent}
+                                      </span>
+                                    </span>
+                                    {lineXpSum > 0 ? (
+                                      <span>
+                                        {t('orderHistoryXpFromLines')}:{' '}
+                                        <span className="font-semibold text-[color:var(--anbit-text)]">{lineXpSum}</span>
+                                      </span>
+                                    ) : null}
+                                  </div>
+                                  <p
+                                    className={cn(
+                                      'mt-2 text-xs leading-relaxed sm:text-sm',
+                                      light ? 'text-neutral-600' : 'text-[color:var(--anbit-muted)]',
+                                    )}
+                                  >
+                                    {order.itemsSummary}
+                                  </p>
+                                  <p className="mt-2 text-[11px] font-medium text-anbit-brand">
+                                    {expanded ? t('orderHistoryCollapseOrder') : t('orderHistoryExpandOrder')}
+                                  </p>
+                                </div>
+                                <ChevronDown
+                                  className={cn(
+                                    'mt-1 h-5 w-5 shrink-0 transition-transform text-anbit-muted',
+                                    expanded && 'rotate-180',
+                                  )}
+                                  aria-hidden
+                                />
+                              </button>
+                              {expanded ? (
+                                <div
+                                  className={cn(
+                                    'border-t px-4 pb-4 pt-3',
+                                    light ? 'border-zinc-200 bg-zinc-50/80' : 'border-[color:var(--anbit-border)] bg-black/20',
+                                  )}
+                                >
+                                  <p
+                                    className={cn(
+                                      'mb-2 text-[11px] font-bold uppercase tracking-wide',
+                                      light ? 'text-neutral-500' : 'text-anbit-muted',
+                                    )}
+                                  >
+                                    {t('orderHistoryOrderItems')}
+                                  </p>
+                                  <ul className="space-y-2">
+                                    {order.lineItems.length === 0 ? (
+                                      <li className="text-xs text-anbit-muted">—</li>
+                                    ) : (
+                                      order.lineItems.map((line, idx) => {
+                                        const lineXp = Number(line.quantity ?? 0) * Number(line.unitXp ?? 0);
+                                        const hasPrice = line.unitPrice != null && Number.isFinite(line.unitPrice);
+                                        return (
+                                          <li
+                                            key={`${order.id}-line-${idx}`}
+                                            className={cn(
+                                              'flex flex-col gap-0.5 rounded-lg border px-3 py-2 text-sm sm:flex-row sm:items-center sm:justify-between',
+                                              light ? 'border-zinc-200 bg-white' : 'border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)]',
+                                            )}
+                                          >
+                                            <span className={cn('font-medium', light ? 'text-neutral-900' : 'text-anbit-text')}>
+                                              {line.productName}
+                                              <span className="ml-1 font-normal text-anbit-muted">×{line.quantity}</span>
+                                            </span>
+                                            <span className="flex flex-wrap gap-x-3 text-xs text-anbit-muted">
+                                              {hasPrice ? (
+                                                <span>
+                                                  {Number(line.unitPrice).toFixed(2)} €{' '}
+                                                  <span className="text-[10px] opacity-80">/ τεμ.</span>
+                                                </span>
+                                              ) : null}
+                                              {lineXp > 0 ? <span className="text-anbit-brand">+{lineXp} XP</span> : null}
+                                            </span>
+                                          </li>
+                                        );
+                                      })
+                                    )}
+                                  </ul>
+                                </div>
+                              ) : null}
+                            </div>
+                          );
+                        })}
+                      </div>
+                    </div>
+                    {orderHistoryModalGroup.partner ? (
+                      <div className="shrink-0 border-t border-[color:var(--anbit-border)] px-4 py-3 sm:px-5">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const p = orderHistoryModalGroup.partner!;
+                            setOrderHistoryModalMerchantId(null);
+                            navigate(`/store-profile/${p.id}`, { state: { partner: p } });
+                          }}
+                          className="w-full rounded-lg bg-anbit-brand py-2.5 text-sm font-semibold text-anbit-brand-foreground transition-colors hover:bg-anbit-brand-hover"
+                        >
+                          Προφίλ καταστήματος
+                        </button>
+                      </div>
+                    ) : null}
+                  </motion.div>
+                </motion.div>
+              ) : null}
+            </AnimatePresence>
           </div>
         )}
 

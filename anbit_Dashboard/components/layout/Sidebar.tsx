@@ -64,7 +64,8 @@ const Sidebar: React.FC = () => {
   return (
     <aside
       className={cn(
-        'flex h-screen flex-col shrink-0 text-white transition-[width] duration-200',
+        'flex h-screen flex-col shrink-0 font-playpen-sans text-white transition-[width] duration-200',
+        'font-extrabold',
         collapsed ? 'w-20' : 'w-56',
       )}
       style={{ backgroundColor: sidebarBg }}
@@ -107,7 +108,7 @@ const Sidebar: React.FC = () => {
                   to="/"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
@@ -128,7 +129,7 @@ const Sidebar: React.FC = () => {
                   to="/admin/stores"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
@@ -149,7 +150,7 @@ const Sidebar: React.FC = () => {
                   to="/admin/merchant-users"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
@@ -170,7 +171,7 @@ const Sidebar: React.FC = () => {
                   to="/admin/customers"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
@@ -191,7 +192,7 @@ const Sidebar: React.FC = () => {
                   to="/admin/anbit-management"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
@@ -212,7 +213,7 @@ const Sidebar: React.FC = () => {
                   to="/admin/settings"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
@@ -235,7 +236,7 @@ const Sidebar: React.FC = () => {
                   to="/"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
                         ? 'bg-white text-[#0a0a0a]'
@@ -256,7 +257,7 @@ const Sidebar: React.FC = () => {
                   to="/orders"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
                       ? 'bg-white text-[#0a0a0a]'
@@ -277,7 +278,7 @@ const Sidebar: React.FC = () => {
                   type="button"
                   onClick={handleManageTableClick}
                   className={cn(
-                    'flex w-full items-center rounded-lg text-sm font-medium transition-colors',
+                    'flex w-full items-center rounded-lg text-sm font-extrabold transition-colors',
                     collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                     isManageTableActive
                       ? 'bg-white/15 text-white'
@@ -304,7 +305,7 @@ const Sidebar: React.FC = () => {
                           to={item.to}
                           className={({ isActive }) =>
                             cn(
-                              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+                              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-extrabold transition-colors',
                               isActive
                                 ? 'bg-white text-[#0a0a0a]'
                                 : 'text-white/90 hover:bg-white/10',
@@ -326,7 +327,7 @@ const Sidebar: React.FC = () => {
                   to="/products"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0a0a0a]'
@@ -347,7 +348,7 @@ const Sidebar: React.FC = () => {
                   to="/merchant/banners"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0a0a0a]'
@@ -368,7 +369,7 @@ const Sidebar: React.FC = () => {
                   to="/customers"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0a0a0a]'
@@ -389,7 +390,7 @@ const Sidebar: React.FC = () => {
                   to="/help"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-medium transition-colors',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
                       collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                       isActive
                         ? 'bg-white text-[#0a0a0a]'
@@ -409,7 +410,7 @@ const Sidebar: React.FC = () => {
                 <button
                   type="button"
                   className={cn(
-                    'flex w-full items-center rounded-lg text-sm font-medium text-white/95 transition-colors hover:bg-white/10',
+                    'flex w-full items-center rounded-lg text-sm font-extrabold text-white/95 transition-colors hover:bg-white/10',
                     collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
                   )}
                 >
@@ -428,7 +429,7 @@ const Sidebar: React.FC = () => {
       {!collapsed && !isAdmin && (
         <div className="shrink-0 px-3 pb-3">
           <div className="rounded-xl border border-white/20 bg-white/10 p-4 shadow-sm">
-            <h3 className="text-sm font-semibold text-white">
+            <h3 className="text-sm font-extrabold text-white">
               Ready for the Next Level?
             </h3>
             <p className="mt-1.5 text-xs leading-snug text-white/85">
@@ -436,7 +437,7 @@ const Sidebar: React.FC = () => {
             </p>
             <button
               type="button"
-              className="mt-3 w-full rounded-lg py-2 text-xs font-semibold text-white transition-opacity hover:opacity-90"
+              className="mt-3 w-full rounded-lg py-2 text-xs font-extrabold text-white transition-opacity hover:opacity-90"
               style={{ backgroundColor: '#0C0C0C' }}
             >
               Upgrade Plan
@@ -470,7 +471,7 @@ const Sidebar: React.FC = () => {
               <MoreVertical className="h-4 w-4" />
             </button>
             {profileMenuOpen && (
-              <div className="absolute bottom-12 right-0 z-20 w-40 rounded-lg bg-white py-1 text-sm text-slate-800 shadow-lg shadow-black/20">
+              <div className="absolute bottom-12 right-0 z-20 w-40 rounded-lg bg-white py-1 font-sans text-sm font-medium text-slate-800 shadow-lg shadow-black/20">
                 <button
                   type="button"
                   className="flex w-full items-center px-3 py-1.5 text-left text-xs hover:bg-slate-100"
@@ -495,7 +496,7 @@ const Sidebar: React.FC = () => {
               />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-semibold text-white">
+              <p className="truncate text-sm font-extrabold text-white">
                 {user?.username ?? 'User'}
               </p>
               <p className="truncate text-xs text-white/80">
@@ -515,7 +516,7 @@ const Sidebar: React.FC = () => {
               <MoreVertical className="h-4 w-4" />
             </button>
             {profileMenuOpen && (
-              <div className="absolute bottom-12 right-0 z-20 w-44 rounded-lg bg-white py-1 text-sm text-slate-800 shadow-lg shadow-black/20">
+              <div className="absolute bottom-12 right-0 z-20 w-44 rounded-lg bg-white py-1 font-sans text-sm font-medium text-slate-800 shadow-lg shadow-black/20">
                 <button
                   type="button"
                   className="flex w-full items-center px-3 py-1.5 text-left text-xs hover:bg-slate-100"

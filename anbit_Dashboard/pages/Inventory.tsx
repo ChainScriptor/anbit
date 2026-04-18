@@ -179,13 +179,13 @@ const Inventory: React.FC = () => {
       </div>
 
       {/* CATEGORY TABS */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2">
+      <div className="flex gap-2 overflow-x-auto no-scrollbar pb-2 font-playpen-sans font-extrabold">
         {categories.map((cat) => (
           <button
             key={cat}
             onClick={() => setActiveCategory(cat)}
             className={`
-              px-6 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all shrink-0 border
+              px-6 py-2 rounded-xl text-[10px] uppercase tracking-widest transition-all shrink-0 border
               ${activeCategory === cat 
                 ? 'bg-anbit-yellow border-anbit-yellow text-anbit-dark shadow-glow-yellow' 
                 : 'bg-white/5 border-white/5 text-white/40 hover:border-white/20 hover:text-white'}

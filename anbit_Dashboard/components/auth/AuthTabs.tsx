@@ -21,7 +21,7 @@ export const AuthTabs: React.FC<AuthTabsProps> = ({ onTabChange }) => {
         <button
           type="button"
           onClick={() => setActiveTab('login')}
-          className="mb-4 text-xs font-semibold uppercase tracking-widest text-white/70 hover:text-white"
+          className="mb-4 font-playpen-sans text-xs font-extrabold uppercase tracking-widest text-white/70 hover:text-white"
         >
           Back to Sign in
         </button>

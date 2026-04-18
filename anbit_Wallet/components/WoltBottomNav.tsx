@@ -80,8 +80,8 @@ export const WoltBottomNav: React.FC = () => {
             className={cn(
               'flex flex-1 flex-col items-center justify-center gap-0.5 py-2 transition-colors',
               active
-                ? isLight ? 'text-[#009DE0]' : 'text-[#009DE0]'
-                : isLight ? 'text-[#717171] hover:text-[#009DE0]' : 'text-[#888] hover:text-[#009DE0]',
+                ? isLight ? 'text-[#242424]' : 'text-[#009DE0]'
+                : isLight ? 'text-[#717171] hover:text-[#242424]' : 'text-[#888] hover:text-[#009DE0]',
             )}
             aria-label={item.label}
           >

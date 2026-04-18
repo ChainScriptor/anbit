@@ -134,7 +134,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       const itemClass = cn(
                         'flex items-center gap-3 w-full px-3 py-2.5 rounded-xl transition-colors',
                         isActive
-                          ? 'bg-[#0a0a0a] text-white'
+                          ? 'bg-[#242424] text-white'
                           : navLightNotHero
                             ? 'text-[#202125] hover:bg-[#f3f4f6] hover:text-[#0a0a0a]'
                             : 'text-white hover:bg-anbit-border/40 hover:text-white',
@@ -155,7 +155,8 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                             <Icon
                               className={cn(
                                 'w-5 h-5 lg:w-6 lg:h-6',
-                                isActive && (navLightNotHero ? 'text-white' : 'text-anbit-bg'),
+                                /* Light + top: ανοιχτό εικονίδιο στο #242424 · dark: λευκό εικονίδιο */
+                                isActive && (navLightAtTop ? 'text-anbit-bg' : 'text-white'),
                               )}
                             />
                             <span className="text-sm font-semibold">{t(item.labelKey)}</span>
@@ -174,7 +175,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                             <Icon
                               className={cn(
                                 'w-5 h-5 lg:w-6 lg:h-6',
-                                isActive && (navLightNotHero ? 'text-white' : 'text-anbit-bg'),
+                                isActive && (navLightAtTop ? 'text-anbit-bg' : 'text-white'),
                               )}
                             />
                           <span className="text-sm font-semibold">{t(item.labelKey)}</span>
@@ -302,7 +303,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
               aria-haspopup="dialog"
             >
               <MapPin
-                className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 text-[#0a0a0a]"
+                className="w-5 h-5 lg:w-6 lg:h-6 shrink-0 text-[#2563eb]"
                 strokeWidth={2.5}
               />
               <span className="truncate text-sm font-semibold lg:text-base sm:max-w-[120px]">{city.labelEl}</span>
@@ -341,9 +342,9 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                 const isActive = isNavItemActive(item.path, location.pathname);
                 const isProfileAsGuest = item.path === '/profile' && !isAuthenticated && onOpenLogin;
                 const baseClass = cn(
-                  'relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-all',
+                  'relative group flex items-center justify-center w-10 h-10 lg:w-11 lg:h-11 rounded-full transition-colors',
                   isActive
-                    ? 'bg-[#0a0a0a] text-white shadow-sm'
+                    ? 'bg-[#242424] text-white'
                     : isStoreProfileHeroMode
                       ? 'bg-[#121214] text-white hover:bg-[#121214] hover:text-white'
                       : navLightRedBar
@@ -378,8 +379,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                       <Icon
                         className={cn(
                           'w-5 h-5 lg:w-6 lg:h-6',
-                          isActive &&
-                          (navLightRedBar ? 'text-white' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
+                          isActive && (navLightAtTop ? 'text-anbit-bg' : 'text-white'),
                         )}
                       />
                       {hoverCardContent}
@@ -395,8 +395,7 @@ const Header: React.FC<HeaderProps> = ({ isAuthenticated, onOpenQR, totalXP = 0,
                     <Icon
                       className={cn(
                         'w-5 h-5 lg:w-6 lg:h-6',
-                        isActive &&
-                          (navLightRedBar ? 'text-white' : navLightAtTop ? 'text-anbit-bg' : 'text-anbit-bg'),
+                        isActive && (navLightAtTop ? 'text-anbit-bg' : 'text-white'),
                       )}
                     />
                     {hoverCardContent}

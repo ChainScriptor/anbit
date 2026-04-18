@@ -198,14 +198,18 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
           className={cn(
             'flex w-full items-center justify-between rounded-xl px-4 py-3 text-sm font-semibold transition-colors',
             sortMode === opt.id
-              ? 'bg-[#009DE0]/10 text-[#009DE0]'
+              ? isLight
+                ? 'bg-[#242424]/10 text-[#242424]'
+                : 'bg-[#009DE0]/10 text-[#009DE0]'
               : isLight
                 ? 'text-[#202125] hover:bg-[#F2F2F2]'
                 : 'text-white hover:bg-white/[0.06]',
           )}
         >
           {opt.label}
-          {sortMode === opt.id && <span className="h-2 w-2 shrink-0 rounded-full bg-[#009DE0]" />}
+          {sortMode === opt.id && (
+            <span className={cn('h-2 w-2 shrink-0 rounded-full', isLight ? 'bg-[#242424]' : 'bg-[#009DE0]')} />
+          )}
         </button>
       ))}
     </div>
@@ -249,7 +253,9 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
               className={cn(
                 'flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition-colors',
                 sortMode !== 'default'
-                  ? 'bg-[#009DE0] border-[#009DE0] text-white'
+                  ? isLight
+                    ? 'bg-[#242424] border-[#242424] text-white'
+                    : 'bg-[#009DE0] border-[#009DE0] text-white'
                   : isLight
                     ? 'bg-white border-[#E8E8E8] text-[#717171] shadow-sm'
                     : 'bg-[#1e1e1e] border-white/[0.08] text-[#888]',
@@ -273,9 +279,11 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
               className={cn(
                 'shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
                 categoryFilter === 'all'
-                  ? 'border-[#009DE0]/40 bg-[#009DE0]/15 text-[#009DE0]'
+                  ? isLight
+                    ? 'border-[#242424]/40 bg-[#242424]/15 text-[#242424]'
+                    : 'border-[#009DE0]/40 bg-[#009DE0]/15 text-[#009DE0]'
                   : isLight
-                    ? 'border-[#E8E8E8] bg-white text-[#717171] hover:border-[#009DE0]/30 hover:text-[#202125]'
+                    ? 'border-[#E8E8E8] bg-white text-[#717171] hover:border-[#242424]/30 hover:text-[#202125]'
                     : 'border-white/[0.1] bg-[#1e1e1e] text-[#aaa] hover:border-[#009DE0]/25 hover:text-white',
               )}
             >
@@ -293,9 +301,11 @@ const NetworkPage: React.FC<NetworkPageProps> = ({
                   className={cn(
                     'shrink-0 whitespace-nowrap rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-colors',
                     active
-                      ? 'border-[#009DE0]/40 bg-[#009DE0]/15 text-[#009DE0]'
+                      ? isLight
+                        ? 'border-[#242424]/40 bg-[#242424]/15 text-[#242424]'
+                        : 'border-[#009DE0]/40 bg-[#009DE0]/15 text-[#009DE0]'
                       : isLight
-                        ? 'border-[#E8E8E8] bg-white text-[#717171] hover:border-[#009DE0]/30 hover:text-[#202125]'
+                        ? 'border-[#E8E8E8] bg-white text-[#717171] hover:border-[#242424]/30 hover:text-[#202125]'
                         : 'border-white/[0.1] bg-[#1e1e1e] text-[#aaa] hover:border-[#009DE0]/25 hover:text-white',
                   )}
                 >

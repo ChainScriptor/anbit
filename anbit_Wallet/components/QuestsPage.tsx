@@ -1,7 +1,7 @@
 
-import React, { useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
-import { ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
+import { ChevronLeft, ChevronRight, Star, X } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { Quest, Partner } from '../types';
 import { useLanguage } from '../context/LanguageContext';
@@ -29,6 +29,115 @@ function buildPricingFromReward(rewardXP: number): { discounted: number; old: nu
   return { discounted, old };
 }
 
+function QuestOfferRulesModal({
+  quest,
+  partner,
+  isOpen,
+  onClose,
+  t,
+}: {
+  quest: Quest;
+  partner?: Partner;
+  isOpen: boolean;
+  onClose: () => void;
+  t: (key: string) => string;
+}) {
+  const { theme } = useTheme();
+  const daysNum = quest.expiresIn.replace(/\D/g, '') || '0';
+  const storeName = partner?.name ?? quest.storeName ?? t('partnerStore');
+
+  useEffect(() => {
+    if (!isOpen) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [isOpen, onClose]);
+
+  return (
+    <AnimatePresence>
+      {isOpen ? (
+        <motion.div
+          key={`rules-${quest.id}`}
+          role="presentation"
+          className="fixed inset-0 z-[110] flex items-end justify-center bg-black/75 p-0 font-sans backdrop-blur-sm sm:items-center sm:p-4"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.2 }}
+          onClick={onClose}
+        >
+          <motion.div
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="quest-rules-modal-title"
+            className={cn(
+              'relative flex max-h-[min(92dvh,820px)] w-full max-w-lg flex-col overflow-hidden rounded-t-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] shadow-2xl sm:max-h-[min(88dvh,720px)] sm:rounded-2xl',
+            )}
+            initial={{ opacity: 0, y: 28 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 28 }}
+            transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--anbit-border)] px-4 pb-3 pt-4 sm:px-5">
+              <div className="min-w-0 pr-2">
+                <p className="text-[11px] font-semibold uppercase tracking-wider text-anbit-muted">{t('viewRules')}</p>
+                <h2
+                  id="quest-rules-modal-title"
+                  className="playpen-sans mt-0.5 text-lg font-bold leading-tight text-[color:var(--anbit-text)] sm:text-xl"
+                >
+                  {quest.title}
+                </h2>
+                <p className="mt-1 text-xs text-anbit-muted">{storeName}</p>
+              </div>
+              <button
+                type="button"
+                onClick={onClose}
+                className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] text-[color:var(--anbit-text)] transition-colors hover:bg-[color:var(--anbit-border)]/40"
+                aria-label={t('close')}
+              >
+                <X className="h-4 w-4" strokeWidth={2.5} />
+              </button>
+            </div>
+            <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
+              <p className="text-sm font-semibold text-anbit-brand">
+                {t('offerDetailRewardLine').replace('{xp}', String(quest.reward))}
+              </p>
+              <p className="mt-1 text-xs text-anbit-muted">
+                {t('offerDetailProgress')
+                  .replace('{current}', String(quest.progress))
+                  .replace('{total}', String(quest.total))}
+              </p>
+              <p className="mt-4 text-sm leading-relaxed text-[color:var(--anbit-text)]">{quest.description}</p>
+              <p className="mt-3 text-sm text-anbit-muted">
+                {t('expiresInDays')} {daysNum} {t('daysLeft')}. {t('offerDetailExpiryNote')}
+              </p>
+              <div
+                className={cn(
+                  'mt-5 space-y-2.5 border-l-2 pl-3 text-sm leading-relaxed',
+                  theme === 'light' ? 'border-zinc-300 text-neutral-700' : 'border-[color:var(--anbit-border)] text-[color:var(--anbit-muted)]',
+                )}
+              >
+                <p>{t('offerDetailStep1')}</p>
+                <p>{t('offerDetailStep2')}</p>
+                <p>{t('offerDetailStep3')}</p>
+                <p>{t('offerDetailStep4')}</p>
+              </div>
+            </div>
+          </motion.div>
+        </motion.div>
+      ) : null}
+    </AnimatePresence>
+  );
+}
+
 function BrandedOfferCard({
   quest,
   partner,
@@ -39,24 +148,37 @@ function BrandedOfferCard({
   cardWidthClassName: string;
 }) {
   const { theme } = useTheme();
+  const { t } = useLanguage();
   const navigate = useNavigate();
+  const [rulesOpen, setRulesOpen] = useState(false);
   const partnerName = partner?.name ?? quest.storeName ?? 'Partner Store';
   const partnerImage = partner?.image || quest.storeImage || DEAL_CARD_IMAGE_FALLBACK;
   const offerImage = quest.bannerImage || quest.storeImage || partner?.image || DEAL_CARD_IMAGE_FALLBACK;
   const pricing = buildPricingFromReward(quest.reward);
   const isXpHeavy = quest.reward >= 120;
-  const lightAccentBg = theme === 'light' ? '#0a0a0a' : '#009DE0';
-  const lightAccentHoverBg = theme === 'light' ? '#171717' : '#007BB5';
-  const lightAccentText = theme === 'light' ? '#0a0a0a' : '#009DE0';
+  const brandColor = 'var(--anbit-brand)';
+  const lightAccentText = 'var(--anbit-brand)';
+  /** Μαλακή μετάβαση φωτό → κάρτα (χωρίς SVG path) ώστε να μην εμφανίζεται ραχοειδής γραμμή στο hover/scale. */
+  const offerImageFadeStyle = {
+    background: `linear-gradient(
+      to top,
+      var(--anbit-card) 0%,
+      var(--anbit-card) 18%,
+      color-mix(in srgb, var(--anbit-card) 82%, transparent) 40%,
+      color-mix(in srgb, var(--anbit-card) 35%, transparent) 58%,
+      transparent 100%
+    )`,
+  } as const;
 
   return (
+    <>
     <motion.article
       whileHover={{ scale: 1.02, y: -4 }}
       transition={{ type: 'spring', stiffness: 260, damping: 22 }}
       className={cn(
-        'shrink-0 rounded-2xl border border-white/10 bg-[#141414] p-3 shadow-[0_12px_24px_rgba(0,0,0,0.24)]',
-        theme === 'light' &&
-          'border-zinc-200/90 bg-white shadow-[0_1px_3px_rgba(0,0,0,0.06)] hover:border-zinc-300 hover:shadow-[0_8px_20px_rgba(15,23,42,0.08)]',
+        'shrink-0 overflow-hidden rounded-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] p-3 shadow-sm transition-shadow',
+        theme === 'light' && 'hover:border-[color:var(--anbit-border)] hover:shadow-md',
+        theme === 'dark' && 'hover:border-anbit-brand/25',
         cardWidthClassName,
       )}
     >
@@ -66,76 +188,77 @@ function BrandedOfferCard({
           if (!partner) return;
           navigate(`/store-profile/${partner.id}`, { state: { partner } });
         }}
-        className="relative block w-full overflow-hidden rounded-xl text-left"
+        className="relative isolate block w-full overflow-hidden rounded-t-xl bg-[color:var(--anbit-card)] text-left"
         disabled={!partner}
       >
-        <img src={offerImage} alt={quest.title} className="h-40 w-full rounded-xl object-cover" />
-        <div className="absolute inset-x-0 top-2 z-10 flex flex-col items-center justify-center gap-1 text-center">
+        <div className="relative overflow-hidden rounded-t-xl">
           <img
-            src={partnerImage}
-            alt={partnerName}
-            className="h-10 w-10 rounded-full bg-white object-cover shadow-md"
-            style={{ border: `1px solid ${lightAccentBg}` }}
+            src={offerImage}
+            alt={quest.title}
+            className="block h-40 w-full object-cover"
           />
-          <p className="max-w-[90%] truncate rounded-full bg-black/45 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.18em] text-white drop-shadow-[0_1px_2px_rgba(0,0,0,0.85)] backdrop-blur-sm">
-            {partnerName}
-          </p>
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-x-0 bottom-0 z-[1] h-[104px]"
+            style={offerImageFadeStyle}
+          />
         </div>
+        <img
+          src={partnerImage}
+          alt=""
+          className={cn(
+            'pointer-events-none absolute bottom-4 left-1/2 z-[2] h-20 w-20 -translate-x-1/2 rounded-3xl bg-white object-cover shadow-lg',
+            theme === 'light' ? 'ring-2 ring-black/[0.08]' : 'ring-2 ring-white/25',
+          )}
+          style={{ border: `1px solid ${brandColor}` }}
+        />
         <span
-          className="absolute left-2 top-2 rounded-md px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-white"
-          style={{ background: lightAccentBg }}
+          className="absolute left-2 top-2 z-[3] rounded-md bg-anbit-brand px-2 py-1 text-[10px] font-bold uppercase tracking-wide text-anbit-brand-foreground"
         >
-          {isXpHeavy ? '+XP' : 'Deal'}
+          {isXpHeavy ? '+XP' : 'XP'}
         </span>
       </button>
 
-      <div className="mt-3 space-y-2">
-        <h4 className={cn('line-clamp-2 text-sm font-bold leading-snug', theme === 'light' ? 'text-zinc-900' : 'text-white')}>
+      <p className="playpen-sans mt-2 line-clamp-2 px-2 text-center text-[15px] font-extrabold leading-tight tracking-tight text-[color:var(--anbit-text)] sm:text-base">
+        {partnerName}
+      </p>
+
+      <div className="mt-2 space-y-2">
+        <h4 className={cn('line-clamp-2 text-sm font-bold leading-snug text-[color:var(--anbit-text)]')}>
           {quest.title}
         </h4>
         <div className="flex items-center gap-2">
           <span className="text-base font-extrabold" style={{ color: lightAccentText }}>€{pricing.discounted.toFixed(2)}</span>
-          <span className={cn('text-xs line-through', theme === 'light' ? 'text-zinc-500' : 'text-white/45')}>
+          <span className="text-xs line-through text-anbit-muted">
             €{pricing.old.toFixed(2)}
           </span>
         </div>
-        <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: lightAccentText }}>
-          <Star className="h-3.5 w-3.5" style={{ fill: lightAccentText, color: lightAccentText }} strokeWidth={0} />
+        <div className="flex items-center gap-1 text-xs font-semibold text-anbit-brand">
+          <Star className="h-3.5 w-3.5 fill-anbit-brand text-anbit-brand" strokeWidth={0} />
           +{quest.reward} XP
         </div>
         <div className="flex gap-2 pt-1">
           <button
             type="button"
-            className="flex-1 rounded-lg py-2.5 text-sm font-semibold text-white transition-colors"
-            style={{
-              background: lightAccentBg,
-              boxShadow: theme === 'light'
-                ? '0 8px 18px rgba(10,10,10,0.24)'
-                : '0 8px 18px rgba(0,157,224,0.28)',
-            }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = lightAccentHoverBg;
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLButtonElement).style.background = lightAccentBg;
-            }}
+            className="flex-1 rounded-lg bg-anbit-brand py-2.5 text-sm font-semibold text-anbit-brand-foreground shadow-md transition-colors hover:bg-anbit-brand-hover"
           >
-            Claim Offer
+            {t('claimOffer')}
           </button>
           <button
             type="button"
-            className={cn(
-              'rounded-lg border px-4 py-2.5 text-sm font-medium transition-colors',
-              theme === 'light'
-                ? 'border-zinc-300 bg-zinc-50 text-neutral-900 hover:bg-zinc-100'
-                : 'border-white/20 text-white hover:bg-white/10',
-            )}
+            onClick={(e) => {
+              e.stopPropagation();
+              setRulesOpen(true);
+            }}
+            className="rounded-lg border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] px-4 py-2.5 text-sm font-medium text-[color:var(--anbit-text)] transition-colors hover:bg-[color:var(--anbit-border)]/30"
           >
-            View Rules
+            {t('viewRules')}
           </button>
         </div>
       </div>
     </motion.article>
+    <QuestOfferRulesModal quest={quest} partner={partner} isOpen={rulesOpen} onClose={() => setRulesOpen(false)} t={t} />
+    </>
   );
 }
 
@@ -143,22 +266,20 @@ function CarouselSection({
   title,
   offers,
   partners,
+  onViewAll,
+  t,
 }: {
   title: string;
   offers: Quest[];
   partners: Partner[];
+  onViewAll: () => void;
+  t: (key: string) => string;
 }) {
-  const { theme } = useTheme();
   const scrollRef = useRef<HTMLDivElement | null>(null);
-  const [expanded, setExpanded] = useState(false);
-  const navClass = theme === 'light'
-    ? 'border-zinc-200 bg-white text-zinc-900 shadow-sm hover:bg-zinc-100'
-    : 'border-white/15 bg-black/45 text-white hover:bg-black/65';
+  const navClass =
+    'border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)]/95 text-[color:var(--anbit-text)] shadow-sm backdrop-blur-sm hover:bg-[color:var(--anbit-card)]';
 
-  const displayOffers = useMemo(
-    () => (expanded ? offers : offers.slice(0, 8)),
-    [expanded, offers],
-  );
+  const displayOffers = useMemo(() => offers.slice(0, 8), [offers]);
   const cardWidth = offers.length <= 1 ? 'w-[min(86vw,26rem)]' : 'w-[min(82vw,18rem)]';
 
   const scrollBy = (dir: 'left' | 'right') => {
@@ -171,19 +292,16 @@ function CarouselSection({
   return (
     <section className="space-y-3">
       <div className="flex items-center justify-between gap-3">
-        <h3 className={cn('text-lg font-bold', theme === 'light' ? 'text-zinc-900' : 'text-white')}>{title}</h3>
-        <button
-          type="button"
-          onClick={() => setExpanded((prev) => !prev)}
-          className="rounded-lg border px-3 py-1.5 text-xs font-semibold transition-colors"
-          style={{
-            borderColor: theme === 'light' ? 'rgba(10,10,10,0.25)' : 'rgba(0,157,224,0.35)',
-            color: theme === 'light' ? '#0a0a0a' : '#009DE0',
-            background: 'transparent',
-          }}
-        >
-          {expanded ? 'Show Less' : 'View All'}
-        </button>
+        <h3 className="text-lg font-bold text-[color:var(--anbit-text)]">{title}</h3>
+        {offers.length > 8 ? (
+          <button
+            type="button"
+            onClick={onViewAll}
+            className="rounded-lg border border-[color:var(--anbit-brand)]/35 bg-transparent px-3 py-1.5 text-xs font-semibold text-anbit-brand transition-colors hover:bg-anbit-brand/10"
+          >
+            {t('viewAll')}
+          </button>
+        ) : null}
       </div>
       <div className="relative">
         <button
@@ -221,8 +339,8 @@ const QuestsPage: React.FC<{
   quests: Quest[];
   partners: Partner[];
 }> = ({ quests, partners }) => {
-  const { theme } = useTheme();
   const { t } = useLanguage();
+  const [offerModal, setOfferModal] = useState<{ title: string; offers: Quest[] } | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [discoverTab, setDiscoverTab] = useState<'popular' | 'favorites'>('popular');
   const [favoriteMerchantIds, setFavoriteMerchantIds] = useState(() => loadFavoriteMerchantIds());
@@ -232,6 +350,20 @@ const QuestsPage: React.FC<{
       setFavoriteMerchantIds(loadFavoriteMerchantIds());
     });
   }, []);
+
+  useEffect(() => {
+    if (!offerModal) return;
+    const prev = document.body.style.overflow;
+    document.body.style.overflow = 'hidden';
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOfferModal(null);
+    };
+    window.addEventListener('keydown', onKey);
+    return () => {
+      document.body.style.overflow = prev;
+      window.removeEventListener('keydown', onKey);
+    };
+  }, [offerModal]);
 
   const filteredQuests = useMemo(() => {
     const q = searchQuery.trim().toLowerCase();
@@ -273,12 +405,7 @@ const QuestsPage: React.FC<{
 
   return (
     <motion.div
-      className={cn(
-        'space-y-8 rounded-2xl p-4 pb-10 md:space-y-10 md:p-6',
-        theme === 'light'
-          ? 'border border-zinc-200 bg-[#f6f7f9]'
-          : 'bg-[#0a0a0a]',
-      )}
+      className="space-y-8 bg-transparent px-4 pb-10 pt-0 md:space-y-10 md:px-6"
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.25 }}
@@ -287,15 +414,10 @@ const QuestsPage: React.FC<{
       <section className="space-y-1">
         <div className="flex min-w-0 flex-col gap-3 md:flex-row md:items-center md:justify-between">
           <div className="min-w-0">
-            <h2
-              className={cn(
-                'playpen-sans text-[26px] font-bold leading-tight tracking-tight sm:text-[30px]',
-                theme === 'light' ? 'text-neutral-900' : 'text-anbit-text',
-              )}
-            >
-              Deals
+            <h2 className="playpen-sans text-[26px] font-bold leading-tight tracking-tight text-[color:var(--anbit-text)] sm:text-[30px]">
+              {t('quests')}
             </h2>
-            <p className={cn('text-sm', theme === 'light' ? 'text-zinc-600' : 'text-white/55')}>{t('quests')}</p>
+            <p className="text-sm text-anbit-muted">{t('storeOffersSubtitle')}</p>
           </div>
           <DiscoverButton
             compact
@@ -314,10 +436,93 @@ const QuestsPage: React.FC<{
       </section>
 
       <div className="space-y-8">
-        <CarouselSection title="Top XP Boosters" offers={topXpBoosters} partners={partners} />
-        <CarouselSection title="Flash Deals (Expiring Soon)" offers={flashDeals} partners={partners} />
-        <CarouselSection title="Exclusive for You" offers={exclusiveForYou} partners={partners} />
+        <CarouselSection
+          title="Top XP Boosters"
+          offers={topXpBoosters}
+          partners={partners}
+          t={t}
+          onViewAll={() => setOfferModal({ title: 'Top XP Boosters', offers: topXpBoosters })}
+        />
+        <CarouselSection
+          title="Flash Deals (Expiring Soon)"
+          offers={flashDeals}
+          partners={partners}
+          t={t}
+          onViewAll={() => setOfferModal({ title: 'Flash Deals (Expiring Soon)', offers: flashDeals })}
+        />
+        <CarouselSection
+          title="Exclusive for You"
+          offers={exclusiveForYou}
+          partners={partners}
+          t={t}
+          onViewAll={() => setOfferModal({ title: 'Exclusive for You', offers: exclusiveForYou })}
+        />
       </div>
+
+      <AnimatePresence>
+        {offerModal ? (
+          <motion.div
+            key={offerModal.title}
+            role="presentation"
+            className="fixed inset-0 z-[100] flex items-end justify-center bg-black/75 p-0 font-sans backdrop-blur-sm sm:items-center sm:p-4"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.2 }}
+            onClick={() => setOfferModal(null)}
+          >
+            <motion.div
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="quests-offers-modal-title"
+              className={cn(
+                'relative flex w-full max-w-2xl flex-col overflow-hidden rounded-t-2xl border border-[color:var(--anbit-border)] bg-[color:var(--anbit-card)] shadow-2xl',
+                'max-h-[min(92dvh,840px)] sm:max-h-[min(88dvh,780px)] sm:rounded-2xl',
+              )}
+              initial={{ opacity: 0, y: 28 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ type: 'spring', damping: 28, stiffness: 320 }}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div className="flex shrink-0 items-start justify-between gap-3 border-b border-[color:var(--anbit-border)] px-4 pb-4 pt-4 sm:px-5 sm:pt-5">
+                <div className="min-w-0 pr-2">
+                  <p className="text-[11px] font-semibold uppercase tracking-wider text-anbit-muted">{t('allOffers')}</p>
+                  <h2
+                    id="quests-offers-modal-title"
+                    className="playpen-sans mt-0.5 text-xl font-bold leading-tight text-[color:var(--anbit-text)] sm:text-2xl"
+                  >
+                    {offerModal.title}
+                  </h2>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setOfferModal(null)}
+                  className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] text-[color:var(--anbit-text)] transition-colors hover:bg-[color:var(--anbit-border)]/40"
+                  aria-label={t('close')}
+                >
+                  <X className="h-4 w-4" strokeWidth={2.5} />
+                </button>
+              </div>
+              <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-4 py-4 sm:px-5 sm:py-5">
+                {offerModal.offers.length === 0 ? (
+                  <p className="py-8 text-center text-sm text-anbit-muted">{t('questsFilterEmpty')}</p>
+                ) : (
+                  <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                    {offerModal.offers.map((quest) => (
+                      <BrandedOfferCard
+                        key={quest.id}
+                        quest={quest}
+                        partner={resolveQuestPartner(quest, partners)}
+                        cardWidthClassName="w-full min-w-0"
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </motion.div>
+        ) : null}
+      </AnimatePresence>
     </motion.div>
   );
 };
