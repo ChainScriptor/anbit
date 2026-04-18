@@ -118,6 +118,7 @@
   "favoriteStoresAddSome": "Δεν έχεις αποθηκευμένα αγαπημένα. Πάτησε την καρδιά σε ένα κατάστημα για να το προσθέσεις.",
   "favoriteStoresNoOffers": "Καμία προσφορά από τα αγαπημένα σου με τα τρέχοντα φίλτρα.",
   "claimOffer": "Δεσμεύστε προσφορά",
+  "claimOfferClaimed": "Δεσμεύτηκε ✅",
   "viewRules": "Δείτε κανόνες",
   "offerDetailRewardLine": "Ανταμοιβή {xp} XP για ολοκλήρωση της προσφοράς.",
   "offerDetailProgress": "Πρόοδος {current} / {total}",

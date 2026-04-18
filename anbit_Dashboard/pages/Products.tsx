@@ -3,26 +3,63 @@ import { isAxiosError } from 'axios';
 import { Product } from '@/types';
 import { Button } from '@/components/ui/button';
 import {
-  Search,
-  Plus,
+  CheckSquare,
+  Circle,
   Filter,
+  GripVertical,
   Image as ImageIcon,
+  Loader2,
   MoreHorizontal,
   Pencil,
-  Trash2,
+  Plus,
   Power,
-  Loader2,
+  RotateCcw,
+  Save,
+  Search,
+  Tag,
+  Trash2,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { api } from '@/services/api';
 import { useAuth } from '@/AuthContext';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
 const ACCENT = '#0a0a0a';
-const PLACEHOLDER_PRODUCT_IMAGE =
+const PLACEHOLDER_IMAGE =
   'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400';
 const MAX_PRODUCT_IMAGE_BYTES = 10 * 1024 * 1024;
-const PRODUCT_OPTIONS_STORAGE_KEY = 'anbit_dashboard_product_options_v1';
+const OPTION_GROUPS_KEY = 'anbit_product_option_groups_v1';
 
+// ─── Option group types ───────────────────────────────────────────────────────
+type OptionGroupType = 'radio' | 'checkbox';
+
+type OptionChoice = {
+  id: string;
+  label: string;
+  priceModifier: number; // 0 = free, >0 = paid extra
+};
+
+type OptionGroup = {
+  id: string;
+  name: string;
+  type: OptionGroupType;
+  required: boolean; // meaningful only for radio
+  choices: OptionChoice[];
+  assignedProductIds: string[];
+  assignedCategories: string[];
+};
+
+type GroupDraft = {
+  name: string;
+  type: OptionGroupType;
+  required: boolean;
+  choices: OptionChoice[];
+  assignedProductIds: string[];
+  assignedCategories: string[];
+};
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 async function convertAvifToWebp(file: File): Promise<File> {
   if (file.type !== 'image/avif') return file;
   const bitmap = await createImageBitmap(file);
@@ -30,58 +67,48 @@ async function convertAvifToWebp(file: File): Promise<File> {
   canvas.width = bitmap.width;
   canvas.height = bitmap.height;
   const ctx = canvas.getContext('2d');
-  if (!ctx) {
-    throw new Error('Δεν ήταν δυνατή η επεξεργασία εικόνας AVIF.');
-  }
+  if (!ctx) throw new Error('Δεν ήταν δυνατή η επεξεργασία AVIF.');
   ctx.drawImage(bitmap, 0, 0);
   bitmap.close();
-  const blob = await new Promise<Blob | null>((resolve) => {
-    canvas.toBlob((result) => resolve(result), 'image/webp', 0.92);
-  });
-  if (!blob) {
-    throw new Error('Αποτυχία μετατροπής AVIF σε WebP.');
-  }
-  const baseName = file.name.replace(/\.[^.]+$/, '');
-  return new File([blob], `${baseName}.webp`, { type: 'image/webp' });
+  const blob = await new Promise<Blob | null>((res) => canvas.toBlob(res, 'image/webp', 0.92));
+  if (!blob) throw new Error('Αποτυχία μετατροπής AVIF σε WebP.');
+  return new File([blob], file.name.replace(/\.[^.]+$/, '') + '.webp', { type: 'image/webp' });
 }
 
-function formatProductImageApiError(e: unknown): string {
+function formatImageApiError(e: unknown): string {
   if (isAxiosError(e)) {
-    const status = e.response?.status;
-    if (status === 401 || status === 403) {
-      return 'Δεν έχεις δικαίωμα για αυτή την ενέργεια. Χρειάζεται merchant λογαριασμός.';
-    }
-    if (status === 413) {
-      return 'Το αρχείο είναι πολύ μεγάλο για τον server.';
-    }
-    const data = e.response?.data as
-      | { error?: string; Error?: string; message?: string }
-      | undefined;
-    const msg = data?.error ?? data?.Error ?? data?.message;
+    const s = e.response?.status;
+    if (s === 401 || s === 403) return 'Δεν έχεις δικαίωμα. Χρειάζεται merchant λογαριασμός.';
+    if (s === 413) return 'Το αρχείο είναι πολύ μεγάλο για τον server.';
+    const d = e.response?.data as { error?: string; Error?: string; message?: string } | undefined;
+    const msg = d?.error ?? d?.Error ?? d?.message;
     if (typeof msg === 'string' && msg.trim()) return msg;
   }
   return 'Αποτυχία εικόνας. Δοκίμασε ξανά.';
 }
 
-function getCategoryPreviewImage(category: string): string {
-  const key = category.toLowerCase();
-  if (key.includes('coffee') || key.includes('καφέ')) {
-    return 'https://images.pexels.com/photos/302899/pexels-photo-302899.jpeg?auto=compress&cs=tinysrgb&w=800';
-  }
-  if (key.includes('dessert') || key.includes('γλυκ')) {
-    return 'https://images.pexels.com/photos/291528/pexels-photo-291528.jpeg?auto=compress&cs=tinysrgb&w=800';
-  }
-  if (key.includes('salad') || key.includes('lunch') || key.includes('vegan')) {
-    return 'https://images.pexels.com/photos/1213710/pexels-photo-1213710.jpeg?auto=compress&cs=tinysrgb&w=800';
-  }
-  if (key.includes('burger')) {
-    return 'https://images.pexels.com/photos/1639562/pexels-photo-1639562.jpeg?auto=compress&cs=tinysrgb&w=800';
-  }
-  return 'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=800';
+function readOptionGroups(): OptionGroup[] {
+  try {
+    const raw = localStorage.getItem(OPTION_GROUPS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw) as OptionGroup[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch { return []; }
+}
+function writeOptionGroups(groups: OptionGroup[]): void {
+  localStorage.setItem(OPTION_GROUPS_KEY, JSON.stringify(groups));
 }
 
+const EMPTY_GROUP_DRAFT: GroupDraft = {
+  name: '', type: 'radio', required: true,
+  choices: [], assignedProductIds: [], assignedCategories: [],
+};
+
+// ─── Main component ───────────────────────────────────────────────────────────
 const Products: React.FC = () => {
   const { user } = useAuth();
+
+  // ── Products state ─────────────────────────────────────────────────────────
   const [items, setItems] = useState<Product[]>([]);
   const [activeCategory, setActiveCategory] = useState<string>('All');
   const [isAddOpen, setIsAddOpen] = useState(false);
@@ -89,17 +116,13 @@ const Products: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'listing' | 'options' | 'categories'>('listing');
   const [searchQuery, setSearchQuery] = useState('');
   const [newProduct, setNewProduct] = useState<Partial<Product> & { price?: string; pointsReward?: string }>({
-    name: '',
-    category: '',
-    price: '',
-    pointsReward: '',
-    image: '',
-    allergens: [],
-    isActive: true,
+    name: '', category: '', price: '', pointsReward: '', image: '', allergens: [], isActive: true,
   });
   const [newProductImageFile, setNewProductImageFile] = useState<File | null>(null);
   const [extraCategories, setExtraCategories] = useState<string[]>([]);
   const [newCategoryName, setNewCategoryName] = useState('');
+  const [renamingCategory, setRenamingCategory] = useState<string | null>(null);
+  const [renameDraft, setRenameDraft] = useState('');
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -117,45 +140,37 @@ const Products: React.FC = () => {
   const [modalImageError, setModalImageError] = useState<string | null>(null);
   const [detailProductId, setDetailProductId] = useState<string | null>(null);
   const [detailDraft, setDetailDraft] = useState<{
-    name: string;
-    description: string;
-    category: string;
-    price: string;
-    pointsReward: string;
-    isActive: boolean;
+    name: string; description: string; category: string;
+    price: string; pointsReward: string; isActive: boolean;
   } | null>(null);
-  const [productOptions, setProductOptions] = useState<Record<string, string[]>>({});
-  const [newOptionText, setNewOptionText] = useState('');
   const detailFileInputRef = useRef<HTMLInputElement | null>(null);
   const [detailImageBusy, setDetailImageBusy] = useState(false);
   const [detailImageError, setDetailImageError] = useState<string | null>(null);
   const [detailSaveBusy, setDetailSaveBusy] = useState(false);
   const [detailSaveError, setDetailSaveError] = useState<string | null>(null);
 
+  // ── Option groups state ────────────────────────────────────────────────────
+  const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
+  const [editingGroupId, setEditingGroupId] = useState<string | null>(null); // null = new
+  const [groupDraft, setGroupDraft] = useState<GroupDraft | null>(null);
+  const [newChoiceLabel, setNewChoiceLabel] = useState('');
+  const [newChoicePrice, setNewChoicePrice] = useState('');
+  const [showGroupEditor, setShowGroupEditor] = useState(false);
+
+  // ── Load data ──────────────────────────────────────────────────────────────
   const loadProducts = async (): Promise<Product[]> => {
     setIsLoading(true);
     setError(null);
     try {
-      const allProducts = await api.getProducts();
-      const currentUser = user ?? null;
-      const filtered =
-        currentUser != null
-          ? allProducts.filter((p) => p.merchantId === currentUser.id)
-          : allProducts;
-
+      const all = await api.getProducts();
+      const filtered = user != null ? all.filter((p) => p.merchantId === user.id) : all;
       const mapped: Product[] = filtered.map((p) => {
-        const url = p.imageUrl && String(p.imageUrl).trim() ? String(p.imageUrl) : null;
+        const url = p.imageUrl?.trim() ? p.imageUrl : null;
         return {
-          id: p.id,
-          name: p.name,
-          description: p.description,
-          category: p.category ?? 'Menu',
-          price: p.price,
-          pointsReward: p.xp,
-          serverImageUrl: url,
-          image: url || PLACEHOLDER_PRODUCT_IMAGE,
-          isActive: true,
-          allergens: [],
+          id: p.id, name: p.name, description: p.description,
+          category: p.category ?? 'Menu', price: p.price, pointsReward: p.xp,
+          serverImageUrl: url, image: url || PLACEHOLDER_IMAGE,
+          isActive: true, allergens: [],
         };
       });
       setItems(mapped);
@@ -172,78 +187,42 @@ const Products: React.FC = () => {
   useEffect(() => {
     void (async () => {
       await loadProducts();
-      // Αρχικό sync κατηγοριών από backend
       try {
         setIsLoadingCategories(true);
         setCategoriesError(null);
-        const categoriesFromApi = await api.getMerchantCategories();
-        setExtraCategories(categoriesFromApi);
+        const cats = await api.getMerchantCategories();
+        setExtraCategories(cats);
       } catch (e: unknown) {
-        console.error(e);
         const status = (e as { response?: { status?: number } })?.response?.status;
         setCategoriesError(
           status === 403
-            ? 'Δεν έχετε δικαιώματα για κατηγορίες. Χρειάζεται ρόλος Merchant ή Admin.'
-            : 'Αποτυχία φόρτωσης κατηγοριών merchant.'
+            ? 'Δεν έχετε δικαιώματα κατηγοριών. Χρειάζεται ρόλος Merchant.'
+            : 'Αποτυχία φόρτωσης κατηγοριών.',
         );
       } finally {
         setIsLoadingCategories(false);
       }
     })();
+    setOptionGroups(readOptionGroups());
   }, []);
 
-  useEffect(() => {
-    try {
-      const raw = localStorage.getItem(PRODUCT_OPTIONS_STORAGE_KEY);
-      if (!raw) return;
-      const parsed = JSON.parse(raw) as Record<string, unknown>;
-      const normalized: Record<string, string[]> = {};
-      Object.entries(parsed ?? {}).forEach(([productId, value]) => {
-        if (Array.isArray(value)) {
-          normalized[productId] = value.map((x) => String(x).trim()).filter(Boolean);
-        }
-      });
-      setProductOptions(normalized);
-    } catch {
-      // ignore malformed options cache
-    }
-  }, []);
-
-  const persistProductOptions = (next: Record<string, string[]>) => {
-    setProductOptions(next);
-    try {
-      localStorage.setItem(PRODUCT_OPTIONS_STORAGE_KEY, JSON.stringify(next));
-    } catch {
-      // ignore storage errors
-    }
-  };
-
+  // ── Computed ───────────────────────────────────────────────────────────────
   const categories = useMemo(() => {
     const base = Array.from(new Set(items.map((p) => p.category)));
-    const merged = Array.from(new Set([...base, ...extraCategories])).sort();
-    return ['All', ...merged];
+    return ['All', ...Array.from(new Set([...base, ...extraCategories])).sort()];
   }, [items, extraCategories]);
 
   const categoryCounts = useMemo(() => {
     const counts: Record<string, number> = { All: items.length };
-    categories.forEach((c) => {
-      if (c !== 'All') counts[c] = items.filter((p) => p.category === c).length;
-    });
+    categories.forEach((c) => { if (c !== 'All') counts[c] = items.filter((p) => p.category === c).length; });
     return counts;
   }, [items, categories]);
 
-  const products: Product[] = useMemo(() => {
-    const filtered =
-      activeCategory === 'All'
-        ? items
-        : items.filter((p) => p.category === activeCategory);
+  const products = useMemo(() => {
+    const filtered = activeCategory === 'All' ? items : items.filter((p) => p.category === activeCategory);
     if (!searchQuery.trim()) return filtered;
     const q = searchQuery.toLowerCase();
-    return filtered.filter(
-      (p) =>
-        p.name.toLowerCase().includes(q) ||
-        p.category.toLowerCase().includes(q),
-    );
+    return filtered.filter((p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
   }, [items, activeCategory, searchQuery]);
 
   const detailProduct = useMemo(
@@ -251,52 +230,38 @@ const Products: React.FC = () => {
     [detailProductId, items],
   );
 
-  const allVisibleSelected = products.length > 0 && products.every((p) => selectedProductIds.has(p.id));
-  const selectedVisibleCount = products.filter((p) => selectedProductIds.has(p.id)).length;
   const groupedProducts = useMemo(() => {
     const groups = new Map<string, Product[]>();
     products.forEach((p) => {
       const key = p.category || 'Χωρίς κατηγορία';
-      const arr = groups.get(key) ?? [];
-      arr.push(p);
-      groups.set(key, arr);
+      groups.set(key, [...(groups.get(key) ?? []), p]);
     });
     return Array.from(groups.entries()).map(([category, groupItems]) => ({
-      category,
-      items: groupItems,
+      category, items: groupItems,
       unavailableCount: groupItems.filter((p) => !p.isActive).length,
     }));
   }, [products]);
 
+  const allVisibleSelected = products.length > 0 && products.every((p) => selectedProductIds.has(p.id));
+  const selectedVisibleCount = products.filter((p) => selectedProductIds.has(p.id)).length;
+
   const optionsCount = useMemo(
-    () =>
-      items.reduce(
-        (sum, p) => sum + (p.allergens?.length ?? 0) + (productOptions[p.id]?.length ?? 0),
-        0,
-      ),
-    [items, productOptions],
+    () => optionGroups.reduce((sum, g) => sum + g.choices.length, 0),
+    [optionGroups],
   );
 
-  const resetForm = () => {
-    const defaultCategory =
-      activeCategory === 'All'
-        ? categories.find((c) => c !== 'All') ?? 'Menu'
-        : activeCategory;
+  // Max products in any category (for bar widths)
+  const maxCatCount = useMemo(
+    () => Math.max(...categories.filter((c) => c !== 'All').map((c) => categoryCounts[c] ?? 0), 1),
+    [categories, categoryCounts],
+  );
 
-    setNewProduct({
-      name: '',
-      category: defaultCategory,
-      price: '',
-      pointsReward: '',
-      image: '',
-      allergens: [],
-      isActive: true,
-    });
+  // ── Product form helpers ───────────────────────────────────────────────────
+  const resetForm = () => {
+    const defaultCat = activeCategory === 'All' ? (categories.find((c) => c !== 'All') ?? 'Menu') : activeCategory;
+    setNewProduct({ name: '', category: defaultCat, price: '', pointsReward: '', image: '', allergens: [], isActive: true });
     setNewProductImageFile(null);
-    // Ensure selecting the same file again triggers `onChange`.
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setEditingProductId(null);
     setModalImageError(null);
     setShowDeleteImageConfirm(false);
@@ -304,607 +269,410 @@ const Products: React.FC = () => {
   };
 
   const startEditProduct = (product: Product) => {
-    setSaveError(null);
-    setSaveSuccess(null);
-    setModalImageError(null);
+    setSaveError(null); setSaveSuccess(null); setModalImageError(null);
     setShowDeleteImageConfirm(false);
     setEditingProductId(product.id);
     setNewProduct({
-      name: product.name,
-      description: product.description ?? '',
-      category: product.category,
-      price: String(product.price),
-      pointsReward: String(product.pointsReward ?? 0),
-      image: product.image,
-      serverImageUrl: product.serverImageUrl ?? null,
-      allergens: product.allergens ?? [],
-      isActive: product.isActive,
+      name: product.name, description: product.description ?? '', category: product.category,
+      price: String(product.price), pointsReward: String(product.pointsReward ?? 0),
+      image: product.image, serverImageUrl: product.serverImageUrl ?? null,
+      allergens: product.allergens ?? [], isActive: product.isActive,
     });
     setNewProductImageFile(null);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
+    if (fileInputRef.current) fileInputRef.current.value = '';
     setIsAddOpen(true);
   };
 
   const handleAddProduct = async () => {
-    setSaveError(null);
-    setSaveSuccess(null);
-
-    if (!newProduct.name?.trim()) {
-      setSaveError('Συμπλήρωσε τουλάχιστον όνομα προϊόντος.');
-      return;
-    }
-    if (!newProduct.category?.trim()) {
-      setSaveError('Επίλεξε κατηγορία.');
-      return;
-    }
+    setSaveError(null); setSaveSuccess(null);
+    if (!newProduct.name?.trim()) { setSaveError('Συμπλήρωσε όνομα.'); return; }
+    if (!newProduct.category?.trim()) { setSaveError('Επίλεξε κατηγορία.'); return; }
     const price = Number(String(newProduct.price ?? '').replace(',', '.'));
-    if (Number.isNaN(price) || price <= 0) {
-      setSaveError('Η τιμή πρέπει να είναι μεγαλύτερη από 0.');
-      return;
-    }
-    const xpValue = Number(String(newProduct.pointsReward ?? '').replace(',', '.'));
-    // Backend expects int Xp. Ensure we send a clean integer.
-    const xp = Number.isNaN(xpValue) || xpValue < 0 ? 0 : Math.trunc(xpValue);
-    if (!editingProductId && !newProductImageFile) {
-      setSaveError('Επίλεξε αρχείο εικόνας (upload).');
-      return;
-    }
+    if (Number.isNaN(price) || price <= 0) { setSaveError('Η τιμή πρέπει να είναι > 0.'); return; }
+    const xp = Math.max(0, Math.trunc(Number(String(newProduct.pointsReward ?? '').replace(',', '.'))));
+    if (!editingProductId && !newProductImageFile) { setSaveError('Επίλεξε αρχείο εικόνας.'); return; }
 
     if (editingProductId) {
       try {
         setIsSaving(true);
-        const description = newProduct.description?.trim() || 'N/A';
         await api.updateProduct(editingProductId, {
-          name: newProduct.name.trim(),
-          description,
-          category: newProduct.category || 'Menu',
-          price,
-          xp,
-          allergens: newProduct.allergens ?? [],
+          name: newProduct.name.trim(), description: newProduct.description?.trim() || 'N/A',
+          category: newProduct.category || 'Menu', price, xp, allergens: newProduct.allergens ?? [],
         });
-        setIsAddOpen(false);
-        resetForm();
-        await loadProducts();
-        setSaveSuccess('Το προϊόν ενημερώθηκε επιτυχώς!');
+        setIsAddOpen(false); resetForm(); await loadProducts();
+        setSaveSuccess('Προϊόν ενημερώθηκε!');
       } catch (e: unknown) {
-        console.error(e);
         const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
-        const message =
-          err.response?.data?.error ??
-          err.response?.data?.Error ??
-          err.response?.data?.message ??
-          'Αποτυχία ενημέρωσης προϊόντος. Ελέγξτε κατηγορία και πεδία.';
-        setSaveError(typeof message === 'string' ? message : 'Αποτυχία ενημέρωσης προϊόντος.');
-      } finally {
-        setIsSaving(false);
-      }
+        setSaveError(err.response?.data?.error ?? err.response?.data?.Error ?? err.response?.data?.message ?? 'Αποτυχία ενημέρωσης.');
+      } finally { setIsSaving(false); }
       return;
     }
+
     try {
       setIsSaving(true);
-      const formData = new FormData();
-      // Backend CreateProductRequest is [FromForm] with PascalCase property names.
-      formData.append('Name', newProduct.name.trim());
-      formData.append('Description', newProduct.description?.trim() || 'N/A');
-      formData.append('Category', newProduct.category || 'Menu');
-      formData.append('Price', String(price));
-      formData.append('Xp', String(xp > 0 ? xp : 1));
-      for (const allergen of newProduct.allergens ?? []) {
-        formData.append('Allergens', allergen);
-      }
-      formData.append('Image', newProductImageFile);
-
-      await api.createProduct(formData);
-      setIsAddOpen(false);
-      resetForm();
-      await loadProducts();
-      setSaveSuccess('Το προϊόν δημιουργήθηκε με επιτυχία!');
+      const fd = new FormData();
+      fd.append('Name', newProduct.name.trim());
+      fd.append('Description', newProduct.description?.trim() || 'N/A');
+      fd.append('Category', newProduct.category || 'Menu');
+      fd.append('Price', String(price));
+      fd.append('Xp', String(xp > 0 ? xp : 1));
+      for (const a of newProduct.allergens ?? []) fd.append('Allergens', a);
+      fd.append('Image', newProductImageFile!);
+      await api.createProduct(fd);
+      setIsAddOpen(false); resetForm(); await loadProducts();
+      setSaveSuccess('Προϊόν δημιουργήθηκε!');
     } catch (e: unknown) {
-      console.error(e);
       const err = e as { response?: { data?: { error?: string; Error?: string } } };
-      const message =
-        err.response?.data?.error ??
-        err.response?.data?.Error ??
-        'Αποτυχία δημιουργίας προϊόντος. Ελέγξτε ότι η κατηγορία έχει αποθηκευτεί (Διαχείριση κατηγοριών) και τα πεδία.';
-      setSaveError(message);
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  const handleAddCategory = () => {
-    const name = newCategoryName.trim();
-    if (!name || name === 'All') return;
-    if (categories.includes(name)) {
-      alert('Η κατηγορία υπάρχει ήδη.');
-      return;
-    }
-    setExtraCategories((prev) => [...prev, name]);
-    setNewCategoryName('');
+      setSaveError(err.response?.data?.error ?? err.response?.data?.Error ?? 'Αποτυχία δημιουργίας. Έλεγξε ότι η κατηγορία είναι αποθηκευμένη.');
+    } finally { setIsSaving(false); }
   };
 
   const handleModalImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawFile = e.target.files?.[0];
     if (!rawFile) return;
     setModalImageError(null);
-
-    if (!rawFile.type.startsWith('image/')) {
-      setModalImageError('Επίλεξε έγκυρο αρχείο εικόνας.');
-      e.target.value = '';
-      return;
-    }
-    if (rawFile.size > MAX_PRODUCT_IMAGE_BYTES) {
-      setModalImageError('Το αρχείο είναι πολύ μεγάλο. Μέγιστο ~10MB.');
-      e.target.value = '';
-      return;
-    }
-
+    if (!rawFile.type.startsWith('image/')) { setModalImageError('Επίλεξε έγκυρο αρχείο εικόνας.'); e.target.value = ''; return; }
+    if (rawFile.size > MAX_PRODUCT_IMAGE_BYTES) { setModalImageError('Μέγιστο ~10MB.'); e.target.value = ''; return; }
     let file = rawFile;
-    try {
-      file = await convertAvifToWebp(rawFile);
-    } catch (err) {
-      setModalImageError(err instanceof Error ? err.message : 'Αποτυχία μετατροπής AVIF.');
-      e.target.value = '';
-      return;
-    }
-
+    try { file = await convertAvifToWebp(rawFile); } catch (err) { setModalImageError(err instanceof Error ? err.message : 'Αποτυχία μετατροπής.'); e.target.value = ''; return; }
     if (editingProductId) {
       setImageFieldBusy(true);
       try {
         await api.uploadProductImage(editingProductId, file);
         const list = await loadProducts();
         const row = list.find((p) => p.id === editingProductId);
-        if (row) {
-          setNewProduct((prev) => ({
-            ...prev,
-            image: row.image,
-            serverImageUrl: row.serverImageUrl ?? null,
-          }));
-        }
+        if (row) setNewProduct((prev) => ({ ...prev, image: row.image, serverImageUrl: row.serverImageUrl ?? null }));
         setNewProductImageFile(null);
-      } catch (err) {
-        console.error(err);
-        setModalImageError(formatProductImageApiError(err));
-      } finally {
-        setImageFieldBusy(false);
-        e.target.value = '';
-      }
+      } catch (err) { setModalImageError(formatImageApiError(err)); }
+      finally { setImageFieldBusy(false); e.target.value = ''; }
       return;
     }
-
     setNewProductImageFile(file);
     const reader = new FileReader();
-    reader.onloadend = () => {
-      setNewProduct((prev) => ({
-        ...prev,
-        image: typeof reader.result === 'string' ? reader.result : prev.image,
-      }));
-    };
+    reader.onloadend = () => setNewProduct((prev) => ({ ...prev, image: typeof reader.result === 'string' ? reader.result : prev.image }));
     reader.readAsDataURL(file);
   };
 
   const handleConfirmDeleteProductImage = async () => {
     if (!editingProductId) return;
-    setModalImageError(null);
-    setImageFieldBusy(true);
+    setModalImageError(null); setImageFieldBusy(true);
     try {
       await api.deleteProductImage(editingProductId);
       const list = await loadProducts();
       const row = list.find((p) => p.id === editingProductId);
-      if (row) {
-        setNewProduct((prev) => ({
-          ...prev,
-          image: row.image,
-          serverImageUrl: row.serverImageUrl ?? null,
-        }));
-      }
+      if (row) setNewProduct((prev) => ({ ...prev, image: row.image, serverImageUrl: row.serverImageUrl ?? null }));
       setShowDeleteImageConfirm(false);
-    } catch (err) {
-      console.error(err);
-      setModalImageError(formatProductImageApiError(err));
-    } finally {
-      setImageFieldBusy(false);
-    }
+    } catch (err) { setModalImageError(formatImageApiError(err)); }
+    finally { setImageFieldBusy(false); }
   };
 
-  const toggleProductSelection = (productId: string) => {
-    setSelectedProductIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(productId)) next.delete(productId);
-      else next.add(productId);
-      return next;
-    });
+  // ── Selection helpers ──────────────────────────────────────────────────────
+  const toggleProductSelection = (id: string) => setSelectedProductIds((prev) => { const n = new Set(prev); n.has(id) ? n.delete(id) : n.add(id); return n; });
+  const toggleSelectAllVisible = () => setSelectedProductIds((prev) => { const n = new Set(prev); allVisibleSelected ? products.forEach((p) => n.delete(p.id)) : products.forEach((p) => n.add(p.id)); return n; });
+  const deleteProducts = (ids: string[]) => { setItems((prev) => prev.filter((p) => !ids.includes(p.id))); setSelectedProductIds((prev) => { const n = new Set(prev); ids.forEach((id) => n.delete(id)); return n; }); setOpenMenuProductId(null); };
+  const deactivateProducts = (ids: string[]) => { setItems((prev) => prev.map((p) => ids.includes(p.id) ? { ...p, isActive: false } : p)); setOpenMenuProductId(null); };
+
+  // ── Category helpers ───────────────────────────────────────────────────────
+  const handleAddCategory = () => {
+    const name = newCategoryName.trim();
+    if (!name || name === 'All' || categories.includes(name)) return;
+    setExtraCategories((prev) => [...prev, name]);
+    setNewCategoryName('');
   };
 
-  const toggleSelectAllVisible = () => {
-    setSelectedProductIds((prev) => {
-      const next = new Set(prev);
-      if (allVisibleSelected) {
-        products.forEach((p) => next.delete(p.id));
-      } else {
-        products.forEach((p) => next.add(p.id));
-      }
-      return next;
-    });
-  };
-
-  const deleteProducts = (ids: string[]) => {
-    if (ids.length === 0) return;
-    setItems((prev) => prev.filter((p) => !ids.includes(p.id)));
-    setSelectedProductIds((prev) => {
-      const next = new Set(prev);
-      ids.forEach((id) => next.delete(id));
-      return next;
-    });
-    setOpenMenuProductId(null);
-  };
-
-  const deactivateProducts = (ids: string[]) => {
-    if (ids.length === 0) return;
-    setItems((prev) =>
-      prev.map((p) => (ids.includes(p.id) ? { ...p, isActive: false } : p)),
-    );
-    setOpenMenuProductId(null);
-  };
-
-  const selectedProductIdsArray = Array.from(selectedProductIds);
   const deleteCategory = (name: string) => {
     if (name === 'All') return;
-    const used = items.some((p) => p.category === name);
-    if (used) {
-      alert('Η κατηγορία χρησιμοποιείται από προϊόντα.');
-      return;
-    }
+    if (items.some((p) => p.category === name)) { alert('Η κατηγορία χρησιμοποιείται από προϊόντα.'); return; }
     setExtraCategories((prev) => prev.filter((c) => c !== name));
     if (activeCategory === name) setActiveCategory('All');
   };
 
+  const commitRenameCategory = () => {
+    if (!renamingCategory || !renameDraft.trim() || renameDraft.trim() === renamingCategory) { setRenamingCategory(null); return; }
+    const newName = renameDraft.trim();
+    if (categories.includes(newName)) { alert('Αυτή η κατηγορία υπάρχει ήδη.'); return; }
+    setExtraCategories((prev) => prev.map((c) => c === renamingCategory ? newName : c));
+    setItems((prev) => prev.map((p) => p.category === renamingCategory ? { ...p, category: newName } : p));
+    if (activeCategory === renamingCategory) setActiveCategory(newName);
+    setRenamingCategory(null);
+  };
+
   const handleSaveCategories = async () => {
     const toSave = categories.filter((c) => c !== 'All');
-    setIsSyncingCategories(true);
-    setCategoriesError(null);
-    try {
-      await api.upsertMerchantCategories({ categories: toSave });
-    } catch (e: unknown) {
-      console.error(e);
+    setIsSyncingCategories(true); setCategoriesError(null);
+    try { await api.upsertMerchantCategories({ categories: toSave }); }
+    catch (e: unknown) {
       const status = (e as { response?: { status?: number } })?.response?.status;
-      setCategoriesError(
-        status === 403
-          ? 'Δεν έχετε δικαιώματα για να επεξεργαστείτε κατηγορίες. Χρειάζεται ρόλος Merchant ή Admin.'
-          : 'Αποτυχία αποθήκευσης κατηγοριών.'
-      );
-    } finally {
-      setIsSyncingCategories(false);
-    }
+      setCategoriesError(status === 403 ? 'Δεν έχετε δικαιώματα κατηγοριών.' : 'Αποτυχία αποθήκευσης κατηγοριών.');
+    } finally { setIsSyncingCategories(false); }
   };
 
-  const primaryActionLabel =
-    activeTab === 'listing'
-      ? 'Add New Product'
-      : activeTab === 'options'
-        ? 'Add New Option'
-        : 'Add New Category';
-
-  const handlePrimaryAction = () => {
-    if (activeTab === 'listing') {
-      resetForm();
-      setIsAddOpen(true);
-      return;
-    }
-    if (activeTab === 'categories') {
-      setIsManageOpen(true);
-      return;
-    }
-    // Options tab: keep single top action visible (feature editor placeholder for now).
+  // ── Option group helpers ───────────────────────────────────────────────────
+  const startNewGroup = () => {
+    setEditingGroupId(null);
+    setGroupDraft({ ...EMPTY_GROUP_DRAFT });
+    setNewChoiceLabel(''); setNewChoicePrice('');
+    setShowGroupEditor(true);
   };
 
+  const startEditGroup = (group: OptionGroup) => {
+    setEditingGroupId(group.id);
+    setGroupDraft({
+      name: group.name, type: group.type, required: group.required,
+      choices: group.choices.map((c) => ({ ...c })),
+      assignedProductIds: [...group.assignedProductIds],
+      assignedCategories: [...group.assignedCategories],
+    });
+    setNewChoiceLabel(''); setNewChoicePrice('');
+    setShowGroupEditor(true);
+  };
+
+  const cancelGroupEdit = () => { setShowGroupEditor(false); setGroupDraft(null); setEditingGroupId(null); };
+
+  const addChoice = () => {
+    const label = newChoiceLabel.trim();
+    if (!label || !groupDraft) return;
+    const price = Number(newChoicePrice.replace(',', '.'));
+    const choice: OptionChoice = { id: crypto.randomUUID(), label, priceModifier: Number.isNaN(price) ? 0 : price };
+    setGroupDraft((prev) => prev ? { ...prev, choices: [...prev.choices, choice] } : prev);
+    setNewChoiceLabel(''); setNewChoicePrice('');
+  };
+
+  const removeChoice = (choiceId: string) => {
+    setGroupDraft((prev) => prev ? { ...prev, choices: prev.choices.filter((c) => c.id !== choiceId) } : prev);
+  };
+
+  const toggleGroupProduct = (productId: string) => {
+    setGroupDraft((prev) => {
+      if (!prev) return prev;
+      const ids = prev.assignedProductIds.includes(productId)
+        ? prev.assignedProductIds.filter((x) => x !== productId)
+        : [...prev.assignedProductIds, productId];
+      return { ...prev, assignedProductIds: ids };
+    });
+  };
+
+  const toggleGroupCategory = (cat: string) => {
+    setGroupDraft((prev) => {
+      if (!prev) return prev;
+      const cats = prev.assignedCategories.includes(cat)
+        ? prev.assignedCategories.filter((x) => x !== cat)
+        : [...prev.assignedCategories, cat];
+      return { ...prev, assignedCategories: cats };
+    });
+  };
+
+  const saveGroup = () => {
+    if (!groupDraft || !groupDraft.name.trim()) return;
+    if (groupDraft.choices.length < 2) { alert('Πρόσθεσε τουλάχιστον 2 επιλογές.'); return; }
+    const newGroup: OptionGroup = {
+      id: editingGroupId ?? crypto.randomUUID(),
+      name: groupDraft.name.trim(),
+      type: groupDraft.type,
+      required: groupDraft.required,
+      choices: groupDraft.choices,
+      assignedProductIds: groupDraft.assignedProductIds,
+      assignedCategories: groupDraft.assignedCategories,
+    };
+    const updated = editingGroupId
+      ? optionGroups.map((g) => g.id === editingGroupId ? newGroup : g)
+      : [newGroup, ...optionGroups];
+    setOptionGroups(updated);
+    writeOptionGroups(updated);
+    cancelGroupEdit();
+  };
+
+  const deleteGroup = (groupId: string) => {
+    const updated = optionGroups.filter((g) => g.id !== groupId);
+    setOptionGroups(updated);
+    writeOptionGroups(updated);
+  };
+
+  // ── Detail modal ───────────────────────────────────────────────────────────
   const openProductDetailModal = (product: Product) => {
     setDetailProductId(product.id);
-    setDetailDraft({
-      name: product.name,
-      description: product.description ?? '',
-      category: product.category,
-      price: String(product.price),
-      pointsReward: String(product.pointsReward ?? 0),
-      isActive: product.isActive,
-    });
-    setNewOptionText('');
+    setDetailDraft({ name: product.name, description: product.description ?? '', category: product.category, price: String(product.price), pointsReward: String(product.pointsReward ?? 0), isActive: product.isActive });
   };
 
   const closeProductDetailModal = () => {
-    setDetailProductId(null);
-    setDetailDraft(null);
-    setNewOptionText('');
-    setDetailImageError(null);
-    setDetailImageBusy(false);
-    setDetailSaveError(null);
-    setDetailSaveBusy(false);
+    setDetailProductId(null); setDetailDraft(null);
+    setDetailImageError(null); setDetailImageBusy(false);
+    setDetailSaveError(null); setDetailSaveBusy(false);
   };
 
   const saveDetailChanges = async () => {
     if (!detailProductId || !detailDraft) return;
     setDetailSaveError(null);
     const name = detailDraft.name.trim();
-    if (!name) {
-      setDetailSaveError('Συμπλήρωσε όνομα προϊόντος.');
-      return;
-    }
+    if (!name) { setDetailSaveError('Συμπλήρωσε όνομα.'); return; }
     const price = Number(detailDraft.price.replace(',', '.'));
-    const pointsReward = Number(detailDraft.pointsReward.replace(',', '.'));
-    if (Number.isNaN(price) || price <= 0) {
-      setDetailSaveError('Η τιμή πρέπει να είναι μεγαλύτερη από 0.');
-      return;
-    }
-    if (Number.isNaN(pointsReward) || pointsReward < 0) {
-      setDetailSaveError('Τα points δεν μπορούν να είναι αρνητικά.');
-      return;
-    }
-    const xp = Math.trunc(pointsReward);
-    const description = detailDraft.description.trim() || 'N/A';
-    const category = detailDraft.category.trim() || 'Menu';
+    const xp = Math.max(0, Math.trunc(Number(detailDraft.pointsReward.replace(',', '.'))));
+    if (Number.isNaN(price) || price <= 0) { setDetailSaveError('Η τιμή πρέπει να είναι > 0.'); return; }
     try {
       setDetailSaveBusy(true);
-      await api.updateProduct(detailProductId, {
-        name,
-        description,
-        category,
-        price,
-        xp,
-        allergens: [],
-      });
+      await api.updateProduct(detailProductId, { name, description: detailDraft.description.trim() || 'N/A', category: detailDraft.category.trim() || 'Menu', price, xp, allergens: [] });
       const list = await loadProducts();
       const row = list.find((p) => p.id === detailProductId);
-      if (row) {
-        setDetailDraft({
-          name: row.name,
-          description: row.description ?? '',
-          category: row.category,
-          price: String(row.price),
-          pointsReward: String(row.pointsReward ?? 0),
-          isActive: detailDraft.isActive,
-        });
-      }
+      if (row) setDetailDraft({ name: row.name, description: row.description ?? '', category: row.category, price: String(row.price), pointsReward: String(row.pointsReward ?? 0), isActive: detailDraft.isActive });
     } catch (e: unknown) {
-      console.error(e);
       const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
-      const message =
-        err.response?.data?.error ??
-        err.response?.data?.Error ??
-        err.response?.data?.message ??
-        'Αποτυχία αποθήκευσης.';
-      setDetailSaveError(typeof message === 'string' ? message : 'Αποτυχία αποθήκευσης.');
-    } finally {
-      setDetailSaveBusy(false);
-    }
-  };
-
-  const addProductOption = () => {
-    if (!detailProductId) return;
-    const option = newOptionText.trim();
-    if (!option) return;
-    const next = { ...productOptions };
-    const current = next[detailProductId] ?? [];
-    if (!current.some((x) => x.toLowerCase() === option.toLowerCase())) {
-      next[detailProductId] = [...current, option];
-      persistProductOptions(next);
-    }
-    setNewOptionText('');
-  };
-
-  const removeProductOption = (option: string) => {
-    if (!detailProductId) return;
-    const next = { ...productOptions };
-    next[detailProductId] = (next[detailProductId] ?? []).filter((x) => x !== option);
-    persistProductOptions(next);
+      setDetailSaveError(err.response?.data?.error ?? err.response?.data?.Error ?? err.response?.data?.message ?? 'Αποτυχία αποθήκευσης.');
+    } finally { setDetailSaveBusy(false); }
   };
 
   const handleDetailImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const rawFile = e.target.files?.[0];
     if (!rawFile || !detailProductId) return;
     setDetailImageError(null);
-
-    if (!rawFile.type.startsWith('image/')) {
-      setDetailImageError('Επίλεξε έγκυρο αρχείο εικόνας.');
-      e.target.value = '';
-      return;
-    }
-    if (rawFile.size > MAX_PRODUCT_IMAGE_BYTES) {
-      setDetailImageError('Το αρχείο είναι πολύ μεγάλο. Μέγιστο ~10MB.');
-      e.target.value = '';
-      return;
-    }
-
+    if (!rawFile.type.startsWith('image/')) { setDetailImageError('Επίλεξε έγκυρο αρχείο εικόνας.'); e.target.value = ''; return; }
+    if (rawFile.size > MAX_PRODUCT_IMAGE_BYTES) { setDetailImageError('Μέγιστο ~10MB.'); e.target.value = ''; return; }
     let file = rawFile;
-    try {
-      file = await convertAvifToWebp(rawFile);
-    } catch (err) {
-      setDetailImageError(err instanceof Error ? err.message : 'Αποτυχία μετατροπής AVIF.');
-      e.target.value = '';
-      return;
-    }
-
+    try { file = await convertAvifToWebp(rawFile); } catch (err) { setDetailImageError(err instanceof Error ? err.message : 'Αποτυχία.'); e.target.value = ''; return; }
     setDetailImageBusy(true);
-    try {
-      await api.uploadProductImage(detailProductId, file);
-      await loadProducts();
-    } catch (err) {
-      setDetailImageError(formatProductImageApiError(err));
-    } finally {
-      setDetailImageBusy(false);
-      e.target.value = '';
-    }
+    try { await api.uploadProductImage(detailProductId, file); await loadProducts(); }
+    catch (err) { setDetailImageError(formatImageApiError(err)); }
+    finally { setDetailImageBusy(false); e.target.value = ''; }
   };
 
+  const primaryActionLabel = activeTab === 'listing' ? 'Add Product' : activeTab === 'options' ? 'New Option Group' : 'Add Category';
+  const handlePrimaryAction = () => {
+    if (activeTab === 'listing') { resetForm(); setIsAddOpen(true); }
+    else if (activeTab === 'options') startNewGroup();
+    else setIsManageOpen(true);
+  };
+
+  // ─────────────────────────────────────────────────────────────────────────
   return (
     <div className="flex flex-col gap-6 bg-[#f8f9fa] text-slate-900">
-      <div className="space-y-6 rounded-3xl bg-[#f8f9fa] p-6 md:p-8">
-        <div className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+      <div className="space-y-5 rounded-3xl bg-[#f8f9fa] p-0 md:p-4 lg:p-6">
+
+        {/* Header */}
+        <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
           <div>
-            <h1 className="font-anbit-display text-3xl font-bold tracking-tight text-slate-900">Menu Management</h1>
-            <p className="mt-1 text-sm font-medium text-slate-500">
-              Curate your restaurant offerings and stock levels
-            </p>
+            <h1 className="font-anbit-display text-2xl font-bold tracking-tight text-slate-900 md:text-3xl">Menu Management</h1>
+            <p className="mt-1 text-sm font-medium text-slate-500">Διαχειρίσου προϊόντα, επιλογές και κατηγορίες</p>
           </div>
-          <Button
-            className="h-12 rounded-2xl px-6 text-sm font-semibold text-white shadow-none"
-            style={{ backgroundColor: ACCENT }}
+          <button
+            type="button"
             onClick={handlePrimaryAction}
+            className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 text-sm font-semibold text-white shadow-sm hover:bg-slate-800 transition-colors sm:w-auto"
           >
-            <Plus className="mr-2 h-5 w-5" />
+            <Plus className="h-4 w-4" />
             {primaryActionLabel}
-          </Button>
+          </button>
         </div>
 
-        <div className="inline-flex w-fit items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5 font-playpen-sans font-extrabold">
-          {[
-            { key: 'listing' as const, label: `Products (${items.length})` },
-            { key: 'options' as const, label: `Options (${optionsCount})` },
-            { key: 'categories' as const, label: `Categories (${categories.length - 1})` },
-          ].map((tab) => (
-            <button
-              key={tab.key}
-              type="button"
-              onClick={() => setActiveTab(tab.key)}
-              className={cn(
-                'rounded-xl px-6 py-2.5 text-sm font-extrabold transition-all',
-                activeTab === tab.key
-                  ? 'bg-white text-[#0a0a0a] shadow-sm'
-                  : 'text-slate-500 hover:text-slate-700',
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+        {/* Tabs */}
+        <div className="overflow-x-auto no-scrollbar -mx-1 px-1">
+          <div className="inline-flex min-w-max items-center gap-1 rounded-xl bg-slate-100 p-1">
+            {([
+              { key: 'listing', label: `Προϊόντα (${items.length})` },
+              { key: 'options', label: `Options (${optionGroups.length})` },
+              { key: 'categories', label: `Κατηγορίες (${categories.length - 1})` },
+            ] as const).map((tab) => (
+              <button key={tab.key} type="button" onClick={() => setActiveTab(tab.key)}
+                className={cn('rounded-lg px-4 py-2 text-sm font-semibold transition-all whitespace-nowrap', activeTab === tab.key ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-700')}>
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
 
+        {/* ── LISTING TAB ────────────────────────────────────────────── */}
         {activeTab === 'listing' && (
-          <div className="space-y-8">
+          <div className="space-y-6">
             {(isLoading || error) && (
-              <div className="space-y-1">
-                {isLoading && <p className="text-sm text-slate-500">Φόρτωση προϊόντων...</p>}
+              <div>
+                {isLoading && <p className="text-sm text-slate-500">Φόρτωση...</p>}
                 {error && <p className="text-sm text-red-600">{error}</p>}
               </div>
             )}
 
+            {/* Search + actions */}
             <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-              <div className="relative w-full max-w-xl">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search dish, category or SKU..."
-                  value={searchQuery}
+              <div className="relative w-full max-w-md">
+                <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-slate-400" />
+                <input type="text" placeholder="Αναζήτηση πιάτου ή κατηγορίας..." value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  className="w-full rounded-2xl border-0 bg-white py-3 pl-12 pr-4 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-[#0a0a0a]/20"
-                />
+                  className="w-full rounded-xl border-0 bg-white py-2.5 pl-10 pr-4 text-sm text-slate-900 shadow-sm ring-1 ring-slate-200 focus:outline-none focus:ring-2 focus:ring-slate-900/15" />
               </div>
-              <div className="flex flex-wrap items-center gap-2">
-                <Button variant="outline" size="sm" className="rounded-xl gap-2">
-                  <Filter className="h-4 w-4" />
-                  Filter
+              <div className="flex items-center gap-2">
+                <Button variant="outline" size="sm" className="rounded-xl gap-2 text-xs font-semibold">
+                  <Filter className="h-3.5 w-3.5" /> Φίλτρα
                 </Button>
-                <Button variant="outline" size="sm" className="rounded-xl" onClick={toggleSelectAllVisible}>
-                  {allVisibleSelected ? 'Unselect' : 'Bulk Edit'} ({selectedVisibleCount})
-                </Button>
-                <Button variant="outline" size="sm" className="rounded-xl gap-2">
-                  <ImageIcon className="h-4 w-4" />
-                  Images
+                <Button variant="outline" size="sm" className="rounded-xl text-xs font-semibold" onClick={toggleSelectAllVisible}>
+                  {allVisibleSelected ? 'Αποεπιλογή' : 'Bulk Edit'} ({selectedVisibleCount})
                 </Button>
               </div>
             </div>
 
-            {groupedProducts.map((group) => (
-              <section key={group.category} className="space-y-5">
-                <div className="flex items-center gap-4">
-                  <div className="h-10 w-1.5 rounded-full bg-[#0a0a0a]" />
-                  <h3 className="text-xl font-bold text-slate-900">
-                    {group.category}
-                    <span className="ml-2 text-base font-medium text-slate-500">({group.items.length})</span>
-                  </h3>
-                </div>
+            {/* Category pills */}
+            {categories.length > 1 && (
+              <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                {categories.map((cat) => (
+                  <button key={cat} type="button" onClick={() => setActiveCategory(cat)}
+                    className={cn('shrink-0 rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all',
+                      activeCategory === cat ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400')}>
+                    {cat}
+                    {cat !== 'All' && categoryCounts[cat] !== undefined && (
+                      <span className={cn('ml-1.5 opacity-60')}>{categoryCounts[cat]}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            )}
 
-                <div className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {/* Product groups */}
+            {groupedProducts.map((group) => (
+              <section key={group.category} className="space-y-4">
+                <div className="flex items-center gap-2.5">
+                  <h3 className="text-sm font-bold uppercase tracking-widest text-slate-400">{group.category}</h3>
+                  <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">{group.items.length}</span>
+                  {group.unavailableCount > 0 && (
+                    <span className="rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-semibold text-amber-600">{group.unavailableCount} sold out</span>
+                  )}
+                </div>
+                <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {group.items.map((product) => (
-                    <article
-                      key={product.id}
-                      onClick={() => openProductDetailModal(product)}
-                      className="relative cursor-pointer rounded-3xl bg-white p-5 shadow-[0_16px_40px_-24px_rgba(25,28,29,0.22)] transition-all duration-300 hover:-translate-y-0.5 hover:shadow-xl"
-                    >
-                      <div className="flex items-center gap-4">
-                        <input
-                          type="checkbox"
-                          checked={selectedProductIds.has(product.id)}
-                          onClick={(e) => e.stopPropagation()}
-                          onChange={() => toggleProductSelection(product.id)}
-                          className="rounded border-slate-300"
-                        />
-                        <div className="h-20 w-20 shrink-0 overflow-hidden rounded-2xl">
-                          <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                    <article key={product.id} onClick={() => openProductDetailModal(product)}
+                      className="relative flex cursor-pointer items-center gap-3.5 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-slate-200 hover:shadow-md">
+                      <input type="checkbox" checked={selectedProductIds.has(product.id)}
+                        onClick={(e) => e.stopPropagation()} onChange={() => toggleProductSelection(product.id)}
+                        className="rounded border-slate-300 shrink-0" />
+                      <div className="h-14 w-14 shrink-0 overflow-hidden rounded-xl">
+                        <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <h4 className="truncate text-sm font-bold text-slate-900">{product.name}</h4>
+                        <div className="mt-0.5 flex items-center gap-1.5">
+                          <p className="anbit-tabular-nums text-sm font-bold text-slate-800">€{product.price.toFixed(2)}</p>
+                          <span className="text-slate-200">·</span>
+                          <p className="anbit-tabular-nums text-xs font-semibold text-amber-600">+{product.pointsReward ?? 0} XP</p>
                         </div>
-                        <div className="min-w-0 flex-1">
-                          <h4 className="truncate text-base font-bold text-slate-900">{product.name}</h4>
-                          <p className="anbit-tabular-nums mt-0.5 text-sm font-bold text-[#0a0a0a]">
-                            €{product.price.toFixed(2)}
-                          </p>
-                          <p className="anbit-tabular-nums text-xs font-semibold text-amber-700">
-                            +{product.pointsReward ?? 0} XP
-                          </p>
-                          <div className="mt-2 flex items-center gap-2">
-                            <span
-                              className={cn(
-                                'h-1.5 w-1.5 rounded-full',
-                                product.isActive ? 'bg-emerald-500' : 'bg-slate-400',
-                              )}
-                            />
-                            <span className={cn('text-[10px] font-bold uppercase tracking-wider', product.isActive ? 'text-emerald-600' : 'text-slate-500')}>
-                              {product.isActive ? 'In Stock' : 'Sold Out'}
-                            </span>
-                          </div>
-                        </div>
-                        <div className="flex flex-col items-end gap-2">
-                          <button
-                            type="button"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setOpenMenuProductId((prev) => (prev === product.id ? null : product.id));
-                            }}
-                            className="rounded-xl p-2 text-slate-400 transition-colors hover:bg-slate-100 hover:text-slate-700"
-                          >
-                            <MoreHorizontal className="h-5 w-5" />
-                          </button>
+                        <div className="mt-1 flex items-center gap-1.5">
+                          <span className={cn('h-1.5 w-1.5 rounded-full', product.isActive ? 'bg-emerald-500' : 'bg-slate-300')} />
+                          <span className={cn('text-[10px] font-semibold uppercase tracking-wider', product.isActive ? 'text-emerald-600' : 'text-slate-400')}>
+                            {product.isActive ? 'In Stock' : 'Sold Out'}
+                          </span>
                         </div>
                       </div>
-
+                      <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuProductId((prev) => prev === product.id ? null : product.id); }}
+                        className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                        <MoreHorizontal className="h-4 w-4" />
+                      </button>
                       {openMenuProductId === product.id && (
-                        <div className="absolute right-4 top-14 z-20 min-w-44 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                            onClick={() => {
-                              setDetailProductId(null);
-                              startEditProduct(product);
-                              setOpenMenuProductId(null);
-                            }}
-                          >
-                            <Pencil className="h-4 w-4" />
-                            Edit
+                        <div className="absolute right-4 top-14 z-20 min-w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
+                          <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-700 hover:bg-slate-100"
+                            onClick={() => { setDetailProductId(null); startEditProduct(product); setOpenMenuProductId(null); }}>
+                            <Pencil className="h-4 w-4" /> Edit
                           </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-amber-700 hover:bg-amber-50"
-                            onClick={() => deactivateProducts([product.id])}
-                          >
-                            <Power className="h-4 w-4" />
-                            Deactivate
+                          <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-amber-700 hover:bg-amber-50"
+                            onClick={() => deactivateProducts([product.id])}>
+                            <Power className="h-4 w-4" /> Deactivate
                           </button>
-                          <button
-                            type="button"
-                            className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-red-600 hover:bg-red-50"
-                            onClick={() => deleteProducts([product.id])}
-                          >
-                            <Trash2 className="h-4 w-4" />
-                            Delete
+                          <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-red-600 hover:bg-red-50"
+                            onClick={() => deleteProducts([product.id])}>
+                            <Trash2 className="h-4 w-4" /> Delete
                           </button>
                         </div>
                       )}
@@ -916,570 +684,606 @@ const Products: React.FC = () => {
           </div>
         )}
 
+        {/* ── OPTIONS TAB ────────────────────────────────────────────── */}
         {activeTab === 'options' && (
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 text-sm text-slate-600">
-            Εδώ εμφανίζονται οι επιλογές προϊόντων (allergens/options). Προς το παρόν: {optionsCount}{' '}
-            συνολικές επιλογές.
-          </div>
-        )}
+          <div className="space-y-6">
 
-        {activeTab === 'categories' && (
-          <div className="space-y-4">
-            {isLoadingCategories && <p className="text-sm text-slate-500">Φόρτωση κατηγοριών...</p>}
-            {categoriesError && <p className="text-sm text-red-600">{categoriesError}</p>}
-            <div className="flex items-center justify-between gap-2">
-              <div className="inline-flex items-center gap-1.5 rounded-2xl bg-slate-200/70 p-1.5 font-playpen-sans font-extrabold">
-                <span className="rounded-xl bg-white px-4 py-2 text-xs font-extrabold text-slate-600">
-                  Categories ({categories.length - 1})
-                </span>
-              </div>
-              <Button variant="outline" onClick={handleSaveCategories} disabled={isSyncingCategories} className="rounded-xl">
-                {isSyncingCategories ? 'Αποθήκευση...' : 'Αποθήκευση αλλαγών'}
-              </Button>
-            </div>
-            <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
-              {categories
-                .filter((c) => c !== 'All')
-                .map((cat) => (
-                  <article
-                    key={cat}
-                    className="group rounded-2xl border border-slate-200 bg-white p-3 shadow-[0_12px_30px_-24px_rgba(25,28,29,0.25)] transition-all hover:shadow-lg"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="min-w-0 flex-1">
-                        <div className="overflow-hidden rounded-xl">
-                          <img
-                            src={getCategoryPreviewImage(cat)}
-                            alt={cat}
-                            className="h-36 w-full object-cover transition-transform duration-300 group-hover:scale-[1.02]"
-                          />
-                        </div>
-                        <p className="mt-2 truncate text-lg font-medium text-slate-900">{cat}</p>
-                      </div>
-                      <div className="flex flex-col items-end gap-2 pt-2 text-xs text-slate-500">
-                        <button
-                          type="button"
-                          onClick={() => setNewCategoryName(cat)}
-                          className="rounded px-2 py-1 hover:bg-slate-100"
-                        >
-                          Edit
+            {/* Group editor panel */}
+            {showGroupEditor && groupDraft && (
+              <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+                  <h2 className="font-semibold text-slate-900">{editingGroupId ? 'Επεξεργασία Ομάδας' : 'Νέα Ομάδα Επιλογών'}</h2>
+                  <button type="button" onClick={cancelGroupEdit} className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
+                </div>
+                <div className="p-6 space-y-5">
+                  {/* Name + type */}
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold uppercase tracking-widest text-slate-400">Όνομα Ομάδας *</label>
+                      <input type="text" value={groupDraft.name} onChange={(e) => setGroupDraft((p) => p ? { ...p, name: e.target.value } : p)}
+                        placeholder="π.χ. Ζάχαρη, Αφαίρεση υλικών, Extras"
+                        className="w-full rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm text-slate-900 shadow-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                    </div>
+
+                    {/* Type selector */}
+                    <div className="space-y-1.5">
+                      <label className="block text-xs font-semibold uppercase tracking-widest text-slate-400">Τύπος Επιλογής</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        <button type="button" onClick={() => setGroupDraft((p) => p ? { ...p, type: 'radio', required: true } : p)}
+                          className={cn('flex flex-col items-start gap-1 rounded-xl border-2 p-3 text-left transition-all',
+                            groupDraft.type === 'radio' ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300')}>
+                          <div className="flex items-center gap-2">
+                            <Circle className={cn('h-4 w-4', groupDraft.type === 'radio' ? 'text-slate-900' : 'text-slate-300')} />
+                            <span className="text-xs font-bold text-slate-800">Radio</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">Μια επιλογή μόνο<br />(π.χ. Ζάχαρη: σκέτος / γλυκός)</p>
                         </button>
-                        <button
-                          type="button"
-                          onClick={() => deleteCategory(cat)}
-                          className="rounded px-2 py-1 text-red-600 hover:bg-red-50"
-                        >
-                          Delete
+                        <button type="button" onClick={() => setGroupDraft((p) => p ? { ...p, type: 'checkbox', required: false } : p)}
+                          className={cn('flex flex-col items-start gap-1 rounded-xl border-2 p-3 text-left transition-all',
+                            groupDraft.type === 'checkbox' ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300')}>
+                          <div className="flex items-center gap-2">
+                            <CheckSquare className={cn('h-4 w-4', groupDraft.type === 'checkbox' ? 'text-slate-900' : 'text-slate-300')} />
+                            <span className="text-xs font-bold text-slate-800">Extras / Αφαίρεση</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">Πολλαπλές επιλογές<br />(π.χ. Χωρίς ντομάτα)</p>
                         </button>
                       </div>
                     </div>
+                  </div>
+
+                  {/* Required toggle (radio only) */}
+                  {groupDraft.type === 'radio' && (
+                    <label className="flex cursor-pointer items-center gap-3">
+                      <div className={cn('relative h-5 w-9 rounded-full transition-colors', groupDraft.required ? 'bg-slate-900' : 'bg-slate-300')}
+                        onClick={() => setGroupDraft((p) => p ? { ...p, required: !p.required } : p)}>
+                        <div className={cn('absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform', groupDraft.required ? 'translate-x-4' : 'translate-x-0.5')} />
+                      </div>
+                      <div>
+                        <span className="text-sm font-semibold text-slate-800">Υποχρεωτική επιλογή</span>
+                        <p className="text-xs text-slate-400">Ο πελάτης πρέπει να επιλέξει μία</p>
+                      </div>
+                    </label>
+                  )}
+
+                  {/* Choices */}
+                  <div className="space-y-2.5">
+                    <label className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+                      Επιλογές ({groupDraft.choices.length})
+                    </label>
+
+                    {/* Existing choices */}
+                    {groupDraft.choices.length > 0 && (
+                      <div className="rounded-xl border border-slate-200 divide-y divide-slate-100 overflow-hidden">
+                        {groupDraft.choices.map((choice, idx) => (
+                          <div key={choice.id} className="flex items-center gap-3 px-4 py-2.5 bg-white">
+                            <GripVertical className="h-4 w-4 shrink-0 text-slate-300" />
+                            <span className={cn('flex h-5 w-5 shrink-0 items-center justify-center rounded-full border-2 text-[10px] font-bold',
+                              groupDraft.type === 'radio' ? 'rounded-full border-slate-300' : 'rounded border-slate-300')}>
+                              {groupDraft.type === 'radio' ? '' : ''}
+                            </span>
+                            <span className="flex-1 text-sm font-medium text-slate-800">{choice.label}</span>
+                            {choice.priceModifier > 0 && (
+                              <span className="rounded-full bg-emerald-50 px-2 py-0.5 text-xs font-semibold text-emerald-700">+€{choice.priceModifier.toFixed(2)}</span>
+                            )}
+                            {choice.priceModifier === 0 && (
+                              <span className="text-xs text-slate-300">δωρεάν</span>
+                            )}
+                            <button type="button" onClick={() => removeChoice(choice.id)}
+                              className="shrink-0 rounded-lg p-1 text-slate-300 hover:bg-red-50 hover:text-red-500">
+                              <X className="h-3.5 w-3.5" />
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+
+                    {/* Add choice */}
+                    <div className="flex gap-2">
+                      <input type="text" value={newChoiceLabel} onChange={(e) => setNewChoiceLabel(e.target.value)}
+                        onKeyDown={(e) => e.key === 'Enter' && addChoice()}
+                        placeholder={groupDraft.type === 'radio' ? 'π.χ. Σκέτος, Ελαφρύς, Γλυκός' : 'π.χ. Χωρίς κρεμμύδι'}
+                        className="flex-1 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                      <div className="relative w-28">
+                        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-xs font-semibold text-slate-300">+€</span>
+                        <input type="number" step="0.10" min="0" value={newChoicePrice} onChange={(e) => setNewChoicePrice(e.target.value)}
+                          placeholder="0.00"
+                          className="w-full rounded-xl border border-slate-200 bg-white pl-7 pr-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                      </div>
+                      <button type="button" onClick={addChoice}
+                        className="inline-flex items-center gap-1.5 rounded-xl bg-slate-100 px-3.5 py-2.5 text-xs font-semibold text-slate-700 hover:bg-slate-200 transition-colors">
+                        <Plus className="h-3.5 w-3.5" /> Προσθήκη
+                      </button>
+                    </div>
+                    {groupDraft.choices.length < 2 && (
+                      <p className="text-xs text-slate-400">Χρειάζονται τουλάχιστον 2 επιλογές.</p>
+                    )}
+                  </div>
+
+                  {/* Assign to products */}
+                  {items.length > 0 && (
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+                        Εφαρμογή σε Προϊόντα ({groupDraft.assignedProductIds.length} επιλεγμένα)
+                      </label>
+                      <div className="max-h-44 overflow-y-auto rounded-xl border border-slate-200 divide-y divide-slate-100">
+                        {items.map((p) => {
+                          const checked = groupDraft.assignedProductIds.includes(p.id);
+                          return (
+                            <label key={p.id} className={cn('flex cursor-pointer items-center gap-3 px-4 py-2.5 hover:bg-slate-50', checked && 'bg-slate-50')}>
+                              <input type="checkbox" checked={checked} onChange={() => toggleGroupProduct(p.id)}
+                                className="h-4 w-4 rounded border-slate-300 text-slate-900" />
+                              <img src={p.image} alt="" className="h-8 w-8 rounded-lg object-cover" />
+                              <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-slate-800">{p.name}</p>
+                                <p className="text-xs text-slate-400">{p.category}</p>
+                              </div>
+                            </label>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Assign to categories */}
+                  {categories.filter((c) => c !== 'All').length > 0 && (
+                    <div className="space-y-2">
+                      <label className="block text-xs font-semibold uppercase tracking-widest text-slate-400">
+                        Ή εφαρμογή σε Κατηγορία ({groupDraft.assignedCategories.length} επιλεγμένες)
+                      </label>
+                      <div className="flex flex-wrap gap-2">
+                        {categories.filter((c) => c !== 'All').map((cat) => {
+                          const checked = groupDraft.assignedCategories.includes(cat);
+                          return (
+                            <button key={cat} type="button" onClick={() => toggleGroupCategory(cat)}
+                              className={cn('rounded-full border px-3.5 py-1.5 text-xs font-semibold transition-all',
+                                checked ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-400')}>
+                              {cat} <span className="opacity-60">{categoryCounts[cat] ?? 0}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Save / Cancel */}
+                  <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                    <button type="button" onClick={cancelGroupEdit}
+                      className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                      Ακύρωση
+                    </button>
+                    <button type="button" onClick={saveGroup}
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800">
+                      <Save className="h-4 w-4" />
+                      {editingGroupId ? 'Αποθήκευση αλλαγών' : 'Δημιουργία ομάδας'}
+                    </button>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Groups grid */}
+            {optionGroups.length === 0 && !showGroupEditor ? (
+              <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-16 text-center">
+                <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                  <Tag className="h-5 w-5 text-slate-300" />
+                </div>
+                <p className="text-sm font-semibold text-slate-400">Δεν υπάρχουν ομάδες επιλογών</p>
+                <p className="mt-1 text-xs text-slate-300">Πάτα "New Option Group" για να δημιουργήσεις</p>
+              </div>
+            ) : (
+              <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {optionGroups.map((group) => (
+                  <article key={group.id} className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+                    {/* Card header */}
+                    <div className="flex items-start justify-between gap-2 px-4 pt-4 pb-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
+                            group.type === 'radio' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700')}>
+                            {group.type === 'radio' ? <><Circle className="h-2.5 w-2.5" /> Radio</> : <><CheckSquare className="h-2.5 w-2.5" /> Extras</>}
+                          </span>
+                          {group.type === 'radio' && group.required && (
+                            <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">Required</span>
+                          )}
+                        </div>
+                        <h3 className="mt-1.5 text-sm font-bold text-slate-900">{group.name}</h3>
+                      </div>
+                      <div className="flex shrink-0 items-center gap-1">
+                        <button type="button" onClick={() => startEditGroup(group)}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+                          <Pencil className="h-3.5 w-3.5" />
+                        </button>
+                        <button type="button" onClick={() => deleteGroup(group.id)}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500">
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </button>
+                      </div>
+                    </div>
+
+                    {/* Choices */}
+                    <div className="border-t border-slate-100 px-4 py-3 space-y-1.5">
+                      {group.choices.map((choice) => (
+                        <div key={choice.id} className="flex items-center gap-2">
+                          <span className={cn('flex h-3.5 w-3.5 shrink-0 items-center justify-center border',
+                            group.type === 'radio' ? 'rounded-full border-slate-300' : 'rounded border-slate-300')} />
+                          <span className="flex-1 truncate text-xs text-slate-700">{choice.label}</span>
+                          {choice.priceModifier > 0 && (
+                            <span className="shrink-0 text-[10px] font-semibold text-emerald-600">+€{choice.priceModifier.toFixed(2)}</span>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+
+                    {/* Assignment */}
+                    <div className="border-t border-slate-100 px-4 py-2.5">
+                      {group.assignedProductIds.length > 0 && (
+                        <p className="text-[10px] text-slate-400">{group.assignedProductIds.length} προϊόντα</p>
+                      )}
+                      {group.assignedCategories.length > 0 && (
+                        <p className="text-[10px] text-slate-400">{group.assignedCategories.join(', ')}</p>
+                      )}
+                      {group.assignedProductIds.length === 0 && group.assignedCategories.length === 0 && (
+                        <p className="text-[10px] text-slate-300">Χωρίς εφαρμογή</p>
+                      )}
+                    </div>
                   </article>
                 ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── CATEGORIES TAB ─────────────────────────────────────────── */}
+        {activeTab === 'categories' && (
+          <div className="space-y-5">
+            {isLoadingCategories && <p className="text-sm text-slate-500">Φόρτωση κατηγοριών...</p>}
+            {categoriesError && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-600">{categoriesError}</p>}
+
+            {/* Add + Save row */}
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="flex items-center gap-2">
+                <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)}
+                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
+                  placeholder="Νέα κατηγορία..."
+                  className="w-56 rounded-xl border border-slate-200 bg-white px-3.5 py-2.5 text-sm shadow-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                <button type="button" onClick={handleAddCategory}
+                  className="inline-flex items-center gap-1.5 rounded-xl bg-slate-900 px-4 py-2.5 text-xs font-semibold text-white hover:bg-slate-800">
+                  <Plus className="h-3.5 w-3.5" /> Προσθήκη
+                </button>
+              </div>
+              <button type="button" onClick={() => void handleSaveCategories()} disabled={isSyncingCategories}
+                className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-semibold text-slate-700 shadow-sm hover:bg-slate-50 disabled:opacity-50">
+                {isSyncingCategories ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                Αποθήκευση στον server
+              </button>
+            </div>
+
+            {/* Categories list */}
+            <div className="rounded-2xl border border-slate-200 bg-white shadow-sm overflow-hidden">
+              {categories.filter((c) => c !== 'All').length === 0 ? (
+                <div className="flex flex-col items-center justify-center py-12 text-center">
+                  <p className="text-sm font-semibold text-slate-400">Δεν υπάρχουν κατηγορίες</p>
+                  <p className="mt-1 text-xs text-slate-300">Πρόσθεσε κατηγορίες παραπάνω</p>
+                </div>
+              ) : (
+                <div className="divide-y divide-slate-100">
+                  {categories.filter((c) => c !== 'All').map((cat, idx) => {
+                    const count = categoryCounts[cat] ?? 0;
+                    const pct = Math.round((count / maxCatCount) * 100);
+                    const isRenaming = renamingCategory === cat;
+                    return (
+                      <div key={cat} className={cn('flex items-center gap-4 px-5 py-4 transition-colors', idx % 2 === 0 ? 'bg-white' : 'bg-slate-50/50')}>
+                        {/* Drag handle */}
+                        <GripVertical className="h-4 w-4 shrink-0 text-slate-300" />
+
+                        {/* Name / rename input */}
+                        <div className="min-w-0 flex-1">
+                          {isRenaming ? (
+                            <div className="flex items-center gap-2">
+                              <input type="text" value={renameDraft} onChange={(e) => setRenameDraft(e.target.value)}
+                                onKeyDown={(e) => { if (e.key === 'Enter') commitRenameCategory(); if (e.key === 'Escape') setRenamingCategory(null); }}
+                                autoFocus
+                                className="w-full max-w-xs rounded-lg border border-slate-900 px-3 py-1.5 text-sm font-semibold outline-none ring-2 ring-slate-900/10" />
+                              <button type="button" onClick={commitRenameCategory}
+                                className="rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white hover:bg-slate-800">OK</button>
+                              <button type="button" onClick={() => setRenamingCategory(null)}
+                                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-3.5 w-3.5" /></button>
+                            </div>
+                          ) : (
+                            <div className="space-y-1.5">
+                              <div className="flex items-center gap-3">
+                                <span className="font-semibold text-slate-900">{cat}</span>
+                                <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-semibold text-slate-500">{count} προϊόντα</span>
+                              </div>
+                              {/* Progress bar */}
+                              <div className="h-1.5 w-full max-w-xs overflow-hidden rounded-full bg-slate-100">
+                                <div className="h-full rounded-full bg-slate-400 transition-all" style={{ width: `${pct}%` }} />
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Actions */}
+                        {!isRenaming && (
+                          <div className="flex shrink-0 items-center gap-1">
+                            <button type="button" onClick={() => { setRenamingCategory(cat); setRenameDraft(cat); }}
+                              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-100">
+                              <Pencil className="h-3 w-3" /> Μετονομασία
+                            </button>
+                            <button type="button" onClick={() => deleteCategory(cat)}
+                              className="inline-flex items-center gap-1.5 rounded-lg px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-50">
+                              <Trash2 className="h-3 w-3" /> Διαγραφή
+                            </button>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
             </div>
           </div>
         )}
       </div>
 
+      {/* ── PRODUCT DETAIL MODAL ───────────────────────────────────── */}
       {detailProduct && detailDraft && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-          <div className="w-full max-w-3xl rounded-2xl bg-white p-6 shadow-lg max-h-[92vh] overflow-y-auto">
-            <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Product details</h2>
-              <button className="text-sm" onClick={closeProductDetailModal}>
-                Close
-              </button>
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl max-h-[92vh] overflow-y-auto">
+            {/* Header */}
+            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
+              <h2 className="text-base font-bold text-slate-900">Product details</h2>
+              <button type="button" onClick={closeProductDetailModal}
+                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
             </div>
-            <div className="grid gap-5 md:grid-cols-[220px_1fr]">
-              <div className="overflow-hidden rounded-xl border border-slate-200">
-                <img src={detailProduct.image} alt={detailProduct.name} className="h-full w-full object-cover" />
-              </div>
-              <div className="space-y-3">
-                <div className="flex flex-wrap items-center gap-2">
-                  <Button
-                    size="sm"
-                    type="button"
-                    onClick={() => detailFileInputRef.current?.click()}
-                    disabled={detailImageBusy}
-                    style={{ backgroundColor: ACCENT }}
-                    className="text-white"
-                  >
-                    {detailImageBusy ? 'Uploading...' : 'Change image'}
-                  </Button>
-                  <input
-                    ref={detailFileInputRef}
-                    type="file"
-                    accept="image/*,.avif,image/avif"
-                    className="hidden"
-                    onChange={(ev) => void handleDetailImageSelected(ev)}
-                  />
-                  {detailImageError && <span className="text-xs text-red-600">{detailImageError}</span>}
+
+            <div className="p-6 space-y-6">
+              {/* Image + fields */}
+              <div className="grid gap-5 md:grid-cols-[200px_1fr]">
+                <div className="space-y-2">
+                  <div className="overflow-hidden rounded-xl border border-slate-200 aspect-square">
+                    <img src={detailProduct.image} alt={detailProduct.name} className="h-full w-full object-cover" />
+                  </div>
+                  <button type="button" onClick={() => detailFileInputRef.current?.click()} disabled={detailImageBusy}
+                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
+                    {detailImageBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
+                    {detailImageBusy ? 'Uploading...' : 'Αλλαγή εικόνας'}
+                  </button>
+                  <input ref={detailFileInputRef} type="file" accept="image/*,.avif,image/avif" className="hidden"
+                    onChange={(e) => void handleDetailImageSelected(e)} />
+                  {detailImageError && <p className="text-xs text-red-600">{detailImageError}</p>}
                 </div>
-                <div className="grid gap-3 md:grid-cols-2">
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-xs font-medium">Name</label>
-                    <input
-                      type="text"
-                      value={detailDraft.name}
-                      onChange={(e) => setDetailDraft({ ...detailDraft, name: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1 md:col-span-2">
-                    <label className="text-xs font-medium">Description</label>
-                    <textarea
-                      value={detailDraft.description}
+
+                <div className="space-y-3">
+                  {[
+                    { label: 'Όνομα', key: 'name' as const, type: 'text' },
+                  ].map(({ label, key }) => (
+                    <div key={key} className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-500">{label}</label>
+                      <input type="text" value={detailDraft[key] as string}
+                        onChange={(e) => setDetailDraft({ ...detailDraft, [key]: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                    </div>
+                  ))}
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500">Περιγραφή</label>
+                    <textarea value={detailDraft.description}
                       onChange={(e) => setDetailDraft({ ...detailDraft, description: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm min-h-[90px]"
-                    />
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 min-h-[80px] resize-none" />
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">Category</label>
-                    <select
-                      value={detailDraft.category}
-                      onChange={(e) => setDetailDraft({ ...detailDraft, category: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    >
-                      {categories
-                        .filter((c) => c !== 'All')
-                        .map((c) => (
-                          <option key={c} value={c}>
-                            {c}
-                          </option>
-                        ))}
-                    </select>
+                  <div className="grid grid-cols-3 gap-3">
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-500">Κατηγορία</label>
+                      <select value={detailDraft.category}
+                        onChange={(e) => setDetailDraft({ ...detailDraft, category: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-900">
+                        {categories.filter((c) => c !== 'All').map((c) => <option key={c} value={c}>{c}</option>)}
+                      </select>
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-500">Τιμή (€)</label>
+                      <input type="number" step="0.01" min="0" value={detailDraft.price}
+                        onChange={(e) => setDetailDraft({ ...detailDraft, price: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs font-semibold text-slate-500">Points</label>
+                      <input type="number" step="1" min="0" value={detailDraft.pointsReward}
+                        onChange={(e) => setDetailDraft({ ...detailDraft, pointsReward: e.target.value })}
+                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                    </div>
                   </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">Price (€)</label>
-                    <input
-                      type="number"
-                      step="0.01"
-                      min="0"
-                      value={detailDraft.price}
-                      onChange={(e) => setDetailDraft({ ...detailDraft, price: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <label className="text-xs font-medium">Points</label>
-                    <input
-                      type="number"
-                      step="1"
-                      min="0"
-                      value={detailDraft.pointsReward}
-                      onChange={(e) => setDetailDraft({ ...detailDraft, pointsReward: e.target.value })}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                    />
-                  </div>
-                  <label className="mt-5 inline-flex items-center gap-2 text-sm font-medium">
-                    <input
-                      type="checkbox"
-                      checked={detailDraft.isActive}
+                  <label className="inline-flex items-center gap-2 text-sm font-medium">
+                    <input type="checkbox" checked={detailDraft.isActive}
                       onChange={(e) => setDetailDraft({ ...detailDraft, isActive: e.target.checked })}
-                    />
-                    Active / In stock
+                      className="rounded border-slate-300" />
+                    Active / In Stock
                   </label>
                 </div>
               </div>
-            </div>
 
-            <div className="mt-6 rounded-xl border border-slate-200 p-4">
-              <h3 className="text-sm font-semibold text-slate-900">Product options</h3>
-              <p className="mt-1 text-xs text-slate-500">Πρόσθεσε επιλογές όπως μέγεθος, έξτρα υλικά, toppings κτλ.</p>
-              <div className="mt-3 flex gap-2">
-                <input
-                  type="text"
-                  value={newOptionText}
-                  onChange={(e) => setNewOptionText(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && addProductOption()}
-                  className="flex-1 rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="π.χ. Extra cheese"
-                />
-                <Button size="sm" onClick={addProductOption} style={{ backgroundColor: ACCENT }} className="text-white">
-                  Add option
-                </Button>
-              </div>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {(productOptions[detailProduct.id] ?? []).length === 0 ? (
-                  <p className="text-xs text-slate-500">Δεν υπάρχουν options ακόμα.</p>
-                ) : (
-                  (productOptions[detailProduct.id] ?? []).map((opt) => (
-                    <span
-                      key={opt}
-                      className="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1 text-xs font-medium"
-                    >
-                      {opt}
-                      <button
-                        type="button"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() => removeProductOption(opt)}
-                      >
-                        ×
-                      </button>
-                    </span>
-                  ))
-                )}
-              </div>
-            </div>
+              {/* Applied option groups */}
+              {(() => {
+                const assigned = optionGroups.filter(
+                  (g) => g.assignedProductIds.includes(detailProduct.id) || g.assignedCategories.includes(detailProduct.category),
+                );
+                if (assigned.length === 0) return null;
+                return (
+                  <div className="rounded-xl border border-slate-200 p-4 space-y-3">
+                    <h3 className="text-sm font-semibold text-slate-900">Option Groups εφαρμοσμένες σε αυτό το προϊόν</h3>
+                    <div className="flex flex-wrap gap-2">
+                      {assigned.map((g) => (
+                        <div key={g.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
+                          <div className="flex items-center gap-2 mb-1">
+                            <span className={cn('rounded text-[10px] font-bold px-1.5 py-0.5', g.type === 'radio' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700')}>
+                              {g.type === 'radio' ? 'RADIO' : 'EXTRAS'}
+                            </span>
+                            <span className="text-xs font-semibold text-slate-800">{g.name}</span>
+                          </div>
+                          <p className="text-[10px] text-slate-400">{g.choices.map((c) => c.label).join(' · ')}</p>
+                        </div>
+                      ))}
+                    </div>
+                    <p className="text-xs text-slate-400">Για να αλλάξεις, πήγαινε στο tab Options.</p>
+                  </div>
+                );
+              })()}
 
-            {detailSaveError && (
-              <p className="mt-4 text-sm text-red-600" role="alert">
-                {detailSaveError}
-              </p>
-            )}
-            <div className="mt-5 flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={closeProductDetailModal} disabled={detailSaveBusy}>
-                Cancel
-              </Button>
-              <Button
-                size="sm"
-                onClick={() => void saveDetailChanges()}
-                disabled={detailSaveBusy}
-                style={{ backgroundColor: ACCENT }}
-                className="text-white"
-              >
-                {detailSaveBusy ? 'Saving...' : 'Save changes'}
-              </Button>
+              {detailSaveError && <p className="text-sm text-red-600" role="alert">{detailSaveError}</p>}
+              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
+                <button type="button" onClick={closeProductDetailModal} disabled={detailSaveBusy}
+                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                  Κλείσιμο
+                </button>
+                <button type="button" onClick={() => void saveDetailChanges()} disabled={detailSaveBusy}
+                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+                  {detailSaveBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                  {detailSaveBusy ? 'Αποθήκευση...' : 'Αποθήκευση'}
+                </button>
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Add product modal */}
+      {/* ── ADD / EDIT PRODUCT MODAL ───────────────────────────────── */}
       {isAddOpen && (
         <>
-        <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:px-4 sm:py-8">
-          <div className="w-full h-[92vh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-white p-4 sm:p-6 shadow-lg overflow-y-auto">
-            <div className="mb-4 flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold">{editingProductId ? 'Edit product' : 'Add product'}</h2>
-              <button
-                className="text-sm shrink-0"
-                onClick={() => {
-                  setIsAddOpen(false);
-                  resetForm();
-                }}
-              >
-                Close
-              </button>
-            </div>
-              <div className="space-y-4 pb-4 sm:pb-0">
-              {saveError && (
-                <p className="rounded-md bg-red-50 px-3 py-2 text-xs text-red-600">
-                  {saveError}
-                </p>
-              )}
-              {saveSuccess && (
-                <p className="rounded-md bg-emerald-50 px-3 py-2 text-xs text-emerald-700">
-                  {saveSuccess}
-                </p>
-              )}
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Name</label>
-                <input
-                  type="text"
-                  value={newProduct.name || ''}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, name: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                />
+          <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/40 p-0 sm:px-4 sm:py-8">
+            <div className="w-full h-[92vh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-white shadow-xl overflow-y-auto">
+              <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
+                <h2 className="text-base font-bold text-slate-900">{editingProductId ? 'Επεξεργασία προϊόντος' : 'Νέο προϊόν'}</h2>
+                <button type="button" onClick={() => { setIsAddOpen(false); resetForm(); }}
+                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
               </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium">Description</label>
-                <textarea
-                  value={newProduct.description || ''}
-                  onChange={(e) =>
-                    setNewProduct({ ...newProduct, description: e.target.value })
-                  }
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm min-h-[80px] resize-y"
-                  placeholder="Περιγραφή πιάτου, υλικά, σημειώσεις..."
-                />
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
+              <div className="space-y-4 p-5 pb-8">
+                {saveError && <p className="rounded-xl bg-red-50 px-4 py-2.5 text-xs text-red-600">{saveError}</p>}
+                {saveSuccess && <p className="rounded-xl bg-emerald-50 px-4 py-2.5 text-xs text-emerald-700">{saveSuccess}</p>}
+
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Category</label>
-                  <select
-                    value={newProduct.category || ''}
-                    onChange={(e) =>
-                      setNewProduct({ ...newProduct, category: e.target.value })
-                    }
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  >
-                    <option value="">Select category</option>
-                    {categories
-                      .filter((c) => c !== 'All')
-                      .map((c) => (
-                        <option key={c} value={c}>
-                          {c}
-                        </option>
-                      ))}
+                  <label className="text-xs font-semibold text-slate-500">Όνομα *</label>
+                  <input type="text" value={newProduct.name || ''} onChange={(e) => setNewProduct({ ...newProduct, name: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500">Περιγραφή</label>
+                  <textarea value={newProduct.description || ''} onChange={(e) => setNewProduct({ ...newProduct, description: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 min-h-[80px] resize-y"
+                    placeholder="Περιγραφή πιάτου, υλικά..." />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-semibold text-slate-500">Κατηγορία *</label>
+                  <select value={newProduct.category || ''} onChange={(e) => setNewProduct({ ...newProduct, category: e.target.value })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900">
+                    <option value="">Επίλεξε κατηγορία</option>
+                    {categories.filter((c) => c !== 'All').map((c) => <option key={c} value={c}>{c}</option>)}
                   </select>
                 </div>
-                <div className="space-y-2 md:col-span-2">
-                  <label className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">
-                    Hero shot
-                  </label>
-                  <div
-                    className={cn(
-                      'relative overflow-hidden rounded-xl border-[3px] border-slate-900 bg-gradient-to-br from-amber-200/90 via-white to-red-100/80 p-4 shadow-[6px_6px_0_0_rgba(10,10,10,1)]',
-                      imageFieldBusy && 'pointer-events-none opacity-80',
-                    )}
-                  >
-                    <div
-                      className="pointer-events-none absolute inset-0 opacity-[0.12]"
-                      style={{
-                        backgroundImage:
-                          'radial-gradient(circle, #0a0a0a 1.2px, transparent 1.2px)',
-                        backgroundSize: '10px 10px',
-                      }}
-                      aria-hidden
-                    />
-                    <div className="relative flex flex-col gap-3 sm:flex-row sm:items-stretch">
-                      <button
-                        type="button"
-                        onClick={() => !imageFieldBusy && fileInputRef.current?.click()}
-                        className="group relative flex min-h-[120px] flex-1 flex-col items-center justify-center gap-2 rounded-lg border-2 border-dashed border-slate-900/40 bg-white/70 px-4 py-6 text-center transition hover:border-slate-900 hover:bg-white"
-                      >
-                        {imageFieldBusy ? (
-                          <Loader2 className="h-8 w-8 animate-spin text-slate-900" />
-                        ) : (
-                          <>
-                            <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-slate-900 bg-amber-300 text-slate-900 shadow-[3px_3px_0_0_#0a0a0a]">
-                              <ImageIcon className="h-6 w-6" strokeWidth={2.2} />
-                            </span>
-                            <span className="text-xs font-black uppercase tracking-wide text-slate-900">
-                              {editingProductId ? 'Drop / tap — uploads now' : 'Choose cover art'}
-                            </span>
-                            <span className="max-w-[220px] text-[11px] font-medium leading-snug text-slate-600">
-                              {editingProductId
-                                ? 'Η εικόνα ανεβαίνει αμέσως στο server (PUT).'
-                                : 'Θα σταλεί μαζί με το Save προϊόντος.'}
-                            </span>
-                          </>
-                        )}
-                      </button>
-                      <div className="relative flex w-full shrink-0 overflow-hidden rounded-lg border-2 border-slate-900 bg-slate-900 sm:w-36">
-                        <img
-                          src={newProduct.image || PLACEHOLDER_PRODUCT_IMAGE}
-                          alt=""
-                          className="h-full min-h-[120px] w-full object-cover"
-                        />
-                        <span className="absolute bottom-1 left-1 rounded bg-amber-400 px-1.5 py-0.5 text-[9px] font-black uppercase text-slate-900">
-                          Preview
-                        </span>
-                      </div>
+
+                {/* Image upload */}
+                <div className="space-y-2">
+                  <label className="text-xs font-semibold text-slate-500">Εικόνα {!editingProductId && '*'}</label>
+                  <div className={cn('relative flex gap-3 rounded-xl border-2 border-dashed border-slate-200 bg-slate-50 p-4 cursor-pointer hover:border-slate-400 transition-colors', imageFieldBusy && 'pointer-events-none opacity-70')}
+                    onClick={() => !imageFieldBusy && fileInputRef.current?.click()}>
+                    <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-slate-200 bg-white">
+                      {newProduct.image ? (
+                        <img src={newProduct.image} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <ImageIcon className="h-6 w-6 text-slate-300" />
+                      )}
                     </div>
-                    <input
-                      ref={fileInputRef}
-                      type="file"
-                      accept="image/*,.avif,image/avif"
-                      className="hidden"
-                      disabled={imageFieldBusy}
-                      onChange={(ev) => void handleModalImageSelected(ev)}
-                    />
-                    {editingProductId && Boolean(newProduct.serverImageUrl) && (
-                      <div className="relative mt-3 flex flex-wrap gap-2">
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          disabled={imageFieldBusy}
-                          className="h-8 border-2 border-red-600 bg-white text-[10px] font-black uppercase tracking-wide text-red-700 hover:bg-red-50"
-                          onClick={() => setShowDeleteImageConfirm(true)}
-                        >
-                          Delete image
-                        </Button>
-                      </div>
-                    )}
-                    {!editingProductId && newProductImageFile && (
-                      <p className="relative mt-2 text-[11px] font-semibold text-slate-700">
-                        Επιλέχθηκε: {newProductImageFile.name}
-                      </p>
-                    )}
+                    <div className="flex flex-col justify-center gap-1">
+                      {imageFieldBusy ? (
+                        <div className="flex items-center gap-2 text-sm text-slate-500"><Loader2 className="h-4 w-4 animate-spin" /> Uploading...</div>
+                      ) : (
+                        <>
+                          <p className="text-sm font-semibold text-slate-700">{editingProductId ? 'Αλλαγή εικόνας' : 'Επίλεξε εικόνα'}</p>
+                          <p className="text-xs text-slate-400">PNG / JPG / WEBP / AVIF · max 10MB</p>
+                          {newProductImageFile && <p className="text-xs text-emerald-600">{newProductImageFile.name}</p>}
+                        </>
+                      )}
+                    </div>
                   </div>
-                  {modalImageError && (
-                    <p className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-xs text-red-700">
-                      {modalImageError}
-                    </p>
+                  <input ref={fileInputRef} type="file" accept="image/*,.avif,image/avif" className="hidden" disabled={imageFieldBusy}
+                    onChange={(e) => void handleModalImageSelected(e)} />
+                  {editingProductId && newProduct.serverImageUrl && (
+                    <button type="button" disabled={imageFieldBusy} onClick={() => setShowDeleteImageConfirm(true)}
+                      className="text-xs font-semibold text-red-500 hover:underline">Αφαίρεση εικόνας</button>
                   )}
+                  {modalImageError && <p className="rounded-xl bg-red-50 px-3 py-2 text-xs text-red-700">{modalImageError}</p>}
                 </div>
-              </div>
-              <div className="grid gap-4 md:grid-cols-2">
-                <div className="space-y-1">
-                  <label className="text-xs font-medium">Price (€)</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="π.χ. 5,50"
-                    value={newProduct.price ?? ''}
-                    onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        price: e.target.value,
-                      })
-                    }
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  />
+
+                <div className="grid gap-4 sm:grid-cols-2">
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500">Τιμή (€) *</label>
+                    <input type="number" step="0.01" min="0" placeholder="0.00" value={newProduct.price ?? ''}
+                      onChange={(e) => setNewProduct({ ...newProduct, price: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                  </div>
+                  <div className="space-y-1">
+                    <label className="text-xs font-semibold text-slate-500">Points (XP)</label>
+                    <input type="number" step="1" min="0" placeholder="0" value={newProduct.pointsReward ?? ''}
+                      onChange={(e) => setNewProduct({ ...newProduct, pointsReward: e.target.value })}
+                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
+                  </div>
                 </div>
                 <div className="space-y-1">
-                  <label className="text-xs font-medium">Points</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    min="0"
-                    placeholder="π.χ. 10"
-                    value={newProduct.pointsReward ?? ''}
-                    onChange={(e) =>
-                      setNewProduct({
-                        ...newProduct,
-                        pointsReward: e.target.value,
-                      })
-                    }
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  />
+                  <label className="text-xs font-semibold text-slate-500">Αλλεργιογόνα (comma separated)</label>
+                  <input type="text" value={(newProduct.allergens || []).join(', ')}
+                    onChange={(e) => setNewProduct({ ...newProduct, allergens: e.target.value.split(',').map((v) => v.trim()).filter(Boolean) })}
+                    className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900"
+                    placeholder="Γάλα, Γλουτένη" />
                 </div>
-              </div>
-              <div className="space-y-1">
-                <label className="text-xs font-medium">
-                  Allergens (comma separated)
-                </label>
-                <input
-                  type="text"
-                  value={(newProduct.allergens || []).join(', ')}
-                  onChange={(e) =>
-                    setNewProduct({
-                      ...newProduct,
-                      allergens: e.target.value
-                        .split(',')
-                        .map((v) => v.trim())
-                        .filter(Boolean),
-                    })
-                  }
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
-                  placeholder="Γάλα, Γλουτένη"
-                />
-              </div>
-              <div className="mt-4 flex flex-col-reverse sm:flex-row sm:justify-end gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="w-full sm:w-auto"
-                  onClick={() => {
-                    setIsAddOpen(false);
-                    resetForm();
-                  }}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  size="sm"
-                  onClick={handleAddProduct}
-                  disabled={isSaving}
-                  style={{ backgroundColor: ACCENT }}
-                  className="text-white w-full sm:w-auto"
-                >
-                  {isSaving ? 'Saving...' : editingProductId ? 'Save changes' : 'Save product'}
-                </Button>
+
+                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
+                  <button type="button" onClick={() => { setIsAddOpen(false); resetForm(); }}
+                    className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
+                    Ακύρωση
+                  </button>
+                  <button type="button" onClick={() => void handleAddProduct()} disabled={isSaving}
+                    className="inline-flex items-center justify-center gap-2 rounded-xl bg-slate-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+                    {isSaving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    {isSaving ? 'Αποθήκευση...' : editingProductId ? 'Αποθήκευση αλλαγών' : 'Δημιουργία προϊόντος'}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
-        </div>
-        {showDeleteImageConfirm && editingProductId && (
-          <div
-            className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4"
-            role="dialog"
-            aria-modal="true"
-            aria-labelledby="delete-image-title"
-          >
-            <div className="w-full max-w-sm rounded-xl border-[3px] border-slate-900 bg-white p-5 shadow-[6px_6px_0_0_#0a0a0a]">
-              <p id="delete-image-title" className="text-sm font-black uppercase tracking-wide text-slate-900">
-                Remove hero shot?
-              </p>
-              <p className="mt-2 text-xs leading-relaxed text-slate-600">
-                Η εικόνα θα αφαιρεθεί από το προϊόν στο server (DELETE).
-              </p>
-              <div className="mt-4 flex justify-end gap-2">
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  disabled={imageFieldBusy}
-                  onClick={() => setShowDeleteImageConfirm(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  type="button"
-                  variant="destructive"
-                  size="sm"
-                  disabled={imageFieldBusy}
-                  onClick={() => void handleConfirmDeleteProductImage()}
-                  className="gap-2"
-                >
-                  {imageFieldBusy ? (
-                    <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
-                  ) : null}
-                  Delete
-                </Button>
+
+          {/* Delete image confirm */}
+          {showDeleteImageConfirm && editingProductId && (
+            <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/55 px-4">
+              <div className="w-full max-w-sm rounded-2xl border border-slate-200 bg-white p-6 shadow-xl">
+                <p className="text-sm font-bold text-slate-900">Αφαίρεση εικόνας;</p>
+                <p className="mt-2 text-xs text-slate-500">Η εικόνα θα αφαιρεθεί από τον server.</p>
+                <div className="mt-5 flex justify-end gap-2">
+                  <Button type="button" variant="outline" size="sm" disabled={imageFieldBusy} onClick={() => setShowDeleteImageConfirm(false)}>Ακύρωση</Button>
+                  <Button type="button" variant="destructive" size="sm" disabled={imageFieldBusy} onClick={() => void handleConfirmDeleteProductImage()} className="gap-2">
+                    {imageFieldBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : null} Αφαίρεση
+                  </Button>
+                </div>
               </div>
             </div>
-          </div>
-        )}
+          )}
         </>
       )}
 
-      {/* Manage categories modal */}
+      {/* Manage categories modal (kept for quick-add from primary action) */}
       {isManageOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-          <div className="w-full max-w-lg rounded-2xl bg-white p-6 shadow-lg">
+          <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
             <div className="mb-4 flex items-center justify-between">
-              <h2 className="text-lg font-semibold">Manage categories</h2>
-              <button className="text-sm" onClick={() => setIsManageOpen(false)}>
-                Close
+              <h2 className="text-base font-bold">Νέα Κατηγορία</h2>
+              <button type="button" className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100" onClick={() => setIsManageOpen(false)}><X className="h-4 w-4" /></button>
+            </div>
+            <div className="flex gap-2">
+              <input type="text" value={newCategoryName} onChange={(e) => setNewCategoryName(e.target.value)}
+                onKeyDown={(e) => { if (e.key === 'Enter') { handleAddCategory(); setIsManageOpen(false); } }}
+                className="flex-1 rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900" placeholder="Όνομα κατηγορίας" />
+              <button type="button" onClick={() => { handleAddCategory(); setIsManageOpen(false); }}
+                className="rounded-xl bg-slate-900 px-4 text-sm font-semibold text-white hover:bg-slate-800">
+                Προσθήκη
               </button>
-            </div>
-            <div className="max-h-64 space-y-2 overflow-y-auto pb-2">
-              {categories.map((cat) => (
-                <div
-                  key={cat}
-                  className="flex items-center justify-between rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm"
-                >
-                  <span className="font-medium">{cat === 'All' ? 'All Dishes' : cat}</span>
-                  {cat === 'All' ? (
-                    <span className="text-xs text-slate-400">default</span>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="h-7 px-2 text-xs"
-                      onClick={() => deleteCategory(cat)}
-                    >
-                      Delete
-                    </Button>
-                  )}
-                </div>
-              ))}
-            </div>
-            <div className="mt-4 space-y-2">
-              <label className="text-xs font-medium">New category</label>
-              <div className="flex gap-2">
-                <input
-                  type="text"
-                  value={newCategoryName}
-                  onChange={(e) => setNewCategoryName(e.target.value)}
-                  onKeyDown={(e) => e.key === 'Enter' && handleAddCategory()}
-                  className="flex-1 rounded-md border border-slate-300 px-3 py-2 text-sm"
-                  placeholder="Enter category name"
-                />
-                <Button
-                  size="sm"
-                  onClick={handleAddCategory}
-                  style={{ backgroundColor: ACCENT }}
-                  className="text-white"
-                >
-                  Add
-                </Button>
-              </div>
             </div>
           </div>
         </div>

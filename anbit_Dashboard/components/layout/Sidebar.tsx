@@ -17,6 +17,7 @@ import {
   ChevronRight,
   Menu,
   MoreVertical,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/AuthContext';
@@ -30,7 +31,12 @@ const manageTableSubItems = [
   { to: '/table-history', icon: History, label: 'Table History' },
 ];
 
-const Sidebar: React.FC = () => {
+interface SidebarProps {
+  mobileOpen?: boolean;
+  onMobileClose?: () => void;
+}
+
+const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileClose }) => {
   const location = useLocation();
   const isManageTableActive = manageTableSubItems.some((item) =>
     location.pathname.startsWith(item.to),
@@ -51,7 +57,12 @@ const Sidebar: React.FC = () => {
     if (isManageTableActive) setManageTableOpen(true);
   }, [isManageTableActive]);
 
-  // When collapsing, close submenu; when opening Manage Table while collapsed, expand sidebar
+  // Close mobile nav on route change
+  React.useEffect(() => {
+    onMobileClose?.();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [location.pathname]);
+
   const handleManageTableClick = () => {
     if (collapsed) {
       setCollapsed(false);
@@ -61,34 +72,58 @@ const Sidebar: React.FC = () => {
     }
   };
 
+  // On mobile the sidebar is always "expanded" (never icon-only)
+  const effectiveCollapsed = collapsed;
+
   return (
     <aside
       className={cn(
-        'flex h-screen flex-col shrink-0 font-playpen-sans text-white transition-[width] duration-200',
-        'font-extrabold',
-        collapsed ? 'w-20' : 'w-56',
+        'flex h-screen flex-col shrink-0 font-playpen-sans text-white font-extrabold',
+        // Mobile: fixed overlay; Desktop: static in flow
+        'fixed inset-y-0 left-0 z-40 lg:relative lg:inset-auto lg:z-auto',
+        'transition-transform duration-200 lg:transition-[width] lg:duration-200',
+        // Mobile translate
+        mobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0',
+        // Width: always full on mobile, collapsed/expanded on desktop
+        effectiveCollapsed ? 'w-64 lg:w-20' : 'w-64 lg:w-56',
       )}
       style={{ backgroundColor: sidebarBg }}
     >
-      {/* Logo + burger – ελαχιστοποίηση: μόνο εικονίδια */}
+      {/* Logo + burger */}
       <div
         className={cn(
           'flex h-16 items-center border-b border-white/15 transition-all',
-          collapsed ? 'justify-center px-0' : 'justify-between gap-2 px-4',
+          effectiveCollapsed ? 'justify-between gap-2 px-4 lg:justify-center lg:px-0' : 'justify-between gap-2 px-4',
         )}
       >
-        {!collapsed && (
-          <span className="font-anbit-brand text-3xl font-extrabold text-white shrink-0" style={{ color: '#FFFFFF' }}>
-            Anbit
-          </span>
-        )}
+        {/* Logo: always visible on mobile, hidden when desktop-collapsed */}
+        <span
+          className={cn(
+            'font-anbit-brand text-3xl font-extrabold text-white shrink-0',
+            effectiveCollapsed && 'lg:hidden',
+          )}
+        >
+          Anbit
+        </span>
+
+        {/* Desktop collapse toggle */}
         <button
           type="button"
           onClick={() => setCollapsed((c) => !c)}
-          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white/95 hover:bg-white/15 transition-colors"
-          aria-label={collapsed ? 'Άνοιγμα menu' : 'Σύμπτυξη menu'}
+          className="hidden lg:flex h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white/95 hover:bg-white/15 transition-colors"
+          aria-label={effectiveCollapsed ? 'Άνοιγμα menu' : 'Σύμπτυξη menu'}
         >
           <Menu className="h-6 w-6" />
+        </button>
+
+        {/* Mobile close button */}
+        <button
+          type="button"
+          onClick={onMobileClose}
+          className="flex lg:hidden h-10 w-10 shrink-0 items-center justify-center rounded-lg text-white/95 hover:bg-white/15 transition-colors"
+          aria-label="Κλείσιμο menu"
+        >
+          <X className="h-6 w-6" />
         </button>
       </div>
 
@@ -97,19 +132,18 @@ const Sidebar: React.FC = () => {
         <ul
           className={cn(
             'space-y-0.5',
-            collapsed ? 'flex flex-col items-center px-2' : 'px-3',
+            effectiveCollapsed ? 'hidden lg:flex lg:flex-col lg:items-center lg:px-2' : 'px-3',
           )}
         >
           {isAdmin ? (
             <>
-              {/* Admin: Global Overview */}
               <li className="w-full">
                 <NavLink
                   to="/"
                   className={({ isActive }) =>
                     cn(
                       'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
+                      'gap-3 px-3.5 py-3',
                       isActive
                         ? 'bg-white text-[#0C0C0C]'
                         : 'text-white/95 hover:bg-white/10',
@@ -117,187 +151,135 @@ const Sidebar: React.FC = () => {
                   }
                 >
                   <LayoutDashboard className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Global Overview</span>
-                  )}
+                  <span className="min-w-0 truncate">Global Overview</span>
                 </NavLink>
               </li>
 
-              {/* Admin: Stores Management */}
               <li className="w-full">
                 <NavLink
                   to="/admin/stores"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
-                      isActive
-                        ? 'bg-white text-[#0C0C0C]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3.5 py-3',
+                      isActive ? 'bg-white text-[#0C0C0C]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Table className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Stores Management</span>
-                  )}
+                  <span className="min-w-0 truncate">Stores Management</span>
                 </NavLink>
               </li>
 
-              {/* Admin: Merchant Users */}
               <li className="w-full">
                 <NavLink
                   to="/admin/merchant-users"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                      isActive
-                        ? 'bg-white text-[#0C0C0C]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0C0C0C]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Users className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Merchant Users</span>
-                  )}
+                  <span className="min-w-0 truncate">Merchant Users</span>
                 </NavLink>
               </li>
 
-              {/* Admin: Customers */}
               <li className="w-full">
                 <NavLink
                   to="/admin/customers"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                      isActive
-                        ? 'bg-white text-[#0C0C0C]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0C0C0C]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Users className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Users & XP</span>
-                  )}
+                  <span className="min-w-0 truncate">Users & XP</span>
                 </NavLink>
               </li>
 
-              {/* Admin: System Settings */}
               <li className="w-full">
                 <NavLink
                   to="/admin/anbit-management"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                      isActive
-                        ? 'bg-white text-[#0C0C0C]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0C0C0C]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Sparkles className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Anbit Management</span>
-                  )}
+                  <span className="min-w-0 truncate">Anbit Management</span>
                 </NavLink>
               </li>
 
-              {/* Admin: System Settings */}
               <li className="w-full">
                 <NavLink
                   to="/admin/settings"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                      isActive
-                        ? 'bg-white text-[#0C0C0C]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0C0C0C]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Settings className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">System Settings</span>
-                  )}
+                  <span className="min-w-0 truncate">System Settings</span>
                 </NavLink>
               </li>
             </>
           ) : (
             <>
-              {/* Merchant: Dashboard */}
               <li className="w-full">
                 <NavLink
                   to="/"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                      isActive
-                        ? 'bg-white text-[#0a0a0a]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <LayoutDashboard className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Dashboard</span>
-                  )}
+                  <span className="min-w-0 truncate">Dashboard</span>
                 </NavLink>
               </li>
 
-              {/* Merchant: Orders Line */}
               <li className="w-full">
                 <NavLink
                   to="/orders"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                      isActive
-                      ? 'bg-white text-[#0a0a0a]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Receipt className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Orders Line</span>
-                  )}
+                  <span className="min-w-0 truncate">Orders Line</span>
                 </NavLink>
               </li>
 
-              {/* Merchant: Manage Table (expandable with sub-items) */}
               <li className="w-full">
                 <button
                   type="button"
                   onClick={handleManageTableClick}
                   className={cn(
-                    'flex w-full items-center rounded-lg text-sm font-extrabold transition-colors',
-                    collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
-                    isManageTableActive
-                      ? 'bg-white/15 text-white'
-                      : 'text-white/95 hover:bg-white/10',
+                    'flex w-full items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3.5 py-3',
+                    isManageTableActive ? 'bg-white/15 text-white' : 'text-white/95 hover:bg-white/10',
                   )}
                 >
                   <Table className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <>
-                      <span className="min-w-0 truncate">Manage Table</span>
-                      {manageTableOpen ? (
-                        <ChevronDown className="ml-auto h-4 w-4 shrink-0" />
-                      ) : (
-                        <ChevronRight className="ml-auto h-4 w-4 shrink-0" />
-                      )}
-                    </>
+                  <span className="min-w-0 truncate">Manage Table</span>
+                  {manageTableOpen ? (
+                    <ChevronDown className="ml-auto h-4 w-4 shrink-0" />
+                  ) : (
+                    <ChevronRight className="ml-auto h-4 w-4 shrink-0" />
                   )}
                 </button>
-                {!collapsed && manageTableOpen && (
+                {manageTableOpen && (
                   <ul className="mt-0.5 space-y-0.5 pl-4">
                     {manageTableSubItems.map((item) => (
                       <li key={item.to}>
@@ -306,9 +288,7 @@ const Sidebar: React.FC = () => {
                           className={({ isActive }) =>
                             cn(
                               'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-extrabold transition-colors',
-                              isActive
-                                ? 'bg-white text-[#0a0a0a]'
-                                : 'text-white/90 hover:bg-white/10',
+                              isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/90 hover:bg-white/10',
                             )
                           }
                         >
@@ -321,117 +301,148 @@ const Sidebar: React.FC = () => {
                 )}
               </li>
 
-              {/* Merchant: Manage Dish */}
               <li className="w-full">
                 <NavLink
                   to="/products"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
-                      isActive
-                        ? 'bg-white text-[#0a0a0a]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3.5 py-3',
+                      isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <UtensilsCrossed className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Manage Dish</span>
-                  )}
+                  <span className="min-w-0 truncate">Manage Dish</span>
                 </NavLink>
               </li>
 
-              {/* Merchant: Store Banners */}
               <li className="w-full">
                 <NavLink
                   to="/merchant/banners"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
-                      isActive
-                        ? 'bg-white text-[#0a0a0a]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3.5 py-3',
+                      isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Images className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Store Banners</span>
-                  )}
+                  <span className="min-w-0 truncate">Offers</span>
                 </NavLink>
               </li>
 
-              {/* Merchant: Customers */}
               <li className="w-full">
                 <NavLink
                   to="/customers"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-3' : 'gap-3 px-3.5 py-3',
-                      isActive
-                        ? 'bg-white text-[#0a0a0a]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3.5 py-3',
+                      isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <Users className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Customers</span>
-                  )}
+                  <span className="min-w-0 truncate">Customers</span>
                 </NavLink>
               </li>
 
-              {/* Merchant: Help Center */}
               <li className="w-full">
                 <NavLink
                   to="/help"
                   className={({ isActive }) =>
                     cn(
-                      'flex items-center rounded-lg text-sm font-extrabold transition-colors',
-                      collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                      isActive
-                        ? 'bg-white text-[#0a0a0a]'
-                        : 'text-white/95 hover:bg-white/10',
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
                     )
                   }
                 >
                   <HelpCircle className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Help Center</span>
-                  )}
+                  <span className="min-w-0 truncate">Help Center</span>
                 </NavLink>
               </li>
 
-              {/* Merchant: Settings */}
               <li className="w-full">
-                <button
-                  type="button"
-                  className={cn(
-                    'flex w-full items-center rounded-lg text-sm font-extrabold text-white/95 transition-colors hover:bg-white/10',
-                    collapsed ? 'justify-center p-2.5' : 'gap-3 px-3 py-2.5',
-                  )}
+                <NavLink
+                  to="/settings"
+                  className={({ isActive }) =>
+                    cn(
+                      'flex items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3 py-2.5',
+                      isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
+                    )
+                  }
                 >
                   <Settings className="h-5 w-5 shrink-0" />
-                  {!collapsed && (
-                    <span className="min-w-0 truncate">Settings</span>
-                  )}
-                </button>
+                  <span className="min-w-0 truncate">Settings</span>
+                </NavLink>
               </li>
             </>
           )}
         </ul>
+
+        {/* Collapsed icon-only nav (desktop only) */}
+        {effectiveCollapsed && (
+          <ul className="hidden lg:flex flex-col items-center space-y-0.5 px-2">
+            {isAdmin ? (
+              <>
+                {[
+                  { to: '/', icon: LayoutDashboard },
+                  { to: '/admin/stores', icon: Table },
+                  { to: '/admin/merchant-users', icon: Users },
+                  { to: '/admin/customers', icon: Users },
+                  { to: '/admin/anbit-management', icon: Sparkles },
+                  { to: '/admin/settings', icon: Settings },
+                ].map(({ to, icon: Icon }) => (
+                  <li key={to} className="w-full">
+                    <NavLink
+                      to={to}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex w-full justify-center rounded-lg p-3 transition-colors',
+                          isActive ? 'bg-white text-[#0C0C0C]' : 'text-white/95 hover:bg-white/10',
+                        )
+                      }
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                    </NavLink>
+                  </li>
+                ))}
+              </>
+            ) : (
+              <>
+                {[
+                  { to: '/', icon: LayoutDashboard },
+                  { to: '/orders', icon: Receipt },
+                  { to: '/products', icon: UtensilsCrossed },
+                  { to: '/merchant/banners', icon: Images },
+                  { to: '/customers', icon: Users },
+                  { to: '/help', icon: HelpCircle },
+                  { to: '/settings', icon: Settings },
+                ].map(({ to, icon: Icon }) => (
+                  <li key={to} className="w-full">
+                    <NavLink
+                      to={to}
+                      className={({ isActive }) =>
+                        cn(
+                          'flex w-full justify-center rounded-lg p-3 transition-colors',
+                          isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/95 hover:bg-white/10',
+                        )
+                      }
+                    >
+                      <Icon className="h-5 w-5 shrink-0" />
+                    </NavLink>
+                  </li>
+                ))}
+              </>
+            )}
+          </ul>
+        )}
       </nav>
 
-      {/* Upgrade Plan – μόνο για merchants, κρύβεται για admins και όταν είναι collapsed */}
-      {!collapsed && !isAdmin && (
+      {/* Upgrade Plan – merchant only, not collapsed */}
+      {!effectiveCollapsed && !isAdmin && (
         <div className="shrink-0 px-3 pb-3">
           <div className="rounded-xl border border-white/20 bg-white/10 p-4 shadow-sm">
-            <h3 className="text-sm font-extrabold text-white">
-              Ready for the Next Level?
-            </h3>
+            <h3 className="text-sm font-extrabold text-white">Ready for the Next Level?</h3>
             <p className="mt-1.5 text-xs leading-snug text-white/85">
               Upgrade to access powerful tools that simplify operations.
             </p>
@@ -446,21 +457,17 @@ const Sidebar: React.FC = () => {
         </div>
       )}
 
-      {/* Admin profile – κάτω κάτω όπως στην εικόνα */}
+      {/* Profile section — desktop only */}
       <div
         className={cn(
-          'shrink-0 border-t border-white/15',
-          collapsed ? 'flex justify-center p-2' : 'p-3',
+          'hidden lg:block shrink-0 border-t border-white/15',
+          effectiveCollapsed ? 'lg:flex lg:justify-center lg:p-2' : 'lg:p-3',
         )}
       >
-        {collapsed ? (
+        {effectiveCollapsed ? (
           <div className="relative flex flex-col items-center gap-1">
             <div className="h-9 w-9 overflow-hidden rounded-full border-2 border-white/30 bg-white/10">
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rex"
-                alt=""
-                className="h-full w-full object-cover"
-              />
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rex" alt="" className="h-full w-full object-cover" />
             </div>
             <button
               type="button"
@@ -475,11 +482,7 @@ const Sidebar: React.FC = () => {
                 <button
                   type="button"
                   className="flex w-full items-center px-3 py-1.5 text-left text-xs hover:bg-slate-100"
-                  onClick={() => {
-                    setProfileMenuOpen(false);
-                    logout();
-                    navigate('/auth', { replace: true });
-                  }}
+                  onClick={() => { setProfileMenuOpen(false); logout(); navigate('/auth', { replace: true }); }}
                 >
                   Logout
                 </button>
@@ -489,22 +492,12 @@ const Sidebar: React.FC = () => {
         ) : (
           <div className="relative flex items-center gap-3">
             <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-white/30 bg-white/10">
-              <img
-                src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rex"
-                alt=""
-                className="h-full w-full object-cover"
-              />
+              <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rex" alt="" className="h-full w-full object-cover" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="truncate text-sm font-extrabold text-white">
-                {user?.username ?? 'User'}
-              </p>
+              <p className="truncate text-sm font-extrabold text-white">{user?.username ?? 'User'}</p>
               <p className="truncate text-xs text-white/80">
-                {isAdmin
-                  ? 'Platform Administrator'
-                  : isMerchant
-                  ? 'Store Manager'
-                  : 'Partner'}
+                {isAdmin ? 'Platform Administrator' : isMerchant ? 'Store Manager' : 'Partner'}
               </p>
             </div>
             <button
@@ -520,11 +513,7 @@ const Sidebar: React.FC = () => {
                 <button
                   type="button"
                   className="flex w-full items-center px-3 py-1.5 text-left text-xs hover:bg-slate-100"
-                  onClick={() => {
-                    setProfileMenuOpen(false);
-                    logout();
-                    navigate('/auth', { replace: true });
-                  }}
+                  onClick={() => { setProfileMenuOpen(false); logout(); navigate('/auth', { replace: true }); }}
                 >
                   Logout
                 </button>
@@ -532,6 +521,28 @@ const Sidebar: React.FC = () => {
             )}
           </div>
         )}
+      </div>
+
+      {/* Mobile profile section (always expanded style) */}
+      <div className="lg:hidden shrink-0 border-t border-white/15 p-3">
+        <div className="relative flex items-center gap-3">
+          <div className="h-10 w-10 shrink-0 overflow-hidden rounded-full border-2 border-white/30 bg-white/10">
+            <img src="https://api.dicebear.com/7.x/avataaars/svg?seed=Rex" alt="" className="h-full w-full object-cover" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="truncate text-sm font-extrabold text-white">{user?.username ?? 'User'}</p>
+            <p className="truncate text-xs text-white/80">
+              {isAdmin ? 'Platform Administrator' : isMerchant ? 'Store Manager' : 'Partner'}
+            </p>
+          </div>
+          <button
+            type="button"
+            className="shrink-0 rounded p-1.5 text-white/80 hover:bg-white/10"
+            onClick={() => { logout(); navigate('/auth', { replace: true }); }}
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
       </div>
     </aside>
   );

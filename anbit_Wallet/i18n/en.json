@@ -118,6 +118,7 @@
   "favoriteStoresAddSome": "You have no saved favorites yet. Tap the heart on a store to add it.",
   "favoriteStoresNoOffers": "No offers from your favorite stores with the current filters.",
   "claimOffer": "Claim Offer",
+  "claimOfferClaimed": "Claimed ✅",
   "viewRules": "View Rules",
   "offerDetailRewardLine": "Reward {xp} XP when you complete this offer.",
   "offerDetailProgress": "Progress {current} / {total}",

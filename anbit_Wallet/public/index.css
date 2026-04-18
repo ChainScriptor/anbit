@@ -53,3 +53,12 @@
 .anbit-phone-input__field::placeholder {
   color: rgba(255, 255, 255, 0.55);
 }
+
+/* Login / compact mobile: χωράει καλύτερα σε μικρά viewport χωρίς scroll */
+@media (max-width: 639px) {
+  .anbit-phone-input--compact-login {
+    height: 48px;
+    gap: 8px;
+    padding: 0 10px;
+  }
+}

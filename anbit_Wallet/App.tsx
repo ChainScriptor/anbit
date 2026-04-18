@@ -347,7 +347,9 @@ const App: React.FC = () => {
           />
         )}
         <main className={hideChrome
-          ? 'flex-1 min-h-screen w-full p-0'
+          ? isLoginRoute
+            ? 'flex min-h-0 flex-1 overflow-hidden p-0'
+            : 'flex-1 min-h-screen w-full p-0'
           : isStoreProfileRoute
             ? 'flex-1 min-h-screen w-full p-0'
             : `flex-1 w-full mx-auto pt-16 pb-8 px-0 lg:pt-20 lg:px-0 ${ANBIT_APP_MAX_WIDTH_CLASS}`}

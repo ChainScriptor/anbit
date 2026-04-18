@@ -29,6 +29,26 @@ function buildPricingFromReward(rewardXP: number): { discounted: number; old: nu
   return { discounted, old };
 }
 
+const CLAIMED_QUEST_IDS_KEY = 'anbit_claimed_quest_ids';
+
+function readClaimedQuestIds(): Set<string> {
+  try {
+    const raw = localStorage.getItem(CLAIMED_QUEST_IDS_KEY);
+    if (!raw) return new Set();
+    const parsed = JSON.parse(raw) as unknown;
+    if (!Array.isArray(parsed)) return new Set();
+    return new Set(parsed.filter((x): x is string => typeof x === 'string'));
+  } catch {
+    return new Set();
+  }
+}
+
+function persistClaimedQuestId(id: string) {
+  const next = readClaimedQuestIds();
+  next.add(id);
+  localStorage.setItem(CLAIMED_QUEST_IDS_KEY, JSON.stringify([...next]));
+}
+
 function QuestOfferRulesModal({
   quest,
   partner,
@@ -151,6 +171,12 @@ function BrandedOfferCard({
   const { t } = useLanguage();
   const navigate = useNavigate();
   const [rulesOpen, setRulesOpen] = useState(false);
+  const [offerClaimed, setOfferClaimed] = useState(() => readClaimedQuestIds().has(quest.id));
+
+  useEffect(() => {
+    setOfferClaimed(readClaimedQuestIds().has(quest.id));
+  }, [quest.id]);
+
   const partnerName = partner?.name ?? quest.storeName ?? 'Partner Store';
   const partnerImage = partner?.image || quest.storeImage || DEAL_CARD_IMAGE_FALLBACK;
   const offerImage = quest.bannerImage || quest.storeImage || partner?.image || DEAL_CARD_IMAGE_FALLBACK;
@@ -240,9 +266,20 @@ function BrandedOfferCard({
         <div className="flex gap-2 pt-1">
           <button
             type="button"
-            className="flex-1 rounded-lg bg-anbit-brand py-2.5 text-sm font-semibold text-anbit-brand-foreground shadow-md transition-colors hover:bg-anbit-brand-hover"
+            disabled={offerClaimed}
+            onClick={() => {
+              if (offerClaimed) return;
+              persistClaimedQuestId(quest.id);
+              setOfferClaimed(true);
+            }}
+            className={cn(
+              'flex-1 rounded-lg py-2.5 text-sm font-semibold shadow-md transition-colors',
+              offerClaimed
+                ? 'cursor-default border border-[color:var(--anbit-border)] bg-[color:var(--anbit-input)] text-anbit-muted'
+                : 'bg-anbit-brand text-anbit-brand-foreground hover:bg-anbit-brand-hover',
+            )}
           >
-            {t('claimOffer')}
+            {offerClaimed ? t('claimOfferClaimed') : t('claimOffer')}
           </button>
           <button
             type="button"

@@ -25,7 +25,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
   const formatCurrency = (value: number) => `$${value.toFixed(2)}`;
 
   return (
-    <div className="grid gap-8 md:grid-cols-[minmax(0,2fr)_minmax(0,1.1fr)]">
+    <div className="grid gap-6 md:gap-8 grid-cols-1 md:grid-cols-[minmax(0,2fr)_minmax(0,1.1fr)]">
       {/* Left: stacked metrics card with three stats */}
       <Card className="border-slate-200 bg-slate-50">
         <CardHeader className="flex flex-row items-center justify-between p-6 pb-4 md:p-8 md:pb-6">
@@ -49,7 +49,7 @@ const MetricsCards: React.FC<MetricsCardsProps> = ({
           </div>
         </CardHeader>
         <CardContent className="px-6 pt-0 pb-6 md:px-8 md:pb-8">
-          <div className="grid gap-6 md:grid-cols-3">
+          <div className="grid gap-4 grid-cols-1 sm:grid-cols-3">
             <Card className="border-slate-100 bg-white p-5">
               <CardHeader className="pb-4">
                 <CardTitle className="text-sm text-slate-400">

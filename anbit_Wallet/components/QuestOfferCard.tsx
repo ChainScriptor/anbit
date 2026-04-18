@@ -68,7 +68,8 @@ export const QuestOfferCard: React.FC<QuestOfferCardProps> = ({
 
   const closeDetail = useCallback(() => setDetailOpen(false), []);
 
-  const showXpBadge = !networkStoreCard || (quest.reward ?? 0) > 0;
+  /** Στο /network δεν εμφανίζουμε XP στις κάρτες καταστημάτων. */
+  const showXpBadge = !networkStoreCard;
   const openAria = networkStoreCard ? `${quest.title} · ${t('profile')}` : t('offerDetailOpenAria');
 
   return (
