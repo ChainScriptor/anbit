@@ -34,6 +34,14 @@ export interface ProductStat {
   value: number; // 0-100
 }
 
+/** Option groups όπως επιστρέφονται από το API προϊόντος (camelCase). */
+export interface ProductOptionGroupFromApi {
+  id: string;
+  name: string;
+  type: 'Single' | 'Multiple';
+  options: { id: string; name: string; price: number }[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -47,6 +55,8 @@ export interface Product {
   allergens?: string[];
   stats?: ProductStat[];
   description?: string;
+  /** Επιλογές προϊόντος από το backend (για επεξεργασία / PUT). */
+  optionGroups?: ProductOptionGroupFromApi[];
 }
 
 export interface Quest {

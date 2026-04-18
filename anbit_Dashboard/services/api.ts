@@ -1,5 +1,4 @@
 import axios, { type AxiosInstance, isAxiosError } from 'axios';
-import type { Product } from '../types';
 
 // Χρησιμοποιούμε Vite proxy: /api → http://localhost:5057
 const API_BASE_URL = '/api/v1';
@@ -35,6 +34,37 @@ apiClient.interceptors.response.use(
   },
 );
 
+export type ApiProductOptionSelectionType = 'Single' | 'Multiple';
+
+export interface ApiProductOptionRow {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface ApiProductOptionGroupRow {
+  id: string;
+  name: string;
+  type: ApiProductOptionSelectionType;
+  options: ApiProductOptionRow[];
+}
+
+export interface ProductOptionGroupApiPayload {
+  name: string;
+  type: ApiProductOptionSelectionType;
+  options: { name: string; price: number }[];
+}
+
+export interface CreateProductPayload {
+  name: string;
+  description: string;
+  category: string;
+  price: number;
+  xp: number;
+  allergens?: string[] | null;
+  optionGroupsJson?: ProductOptionGroupApiPayload[] | null;
+}
+
 export interface ApiProduct {
   id: string;
   name: string;
@@ -44,6 +74,7 @@ export interface ApiProduct {
   merchantId: string;
   category: string;
   imageUrl?: string | null;
+  optionGroups?: ApiProductOptionGroupRow[];
 }
 
 export interface ApiOrder {
@@ -259,10 +290,10 @@ async function collectMerchantIdsFromPagedProducts(): Promise<Set<string>> {
   for (let page = 0; page < maxPages; page += 1) {
     const offset = page * pageSize;
     try {
-      const { data } = await apiClient.get<ApiProduct[]>('/Products', {
+      const { data } = await apiClient.get<unknown[]>('/Products', {
         params: { limit: pageSize, offset },
       });
-      const batch = Array.isArray(data) ? data : [];
+      const batch = Array.isArray(data) ? data.map(normalizeApiProduct) : [];
       for (const p of batch) {
         const mid = p.merchantId ? String(p.merchantId) : '';
         if (isUsableMerchantId(mid)) idSet.add(mid);
@@ -298,12 +329,102 @@ async function collectMerchantIdsFromPagedOrders(): Promise<Set<string>> {
   return idSet;
 }
 
+function readApiNumber(value: unknown, fallback = 0): number {
+  if (typeof value === 'number' && Number.isFinite(value)) return value;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : fallback;
+}
+
+function newLocalApiId(prefix: string): string {
+  try {
+    const c = globalThis.crypto?.randomUUID?.();
+    if (c) return `${prefix}-${c}`;
+  } catch {
+    /* ignore */
+  }
+  return `${prefix}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+}
+
+function normalizeApiProductOptionRow(raw: unknown): ApiProductOptionRow | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const id = String(r.id ?? r.Id ?? '').trim() || newLocalApiId('opt');
+  const name = String(r.name ?? r.Name ?? '').trim();
+  if (!name) return null;
+  const price = readApiNumber(r.price ?? r.Price, 0);
+  return { id, name, price };
+}
+
+function normalizeApiProductOptionGroupRow(raw: unknown): ApiProductOptionGroupRow | null {
+  if (!raw || typeof raw !== 'object') return null;
+  const r = raw as Record<string, unknown>;
+  const id = String(r.id ?? r.Id ?? '').trim() || newLocalApiId('grp');
+  const name = String(r.name ?? r.Name ?? '').trim();
+  if (!name) return null;
+  const typeRaw = String(r.type ?? r.Type ?? 'Single');
+  const type: ApiProductOptionSelectionType = typeRaw === 'Multiple' ? 'Multiple' : 'Single';
+  const optsRaw = r.options ?? r.Options;
+  const optsArr = Array.isArray(optsRaw) ? optsRaw : [];
+  const options = optsArr
+    .map((o) => normalizeApiProductOptionRow(o))
+    .filter((x): x is ApiProductOptionRow => x !== null);
+  if (options.length === 0) return null;
+  return { id, name, type, options };
+}
+
+function normalizeApiProduct(raw: unknown): ApiProduct {
+  if (!raw || typeof raw !== 'object') {
+    return {
+      id: '',
+      name: '',
+      description: '',
+      price: 0,
+      xp: 0,
+      merchantId: '',
+      category: '',
+      imageUrl: null,
+    };
+  }
+  const r = raw as Record<string, unknown>;
+  const id = String(r.id ?? r.Id ?? '');
+  const name = String(r.name ?? r.Name ?? '');
+  const description = String(r.description ?? r.Description ?? '');
+  const price = readApiNumber(r.price ?? r.Price, 0);
+  const xp = Math.trunc(readApiNumber(r.xp ?? r.Xp, 0));
+  const merchantId = String(r.merchantId ?? r.MerchantId ?? '');
+  const category = String(r.category ?? r.Category ?? '');
+  const imageUrlRaw = r.imageUrl ?? r.ImageUrl;
+  const imageUrl =
+    typeof imageUrlRaw === 'string' && imageUrlRaw.trim() ? imageUrlRaw.trim() : null;
+
+  const ogRaw = r.optionGroups ?? r.OptionGroups;
+  let optionGroups: ApiProductOptionGroupRow[] | undefined;
+  if (Array.isArray(ogRaw)) {
+    const parsed = ogRaw
+      .map((g) => normalizeApiProductOptionGroupRow(g))
+      .filter((x): x is ApiProductOptionGroupRow => x !== null);
+    if (parsed.length > 0) optionGroups = parsed;
+  }
+
+  return {
+    id,
+    name,
+    description,
+    price,
+    xp,
+    merchantId,
+    category,
+    imageUrl,
+    optionGroups,
+  };
+}
+
 export const api = {
   async getProducts(): Promise<ApiProduct[]> {
-    const { data } = await apiClient.get<ApiProduct[]>('/Products', {
+    const { data } = await apiClient.get<unknown[]>('/Products', {
       params: { limit: 50, offset: 0 },
     });
-    return data;
+    return Array.isArray(data) ? data.map(normalizeApiProduct) : [];
   },
 
   /**
@@ -320,28 +441,36 @@ export const api = {
     const pageSize = 100;
     const all: ApiProduct[] = [];
     for (let offset = 0; offset < maxItems; offset += pageSize) {
-      const { data } = await apiClient.get<ApiProduct[]>(
+      const { data } = await apiClient.get<unknown[]>(
         `/Products/merchants/${encodeURIComponent(merchantId)}`,
         { params: { limit: pageSize, offset } },
       );
-      const batch = Array.isArray(data) ? data : [];
+      const batch = Array.isArray(data) ? data.map(normalizeApiProduct) : [];
       all.push(...batch);
       if (batch.length < pageSize) break;
     }
     return all;
   },
 
-  async createProduct(
-    formData: FormData,
-    merchantId?: string
-  ): Promise<void> {
-    await apiClient.post('/Products', formData, {
-      params: merchantId ? { merchantId } : undefined,
+  /**
+   * `POST /Products` — JSON `CreateProductRequest` (camelCase, συμπ. `optionGroupsJson`).
+   * Η εικόνα ανεβαίνει χωριστά με `uploadProductImage` αφού υπάρχει `productId`.
+   */
+  async createProduct(payload: CreateProductPayload, _merchantId?: string): Promise<void> {
+    await apiClient.post('/Products', {
+      name: payload.name,
+      description: payload.description,
+      category: payload.category,
+      price: payload.price,
+      xp: payload.xp,
+      allergens: payload.allergens ?? null,
+      optionGroupsJson: payload.optionGroupsJson ?? null,
     });
   },
 
   /**
    * `PUT /Products/{productId}` — JSON σώμα όπως `UpdateProductRequest` (camelCase).
+   * Το `optionGroups` είναι υποχρεωτικό: το backend αντικαθιστά όλες τις ομάδες.
    * Η εικόνα ενημερώνεται χωριστά με `uploadProductImage` / `deleteProductImage`.
    */
   async updateProduct(
@@ -353,6 +482,7 @@ export const api = {
       price: number;
       xp: number;
       allergens?: string[] | null;
+      optionGroups: ProductOptionGroupApiPayload[];
     },
   ): Promise<void> {
     await apiClient.put(`/Products/${encodeURIComponent(productId)}`, {
@@ -362,7 +492,22 @@ export const api = {
       price: payload.price,
       xp: payload.xp,
       allergens: payload.allergens ?? null,
+      optionGroups: payload.optionGroups,
     });
+  },
+
+  /** `GET /merchants/product-option-groups` — template ομάδων επιλογών merchant (ρόλος Merchant). */
+  async getMerchantProductOptionGroups(): Promise<ApiProductOptionGroupRow[]> {
+    const { data } = await apiClient.get<unknown>('/merchants/product-option-groups');
+    if (!Array.isArray(data)) return [];
+    return data
+      .map((row) => normalizeApiProductOptionGroupRow(row))
+      .filter((x): x is ApiProductOptionGroupRow => x !== null);
+  },
+
+  /** `PUT /merchants/product-option-groups` — αποθήκευση template ομάδων (ρόλος Merchant). */
+  async upsertMerchantProductOptionGroups(groups: ProductOptionGroupApiPayload[]): Promise<void> {
+    await apiClient.put('/merchants/product-option-groups', { groups });
   },
 
   async uploadProductImage(productId: string, file: File): Promise<void> {

@@ -204,15 +204,18 @@ const StoresManagement: React.FC = () => {
 
     try {
       setIsCreatingProduct(true);
-      const formData = new FormData();
-      // Backend CreateProductRequest is [FromForm] with PascalCase property names.
-      formData.append('Name', newProductName.trim());
-      formData.append('Description', newProductDescription.trim() || 'N/A');
-      formData.append('Category', newProductCategory);
-      formData.append('Price', String(price));
-      formData.append('Xp', String(xp));
-
-      await api.createProduct(formData, selectedMerchantId);
+      await api.createProduct(
+        {
+          name: newProductName.trim(),
+          description: newProductDescription.trim() || 'N/A',
+          category: newProductCategory,
+          price,
+          xp,
+          allergens: null,
+          optionGroupsJson: null,
+        },
+        selectedMerchantId,
+      );
 
       setNewProductName('');
       setNewProductDescription('');

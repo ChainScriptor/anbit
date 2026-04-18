@@ -132,7 +132,7 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileClose }) 
         <ul
           className={cn(
             'space-y-0.5',
-            effectiveCollapsed ? 'hidden lg:flex lg:flex-col lg:items-center lg:px-2' : 'px-3',
+            effectiveCollapsed ? 'hidden' : 'px-3',
           )}
         >
           {isAdmin ? (

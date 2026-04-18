@@ -21,7 +21,13 @@ import {
   X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { api } from '@/services/api';
+import {
+  api,
+  type ApiProduct,
+  type ApiProductOptionGroupRow,
+  type ProductOptionGroupApiPayload,
+} from '@/services/api';
+import type { ProductOptionGroupFromApi } from '@/types';
 import { useAuth } from '@/AuthContext';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
@@ -104,6 +110,141 @@ const EMPTY_GROUP_DRAFT: GroupDraft = {
   choices: [], assignedProductIds: [], assignedCategories: [],
 };
 
+function mapApiProductOptionGroupsToProduct(
+  rows?: ApiProduct['optionGroups'],
+): ProductOptionGroupFromApi[] | undefined {
+  if (!rows?.length) return undefined;
+  return rows.map((g) => ({
+    id: g.id,
+    name: g.name,
+    type: g.type,
+    options: g.options.map((o) => ({ id: o.id, name: o.name, price: o.price })),
+  }));
+}
+
+function mapUiGroupToApiPayload(group: OptionGroup): ProductOptionGroupApiPayload {
+  return {
+    name: group.name.trim(),
+    type: group.type === 'radio' ? 'Single' : 'Multiple',
+    options: group.choices.map((c) => ({ name: c.label.trim(), price: c.priceModifier })),
+  };
+}
+
+function mapGroupDraftToApiPayload(draft: GroupDraft): ProductOptionGroupApiPayload | null {
+  const name = draft.name.trim();
+  if (!name || draft.choices.length < 1) return null;
+  return {
+    name,
+    type: draft.type === 'radio' ? 'Single' : 'Multiple',
+    options: draft.choices.map((c) => ({ name: c.label.trim(), price: c.priceModifier })),
+  };
+}
+
+function mapApiTemplateRowToUi(row: ApiProductOptionGroupRow): OptionGroup {
+  return {
+    id: row.id,
+    name: row.name,
+    type: row.type === 'Multiple' ? 'checkbox' : 'radio',
+    required: row.type === 'Single',
+    choices: row.options.map((o) => ({
+      id: o.id,
+      label: o.name,
+      priceModifier: o.price,
+    })),
+    assignedProductIds: [],
+    assignedCategories: [],
+  };
+}
+
+function mergeTemplateGroupsWithPreviousAssignments(
+  prev: OptionGroup[],
+  apiRows: ApiProductOptionGroupRow[],
+): OptionGroup[] {
+  return apiRows.map((row) => {
+    const old =
+      prev.find((g) => g.name.trim().toLowerCase() === row.name.trim().toLowerCase()) ?? null;
+    const base = mapApiTemplateRowToUi(row);
+    return {
+      ...base,
+      required: row.type === 'Single' ? (old?.required ?? true) : false,
+      assignedProductIds: old?.assignedProductIds ?? [],
+      assignedCategories: old?.assignedCategories ?? [],
+    };
+  });
+}
+
+function buildProductOptionGroupsForApi(
+  libraryNames: string[],
+  extraDrafts: GroupDraft[],
+  template: OptionGroup[],
+): ProductOptionGroupApiPayload[] {
+  const lib = libraryNames
+    .map((n) => template.find((g) => g.name === n))
+    .filter((g): g is OptionGroup => Boolean(g))
+    .map(mapUiGroupToApiPayload);
+  const extra = extraDrafts
+    .map((d) => mapGroupDraftToApiPayload(d))
+    .filter((x): x is ProductOptionGroupApiPayload => x !== null);
+  const out: ProductOptionGroupApiPayload[] = [];
+  const seen = new Set<string>();
+  for (const g of [...lib, ...extra]) {
+    const k = g.name.trim().toLowerCase();
+    if (seen.has(k)) continue;
+    seen.add(k);
+    out.push(g);
+  }
+  return out;
+}
+
+function mapProductOptionGroupsToApiPayload(
+  rows: ProductOptionGroupFromApi[] | undefined,
+): ProductOptionGroupApiPayload[] {
+  if (!rows?.length) return [];
+  return rows.map((g) => ({
+    name: g.name.trim(),
+    type: g.type,
+    options: g.options.map((o) => ({ name: o.name.trim(), price: o.price })),
+  }));
+}
+
+function newChoiceId(): string {
+  try {
+    return crypto.randomUUID();
+  } catch {
+    return `c-${Date.now()}`;
+  }
+}
+
+function splitProductGroupsForEditModal(
+  product: Product,
+  template: OptionGroup[],
+): { libraryNames: string[]; extraDrafts: GroupDraft[] } {
+  const libraryNames: string[] = [];
+  const extraDrafts: GroupDraft[] = [];
+  for (const og of product.optionGroups ?? []) {
+    const t = template.find(
+      (x) => x.name.trim().toLowerCase() === og.name.trim().toLowerCase(),
+    );
+    if (t) {
+      if (!libraryNames.includes(t.name)) libraryNames.push(t.name);
+    } else {
+      extraDrafts.push({
+        name: og.name,
+        type: og.type === 'Multiple' ? 'checkbox' : 'radio',
+        required: og.type === 'Single',
+        choices: og.options.map((o) => ({
+          id: o.id || newChoiceId(),
+          label: o.name,
+          priceModifier: o.price,
+        })),
+        assignedProductIds: [],
+        assignedCategories: [],
+      });
+    }
+  }
+  return { libraryNames, extraDrafts };
+}
+
 // ─── Main component ───────────────────────────────────────────────────────────
 const Products: React.FC = () => {
   const { user } = useAuth();
@@ -149,6 +290,13 @@ const Products: React.FC = () => {
   const [detailSaveBusy, setDetailSaveBusy] = useState(false);
   const [detailSaveError, setDetailSaveError] = useState<string | null>(null);
 
+  /** Επιλογές προϊόντος: ομάδες από template (όνομα) + πρόχειρα μόνο-για-προϊόν. */
+  const [selectedLibraryGroupNames, setSelectedLibraryGroupNames] = useState<string[]>([]);
+  const [productExtraOptionDrafts, setProductExtraOptionDrafts] = useState<GroupDraft[]>([]);
+  const [extraDraftChoiceLines, setExtraDraftChoiceLines] = useState<{ label: string; price: string }[]>([]);
+  const [optionsTemplateError, setOptionsTemplateError] = useState<string | null>(null);
+  const [optionsTemplateBusy, setOptionsTemplateBusy] = useState(false);
+
   // ── Option groups state ────────────────────────────────────────────────────
   const [optionGroups, setOptionGroups] = useState<OptionGroup[]>([]);
   const [editingGroupId, setEditingGroupId] = useState<string | null>(null); // null = new
@@ -171,6 +319,7 @@ const Products: React.FC = () => {
           category: p.category ?? 'Menu', price: p.price, pointsReward: p.xp,
           serverImageUrl: url, image: url || PLACEHOLDER_IMAGE,
           isActive: true, allergens: [],
+          optionGroups: mapApiProductOptionGroupsToProduct(p.optionGroups),
         };
       });
       setItems(mapped);
@@ -203,7 +352,23 @@ const Products: React.FC = () => {
         setIsLoadingCategories(false);
       }
     })();
-    setOptionGroups(readOptionGroups());
+    void (async () => {
+      try {
+        const serverGroups = await api.getMerchantProductOptionGroups();
+        const localFallback = readOptionGroups();
+        if (serverGroups.length > 0) {
+          const merged = mergeTemplateGroupsWithPreviousAssignments(localFallback, serverGroups);
+          setOptionGroups(merged);
+          writeOptionGroups(merged);
+        } else if (localFallback.length > 0) {
+          setOptionGroups(localFallback);
+        } else {
+          setOptionGroups([]);
+        }
+      } catch {
+        setOptionGroups(readOptionGroups());
+      }
+    })();
   }, []);
 
   // ── Computed ───────────────────────────────────────────────────────────────
@@ -263,6 +428,9 @@ const Products: React.FC = () => {
     setNewProductImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
     setEditingProductId(null);
+    setSelectedLibraryGroupNames([]);
+    setProductExtraOptionDrafts([]);
+    setExtraDraftChoiceLines([]);
     setModalImageError(null);
     setShowDeleteImageConfirm(false);
     setImageFieldBusy(false);
@@ -280,6 +448,10 @@ const Products: React.FC = () => {
     });
     setNewProductImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
+    const { libraryNames, extraDrafts } = splitProductGroupsForEditModal(product, optionGroups);
+    setSelectedLibraryGroupNames(libraryNames);
+    setProductExtraOptionDrafts(extraDrafts);
+    setExtraDraftChoiceLines(extraDrafts.map(() => ({ label: '', price: '' })));
     setIsAddOpen(true);
   };
 
@@ -292,12 +464,23 @@ const Products: React.FC = () => {
     const xp = Math.max(0, Math.trunc(Number(String(newProduct.pointsReward ?? '').replace(',', '.'))));
     if (!editingProductId && !newProductImageFile) { setSaveError('Επίλεξε αρχείο εικόνας.'); return; }
 
+    const optionPayload = buildProductOptionGroupsForApi(
+      selectedLibraryGroupNames,
+      productExtraOptionDrafts,
+      optionGroups,
+    );
+
     if (editingProductId) {
       try {
         setIsSaving(true);
         await api.updateProduct(editingProductId, {
-          name: newProduct.name.trim(), description: newProduct.description?.trim() || 'N/A',
-          category: newProduct.category || 'Menu', price, xp, allergens: newProduct.allergens ?? [],
+          name: newProduct.name.trim(),
+          description: newProduct.description?.trim() || 'N/A',
+          category: newProduct.category || 'Menu',
+          price,
+          xp,
+          allergens: newProduct.allergens ?? [],
+          optionGroups: optionPayload,
         });
         setIsAddOpen(false); resetForm(); await loadProducts();
         setSaveSuccess('Προϊόν ενημερώθηκε!');
@@ -308,22 +491,40 @@ const Products: React.FC = () => {
       return;
     }
 
+    if (!user?.id) {
+      setSaveError('Χρειάζεται σύνδεση merchant.');
+      return;
+    }
+
     try {
       setIsSaving(true);
-      const fd = new FormData();
-      fd.append('Name', newProduct.name.trim());
-      fd.append('Description', newProduct.description?.trim() || 'N/A');
-      fd.append('Category', newProduct.category || 'Menu');
-      fd.append('Price', String(price));
-      fd.append('Xp', String(xp > 0 ? xp : 1));
-      for (const a of newProduct.allergens ?? []) fd.append('Allergens', a);
-      fd.append('Image', newProductImageFile!);
-      await api.createProduct(fd);
+      const idsBefore = new Set((await api.getProductsByMerchantId(user.id)).map((p) => p.id));
+      await api.createProduct({
+        name: newProduct.name.trim(),
+        description: newProduct.description?.trim() || 'N/A',
+        category: newProduct.category || 'Menu',
+        price,
+        xp: Math.max(0, xp),
+        allergens: newProduct.allergens?.length ? newProduct.allergens : null,
+        optionGroupsJson: optionPayload.length > 0 ? optionPayload : null,
+      });
+      if (newProductImageFile) {
+        const after = await api.getProductsByMerchantId(user.id);
+        const created = after.find((p) => !idsBefore.has(p.id));
+        if (created) {
+          await api.uploadProductImage(created.id, newProductImageFile);
+        }
+      }
       setIsAddOpen(false); resetForm(); await loadProducts();
       setSaveSuccess('Προϊόν δημιουργήθηκε!');
     } catch (e: unknown) {
-      const err = e as { response?: { data?: { error?: string; Error?: string } } };
-      setSaveError(err.response?.data?.error ?? err.response?.data?.Error ?? 'Αποτυχία δημιουργίας. Έλεγξε ότι η κατηγορία είναι αποθηκευμένη.');
+      const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
+      setSaveError(
+        err.response?.data?.error ??
+          err.response?.data?.Error ??
+          err.response?.data?.message ??
+          'Αποτυχία δημιουργίας. Έλεγξε ότι η κατηγορία είναι αποθηκευμένη.',
+      );
     } finally { setIsSaving(false); }
   };
 
@@ -462,9 +663,12 @@ const Products: React.FC = () => {
     });
   };
 
-  const saveGroup = () => {
+  const saveGroup = async () => {
     if (!groupDraft || !groupDraft.name.trim()) return;
-    if (groupDraft.choices.length < 2) { alert('Πρόσθεσε τουλάχιστον 2 επιλογές.'); return; }
+    if (groupDraft.choices.length < 1) {
+      alert('Πρόσθεσε τουλάχιστον 1 επιλογή.');
+      return;
+    }
     const newGroup: OptionGroup = {
       id: editingGroupId ?? crypto.randomUUID(),
       name: groupDraft.name.trim(),
@@ -475,17 +679,105 @@ const Products: React.FC = () => {
       assignedCategories: groupDraft.assignedCategories,
     };
     const updated = editingGroupId
-      ? optionGroups.map((g) => g.id === editingGroupId ? newGroup : g)
+      ? optionGroups.map((g) => (g.id === editingGroupId ? newGroup : g))
       : [newGroup, ...optionGroups];
-    setOptionGroups(updated);
-    writeOptionGroups(updated);
-    cancelGroupEdit();
+    setOptionsTemplateError(null);
+    setOptionsTemplateBusy(true);
+    try {
+      await api.upsertMerchantProductOptionGroups(updated.map(mapUiGroupToApiPayload));
+      const fresh = await api.getMerchantProductOptionGroups();
+      const merged = mergeTemplateGroupsWithPreviousAssignments(updated, fresh);
+      setOptionGroups(merged);
+      writeOptionGroups(merged);
+      cancelGroupEdit();
+    } catch (e: unknown) {
+      const msg = isAxiosError(e)
+        ? String(e.response?.data ?? e.message)
+        : 'Αποτυχία αποθήκευσης template στον server.';
+      setOptionsTemplateError(msg);
+    } finally {
+      setOptionsTemplateBusy(false);
+    }
   };
 
-  const deleteGroup = (groupId: string) => {
+  const deleteGroup = async (groupId: string) => {
     const updated = optionGroups.filter((g) => g.id !== groupId);
-    setOptionGroups(updated);
-    writeOptionGroups(updated);
+    setOptionsTemplateError(null);
+    setOptionsTemplateBusy(true);
+    try {
+      await api.upsertMerchantProductOptionGroups(updated.map(mapUiGroupToApiPayload));
+      const fresh = await api.getMerchantProductOptionGroups();
+      const merged = mergeTemplateGroupsWithPreviousAssignments(updated, fresh);
+      setOptionGroups(merged);
+      writeOptionGroups(merged);
+    } catch (e: unknown) {
+      const msg = isAxiosError(e)
+        ? String(e.response?.data ?? e.message)
+        : 'Αποτυχία διαγραφής στον server.';
+      setOptionsTemplateError(msg);
+    } finally {
+      setOptionsTemplateBusy(false);
+    }
+  };
+
+  const toggleLibraryGroupName = (name: string) => {
+    setSelectedLibraryGroupNames((prev) =>
+      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
+    );
+  };
+
+  const addProductExtraDraft = () => {
+    setProductExtraOptionDrafts((prev) => [...prev, { ...EMPTY_GROUP_DRAFT }]);
+    setExtraDraftChoiceLines((prev) => [...prev, { label: '', price: '' }]);
+  };
+
+  const removeProductExtraDraft = (idx: number) => {
+    setProductExtraOptionDrafts((prev) => prev.filter((_, i) => i !== idx));
+    setExtraDraftChoiceLines((prev) => prev.filter((_, i) => i !== idx));
+  };
+
+  const patchProductExtraDraft = (idx: number, patch: Partial<GroupDraft>) => {
+    setProductExtraOptionDrafts((prev) => {
+      const n = [...prev];
+      if (!n[idx]) return prev;
+      n[idx] = { ...n[idx], ...patch };
+      return n;
+    });
+  };
+
+  const addChoiceToProductExtraDraft = (idx: number) => {
+    const line = extraDraftChoiceLines[idx] ?? { label: '', price: '' };
+    const label = line.label.trim();
+    if (!label) return;
+    const price = Number(line.price.replace(',', '.'));
+    const choice: OptionChoice = {
+      id: newChoiceId(),
+      label,
+      priceModifier: Number.isNaN(price) ? 0 : price,
+    };
+    setProductExtraOptionDrafts((prev) => {
+      const n = [...prev];
+      if (!n[idx]) return prev;
+      n[idx] = { ...n[idx], choices: [...n[idx].choices, choice] };
+      return n;
+    });
+    setExtraDraftChoiceLines((prev) => {
+      const n = [...prev];
+      n[idx] = { label: '', price: '' };
+      return n;
+    });
+  };
+
+  const removeChoiceFromProductExtraDraft = (draftIdx: number, choiceId: string) => {
+    setProductExtraOptionDrafts((prev) => {
+      const n = [...prev];
+      if (!n[draftIdx]) return prev;
+      n[draftIdx] = {
+        ...n[draftIdx],
+        choices: n[draftIdx].choices.filter((c) => c.id !== choiceId),
+      };
+      return n;
+    });
   };
 
   // ── Detail modal ───────────────────────────────────────────────────────────
@@ -510,7 +802,15 @@ const Products: React.FC = () => {
     if (Number.isNaN(price) || price <= 0) { setDetailSaveError('Η τιμή πρέπει να είναι > 0.'); return; }
     try {
       setDetailSaveBusy(true);
-      await api.updateProduct(detailProductId, { name, description: detailDraft.description.trim() || 'N/A', category: detailDraft.category.trim() || 'Menu', price, xp, allergens: [] });
+      await api.updateProduct(detailProductId, {
+        name,
+        description: detailDraft.description.trim() || 'N/A',
+        category: detailDraft.category.trim() || 'Menu',
+        price,
+        xp,
+        allergens: [],
+        optionGroups: mapProductOptionGroupsToApiPayload(detailProduct.optionGroups),
+      });
       const list = await loadProducts();
       const row = list.find((p) => p.id === detailProductId);
       if (row) setDetailDraft({ name: row.name, description: row.description ?? '', category: row.category, price: String(row.price), pointsReward: String(row.pointsReward ?? 0), isActive: detailDraft.isActive });
@@ -687,6 +987,21 @@ const Products: React.FC = () => {
         {/* ── OPTIONS TAB ────────────────────────────────────────────── */}
         {activeTab === 'options' && (
           <div className="space-y-6">
+            {optionsTemplateBusy && !showGroupEditor && (
+              <p className="text-sm text-slate-500 flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" /> Συγχρονισμός με τον server…
+              </p>
+            )}
+            {optionsTemplateError && (
+              <p className="rounded-xl bg-red-50 px-4 py-2.5 text-sm text-red-700" role="alert">
+                {optionsTemplateError}
+              </p>
+            )}
+            <p className="text-xs text-slate-500 max-w-2xl">
+              Οι ομάδες αποθηκεύονται στο backend ως <strong>template</strong> (GET/PUT{' '}
+              <code className="rounded bg-slate-100 px-1">/merchants/product-option-groups</code>). Για να τις
+              εφαρμόσεις σε συγκεκριμένο προϊόν, χρησιμοποίησε το παράθυρο Νέο / Επεξεργασία προϊόντος.
+            </p>
 
             {/* Group editor panel */}
             {showGroupEditor && groupDraft && (
@@ -794,8 +1109,8 @@ const Products: React.FC = () => {
                         <Plus className="h-3.5 w-3.5" /> Προσθήκη
                       </button>
                     </div>
-                    {groupDraft.choices.length < 2 && (
-                      <p className="text-xs text-slate-400">Χρειάζονται τουλάχιστον 2 επιλογές.</p>
+                    {groupDraft.choices.length < 1 && (
+                      <p className="text-xs text-slate-400">Χρειάζεται τουλάχιστον 1 επιλογή.</p>
                     )}
                   </div>
 
@@ -851,9 +1166,9 @@ const Products: React.FC = () => {
                       className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
                       Ακύρωση
                     </button>
-                    <button type="button" onClick={saveGroup}
-                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800">
-                      <Save className="h-4 w-4" />
+                    <button type="button" onClick={() => void saveGroup()} disabled={optionsTemplateBusy}
+                      className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
+                      {optionsTemplateBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                       {editingGroupId ? 'Αποθήκευση αλλαγών' : 'Δημιουργία ομάδας'}
                     </button>
                   </div>
@@ -893,8 +1208,8 @@ const Products: React.FC = () => {
                           className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
                           <Pencil className="h-3.5 w-3.5" />
                         </button>
-                        <button type="button" onClick={() => deleteGroup(group.id)}
-                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500">
+                        <button type="button" onClick={() => void deleteGroup(group.id)} disabled={optionsTemplateBusy}
+                          className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-500 disabled:opacity-40">
                           <Trash2 className="h-3.5 w-3.5" />
                         </button>
                       </div>
@@ -1233,6 +1548,157 @@ const Products: React.FC = () => {
                     onChange={(e) => setNewProduct({ ...newProduct, allergens: e.target.value.split(',').map((v) => v.trim()).filter(Boolean) })}
                     className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900"
                     placeholder="Γάλα, Γλουτένη" />
+                </div>
+
+                <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
+                  <div>
+                    <p className="text-xs font-semibold text-slate-700">Επιλογές προϊόντος (options)</p>
+                    <p className="mt-0.5 text-[11px] text-slate-500">
+                      Επίλεξε ομάδες από το tab <strong>Options</strong> (βιβλιοθήκη) και/ή πρόσθεσε ομάδες μόνο για αυτό το προϊόν.
+                    </p>
+                  </div>
+                  {optionGroups.length > 0 && (
+                    <div className="space-y-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Από βιβλιοθήκη</p>
+                      <div className="flex flex-col gap-2">
+                        {optionGroups.map((g) => (
+                          <label
+                            key={g.id}
+                            className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
+                          >
+                            <input
+                              type="checkbox"
+                              checked={selectedLibraryGroupNames.includes(g.name)}
+                              onChange={() => toggleLibraryGroupName(g.name)}
+                              className="h-4 w-4 rounded border-slate-300"
+                            />
+                            <span className="font-medium text-slate-800">{g.name}</span>
+                            <span className="text-xs text-slate-400">
+                              {g.type === 'radio' ? 'Single' : 'Multiple'} · {g.choices.length} επιλογές
+                            </span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div className="space-y-3">
+                    <div className="flex items-center justify-between gap-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">
+                        Μόνο για αυτό το προϊόν
+                      </p>
+                      <button
+                        type="button"
+                        onClick={addProductExtraDraft}
+                        className="text-xs font-semibold text-slate-700 underline decoration-slate-300 hover:decoration-slate-600"
+                      >
+                        + Ομάδα
+                      </button>
+                    </div>
+                    {productExtraOptionDrafts.length === 0 ? (
+                      <p className="text-[11px] text-slate-400">Καμία επιπλέον ομάδα. Πάτα «+ Ομάδα» για δική σου ομάδα μόνο σε αυτό το προϊόν.</p>
+                    ) : (
+                      <div className="space-y-3">
+                        {productExtraOptionDrafts.map((draft, idx) => (
+                          <div key={`extra-${idx}`} className="rounded-lg border border-slate-200 bg-white p-3 space-y-2">
+                            <div className="flex items-start justify-between gap-2">
+                              <input
+                                type="text"
+                                value={draft.name}
+                                onChange={(e) => patchProductExtraDraft(idx, { name: e.target.value })}
+                                placeholder="Όνομα ομάδας"
+                                className="flex-1 rounded-lg border border-slate-200 px-2.5 py-1.5 text-sm"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => removeProductExtraDraft(idx)}
+                                className="shrink-0 rounded p-1 text-slate-400 hover:bg-red-50 hover:text-red-600"
+                              >
+                                <Trash2 className="h-3.5 w-3.5" />
+                              </button>
+                            </div>
+                            <div className="flex gap-2">
+                              <button
+                                type="button"
+                                onClick={() => patchProductExtraDraft(idx, { type: 'radio', required: true })}
+                                className={cn(
+                                  'flex-1 rounded-lg border px-2 py-1.5 text-xs font-semibold',
+                                  draft.type === 'radio' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200',
+                                )}
+                              >
+                                Single
+                              </button>
+                              <button
+                                type="button"
+                                onClick={() => patchProductExtraDraft(idx, { type: 'checkbox', required: false })}
+                                className={cn(
+                                  'flex-1 rounded-lg border px-2 py-1.5 text-xs font-semibold',
+                                  draft.type === 'checkbox' ? 'border-slate-900 bg-slate-900 text-white' : 'border-slate-200',
+                                )}
+                              >
+                                Multiple
+                              </button>
+                            </div>
+                            {draft.choices.length > 0 && (
+                              <ul className="divide-y divide-slate-100 rounded-lg border border-slate-100 text-xs">
+                                {draft.choices.map((c) => (
+                                  <li key={c.id} className="flex items-center justify-between gap-2 px-2 py-1.5">
+                                    <span>{c.label}</span>
+                                    <span className="text-slate-400">+€{c.priceModifier.toFixed(2)}</span>
+                                    <button
+                                      type="button"
+                                      onClick={() => removeChoiceFromProductExtraDraft(idx, c.id)}
+                                      className="text-slate-300 hover:text-red-500"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </button>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                            <div className="flex gap-1.5">
+                              <input
+                                type="text"
+                                value={extraDraftChoiceLines[idx]?.label ?? ''}
+                                onChange={(e) =>
+                                  setExtraDraftChoiceLines((prev) => {
+                                    const n = [...prev];
+                                    while (n.length <= idx) n.push({ label: '', price: '' });
+                                    n[idx] = { ...n[idx], label: e.target.value };
+                                    return n;
+                                  })
+                                }
+                                placeholder="Όνομα επιλογής"
+                                className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                              />
+                              <input
+                                type="number"
+                                step="0.01"
+                                min="0"
+                                value={extraDraftChoiceLines[idx]?.price ?? ''}
+                                onChange={(e) =>
+                                  setExtraDraftChoiceLines((prev) => {
+                                    const n = [...prev];
+                                    while (n.length <= idx) n.push({ label: '', price: '' });
+                                    n[idx] = { ...n[idx], price: e.target.value };
+                                    return n;
+                                  })
+                                }
+                                placeholder="€"
+                                className="w-20 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                              />
+                              <button
+                                type="button"
+                                onClick={() => addChoiceToProductExtraDraft(idx)}
+                                className="shrink-0 rounded-lg bg-slate-100 px-2 py-1.5 text-xs font-semibold text-slate-700"
+                              >
+                                +
+                              </button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
                 </div>
 
                 <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
