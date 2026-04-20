@@ -145,6 +145,7 @@ function mapApiTemplateRowToUi(row: ApiProductOptionGroupRow): OptionGroup {
     id: row.id,
     name: row.name,
     type: row.type === 'Multiple' ? 'checkbox' : 'radio',
+    /** Single στο API → υποχρεωτική μία επιλογή στο PWA · Multiple → 0+. */
     required: row.type === 'Single',
     choices: row.options.map((o) => ({
       id: o.id,
@@ -166,20 +167,24 @@ function mergeTemplateGroupsWithPreviousAssignments(
     const base = mapApiTemplateRowToUi(row);
     return {
       ...base,
-      required: row.type === 'Single' ? (old?.required ?? true) : false,
+      required: row.type === 'Single',
       assignedProductIds: old?.assignedProductIds ?? [],
       assignedCategories: old?.assignedCategories ?? [],
     };
   });
 }
 
+/**
+ * Επιλεγμένα template IDs → πλήρη ομάδες από `optionGroups` (όνομα, Single/Multiple, όλες οι επιλογές + τιμές).
+ * Το snapshot που αποθηκεύεται στο προϊόν προέρχεται από εδώ + τα extra drafts.
+ */
 function buildProductOptionGroupsForApi(
-  libraryNames: string[],
+  libraryGroupIds: string[],
   extraDrafts: GroupDraft[],
   template: OptionGroup[],
 ): ProductOptionGroupApiPayload[] {
-  const lib = libraryNames
-    .map((n) => template.find((g) => g.name === n))
+  const lib = libraryGroupIds
+    .map((id) => template.find((g) => g.id === id))
     .filter((g): g is OptionGroup => Boolean(g))
     .map(mapUiGroupToApiPayload);
   const extra = extraDrafts
@@ -218,15 +223,17 @@ function newChoiceId(): string {
 function splitProductGroupsForEditModal(
   product: Product,
   template: OptionGroup[],
-): { libraryNames: string[]; extraDrafts: GroupDraft[] } {
-  const libraryNames: string[] = [];
+): { libraryIds: string[]; extraDrafts: GroupDraft[] } {
+  const libraryIds: string[] = [];
   const extraDrafts: GroupDraft[] = [];
   for (const og of product.optionGroups ?? []) {
     const t = template.find(
-      (x) => x.name.trim().toLowerCase() === og.name.trim().toLowerCase(),
+      (x) =>
+        (Boolean(og.id) && x.id === og.id) ||
+        x.name.trim().toLowerCase() === og.name.trim().toLowerCase(),
     );
     if (t) {
-      if (!libraryNames.includes(t.name)) libraryNames.push(t.name);
+      if (!libraryIds.includes(t.id)) libraryIds.push(t.id);
     } else {
       extraDrafts.push({
         name: og.name,
@@ -242,7 +249,7 @@ function splitProductGroupsForEditModal(
       });
     }
   }
-  return { libraryNames, extraDrafts };
+  return { libraryIds, extraDrafts };
 }
 
 // ─── Main component ───────────────────────────────────────────────────────────
@@ -279,19 +286,9 @@ const Products: React.FC = () => {
   const [imageFieldBusy, setImageFieldBusy] = useState(false);
   const [showDeleteImageConfirm, setShowDeleteImageConfirm] = useState(false);
   const [modalImageError, setModalImageError] = useState<string | null>(null);
-  const [detailProductId, setDetailProductId] = useState<string | null>(null);
-  const [detailDraft, setDetailDraft] = useState<{
-    name: string; description: string; category: string;
-    price: string; pointsReward: string; isActive: boolean;
-  } | null>(null);
-  const detailFileInputRef = useRef<HTMLInputElement | null>(null);
-  const [detailImageBusy, setDetailImageBusy] = useState(false);
-  const [detailImageError, setDetailImageError] = useState<string | null>(null);
-  const [detailSaveBusy, setDetailSaveBusy] = useState(false);
-  const [detailSaveError, setDetailSaveError] = useState<string | null>(null);
-
-  /** Επιλογές προϊόντος: ομάδες από template (όνομα) + πρόχειρα μόνο-για-προϊόν. */
-  const [selectedLibraryGroupNames, setSelectedLibraryGroupNames] = useState<string[]>([]);
+  /** Επιλογές προϊόντος: ομάδες από template (id) + πρόχειρα μόνο-για-προϊόν. */
+  const [selectedLibraryGroupIds, setSelectedLibraryGroupIds] = useState<string[]>([]);
+  const [modalLibraryBusy, setModalLibraryBusy] = useState(false);
   const [productExtraOptionDrafts, setProductExtraOptionDrafts] = useState<GroupDraft[]>([]);
   const [extraDraftChoiceLines, setExtraDraftChoiceLines] = useState<{ label: string; price: string }[]>([]);
   const [optionsTemplateError, setOptionsTemplateError] = useState<string | null>(null);
@@ -306,8 +303,8 @@ const Products: React.FC = () => {
   const [showGroupEditor, setShowGroupEditor] = useState(false);
 
   // ── Load data ──────────────────────────────────────────────────────────────
-  const loadProducts = async (): Promise<Product[]> => {
-    setIsLoading(true);
+  const loadProducts = async (silent = false): Promise<Product[]> => {
+    if (!silent) setIsLoading(true);
     setError(null);
     try {
       const all = await api.getProducts();
@@ -329,7 +326,7 @@ const Products: React.FC = () => {
       console.error(e);
       return [];
     } finally {
-      setIsLoading(false);
+      if (!silent) setIsLoading(false);
     }
   };
 
@@ -390,10 +387,58 @@ const Products: React.FC = () => {
     return filtered.filter((p) => p.name.toLowerCase().includes(q) || p.category.toLowerCase().includes(q));
   }, [items, activeCategory, searchQuery]);
 
-  const detailProduct = useMemo(
-    () => (detailProductId ? items.find((p) => p.id === detailProductId) ?? null : null),
-    [detailProductId, items],
-  );
+  const modalSyncRef = useRef({ products, editingProductId, items });
+  modalSyncRef.current = { products, editingProductId, items };
+
+  /** Κάθε φορά που ανοίγει το modal προϊόντος: φρέσκο template από API + (edit) refresh επιλογών. */
+  useEffect(() => {
+    if (!isAddOpen) return;
+    let cancelled = false;
+    (async () => {
+      setModalLibraryBusy(true);
+      let mergedSnapshot: OptionGroup[] | null = null;
+      try {
+        const fresh = await api.getMerchantProductOptionGroups();
+        if (cancelled) return;
+        setOptionGroups((prev) => {
+          if (!fresh.length) {
+            mergedSnapshot = prev;
+            return prev;
+          }
+          const merged = mergeTemplateGroupsWithPreviousAssignments(prev, fresh);
+          writeOptionGroups(merged);
+          mergedSnapshot = merged;
+          return merged;
+        });
+        const { editingProductId: eid, items: allItems } = modalSyncRef.current;
+        if (eid && mergedSnapshot !== null) {
+          const p = allItems.find((x) => x.id === eid);
+          if (p) {
+            const { libraryIds, extraDrafts } = splitProductGroupsForEditModal(p, mergedSnapshot);
+            setSelectedLibraryGroupIds(libraryIds);
+            setProductExtraOptionDrafts(extraDrafts);
+            setExtraDraftChoiceLines(extraDrafts.map(() => ({ label: '', price: '' })));
+          }
+        }
+      } catch {
+        /* κρατάμε τοπική βιβλιοθήκη · χωρίς re-split στο edit */
+      } finally {
+        if (!cancelled) setModalLibraryBusy(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAddOpen]);
+
+  /** Κλείσιμο modal: καθαρίζει επιλογές βιβλιοθήκης ώστε να μη «κουβαλάνε» σε επόμενο προϊόν. */
+  useEffect(() => {
+    if (isAddOpen) return;
+    setEditingProductId(null);
+    setSelectedLibraryGroupIds([]);
+    setProductExtraOptionDrafts([]);
+    setExtraDraftChoiceLines([]);
+  }, [isAddOpen]);
 
   const groupedProducts = useMemo(() => {
     const groups = new Map<string, Product[]>();
@@ -423,14 +468,14 @@ const Products: React.FC = () => {
 
   // ── Product form helpers ───────────────────────────────────────────────────
   const resetForm = () => {
+    setEditingProductId(null);
+    setSelectedLibraryGroupIds([]);
+    setProductExtraOptionDrafts([]);
+    setExtraDraftChoiceLines([]);
     const defaultCat = activeCategory === 'All' ? (categories.find((c) => c !== 'All') ?? 'Menu') : activeCategory;
     setNewProduct({ name: '', category: defaultCat, price: '', pointsReward: '', image: '', allergens: [], isActive: true });
     setNewProductImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    setEditingProductId(null);
-    setSelectedLibraryGroupNames([]);
-    setProductExtraOptionDrafts([]);
-    setExtraDraftChoiceLines([]);
     setModalImageError(null);
     setShowDeleteImageConfirm(false);
     setImageFieldBusy(false);
@@ -448,8 +493,8 @@ const Products: React.FC = () => {
     });
     setNewProductImageFile(null);
     if (fileInputRef.current) fileInputRef.current.value = '';
-    const { libraryNames, extraDrafts } = splitProductGroupsForEditModal(product, optionGroups);
-    setSelectedLibraryGroupNames(libraryNames);
+    const { libraryIds, extraDrafts } = splitProductGroupsForEditModal(product, optionGroups);
+    setSelectedLibraryGroupIds(libraryIds);
     setProductExtraOptionDrafts(extraDrafts);
     setExtraDraftChoiceLines(extraDrafts.map(() => ({ label: '', price: '' })));
     setIsAddOpen(true);
@@ -464,8 +509,12 @@ const Products: React.FC = () => {
     const xp = Math.max(0, Math.trunc(Number(String(newProduct.pointsReward ?? '').replace(',', '.'))));
     if (!editingProductId && !newProductImageFile) { setSaveError('Επίλεξε αρχείο εικόνας.'); return; }
 
+    /** Μόνο IDs που υπάρχουν στην τρέχουσα βιβλιοθήκη (session UI) — όχι stale μετά sync/διαγραφή ομάδας. */
+    const libraryIdsForPayload = Array.from(new Set<string>(selectedLibraryGroupIds)).filter((id) =>
+      optionGroups.some((g) => g.id === id),
+    );
     const optionPayload = buildProductOptionGroupsForApi(
-      selectedLibraryGroupNames,
+      libraryIdsForPayload,
       productExtraOptionDrafts,
       optionGroups,
     );
@@ -482,7 +531,7 @@ const Products: React.FC = () => {
           allergens: newProduct.allergens ?? [],
           optionGroups: optionPayload,
         });
-        setIsAddOpen(false); resetForm(); await loadProducts();
+        resetForm(); setIsAddOpen(false); await loadProducts();
         setSaveSuccess('Προϊόν ενημερώθηκε!');
       } catch (e: unknown) {
         const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
@@ -499,6 +548,9 @@ const Products: React.FC = () => {
     try {
       setIsSaving(true);
       const idsBefore = new Set((await api.getProductsByMerchantId(user.id)).map((p) => p.id));
+      /** POST /Products: serialized groups (όνομα, τύπος, options) — ίδιο περιεχόμενο με `optionPayload`. */
+      const optionGroupsJson =
+        optionPayload.length > 0 ? JSON.stringify(optionPayload) : null;
       await api.createProduct({
         name: newProduct.name.trim(),
         description: newProduct.description?.trim() || 'N/A',
@@ -506,7 +558,7 @@ const Products: React.FC = () => {
         price,
         xp: Math.max(0, xp),
         allergens: newProduct.allergens?.length ? newProduct.allergens : null,
-        optionGroupsJson: optionPayload.length > 0 ? optionPayload : null,
+        optionGroupsJson,
       });
       if (newProductImageFile) {
         const after = await api.getProductsByMerchantId(user.id);
@@ -515,15 +567,15 @@ const Products: React.FC = () => {
           await api.uploadProductImage(created.id, newProductImageFile);
         }
       }
-      setIsAddOpen(false); resetForm(); await loadProducts();
+      resetForm(); setIsAddOpen(false); await loadProducts();
       setSaveSuccess('Προϊόν δημιουργήθηκε!');
     } catch (e: unknown) {
       const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
       setSaveError(
         err.response?.data?.error ??
-          err.response?.data?.Error ??
-          err.response?.data?.message ??
-          'Αποτυχία δημιουργίας. Έλεγξε ότι η κατηγορία είναι αποθηκευμένη.',
+        err.response?.data?.Error ??
+        err.response?.data?.message ??
+        'Αποτυχία δημιουργίας. Έλεγξε ότι η κατηγορία είναι αποθηκευμένη.',
       );
     } finally { setIsSaving(false); }
   };
@@ -619,7 +671,9 @@ const Products: React.FC = () => {
   const startEditGroup = (group: OptionGroup) => {
     setEditingGroupId(group.id);
     setGroupDraft({
-      name: group.name, type: group.type, required: group.required,
+      name: group.name,
+      type: group.type,
+      required: group.type === 'radio',
       choices: group.choices.map((c) => ({ ...c })),
       assignedProductIds: [...group.assignedProductIds],
       assignedCategories: [...group.assignedCategories],
@@ -663,6 +717,15 @@ const Products: React.FC = () => {
     });
   };
 
+  const buildProductUpdateBase = (product: Product) => ({
+    name: product.name,
+    description: product.description?.trim() || 'N/A',
+    category: product.category || 'Menu',
+    price: product.price,
+    xp: product.pointsReward ?? 0,
+    allergens: product.allergens ?? [],
+  });
+
   const saveGroup = async () => {
     if (!groupDraft || !groupDraft.name.trim()) return;
     if (groupDraft.choices.length < 1) {
@@ -673,7 +736,7 @@ const Products: React.FC = () => {
       id: editingGroupId ?? crypto.randomUUID(),
       name: groupDraft.name.trim(),
       type: groupDraft.type,
-      required: groupDraft.required,
+      required: groupDraft.type === 'radio',
       choices: groupDraft.choices,
       assignedProductIds: groupDraft.assignedProductIds,
       assignedCategories: groupDraft.assignedCategories,
@@ -684,11 +747,89 @@ const Products: React.FC = () => {
     setOptionsTemplateError(null);
     setOptionsTemplateBusy(true);
     try {
+      // 1. Αποθήκευση template
       await api.upsertMerchantProductOptionGroups(updated.map(mapUiGroupToApiPayload));
       const fresh = await api.getMerchantProductOptionGroups();
       const merged = mergeTemplateGroupsWithPreviousAssignments(updated, fresh);
       setOptionGroups(merged);
       writeOptionGroups(merged);
+
+      // 2. Sync assigned products
+      // IMPORTANT: we fetch fresh products HERE (after template save) because the backend
+      // auto-includes new template groups in all products on GET. Using stale `items` would
+      // miss the auto-added group (hasGroup=false) and leave it on every product.
+      const groupPayload = mapUiGroupToApiPayload(newGroup);
+      const groupNameLower = groupPayload.name.toLowerCase();
+      const prevGroup = editingGroupId
+        ? optionGroups.find((g) => g.id === editingGroupId) ?? null
+        : null;
+
+      const targetIds = new Set<string>([
+        ...newGroup.assignedProductIds,
+        ...items.filter((p) => newGroup.assignedCategories.includes(p.category)).map((p) => p.id),
+      ]);
+      const prevTargetIds = prevGroup
+        ? new Set<string>([
+            ...prevGroup.assignedProductIds,
+            ...items.filter((p) => prevGroup.assignedCategories.includes(p.category)).map((p) => p.id),
+          ])
+        : new Set<string>();
+
+      // Fetch fresh product list so we see what the backend auto-added from the template
+      const freshApiProducts = await api.getProducts();
+      const merchantFreshProducts =
+        user != null ? freshApiProducts.filter((p) => p.merchantId === user.id) : freshApiProducts;
+
+      const productUpdates: Promise<void>[] = [];
+      for (const apiProduct of merchantFreshProducts) {
+        const currentGroups = mapProductOptionGroupsToApiPayload(apiProduct.optionGroups);
+        const hasGroup = currentGroups.some((g) => g.name.toLowerCase() === groupNameLower);
+        const shouldHave = targetIds.has(apiProduct.id);
+        const hadBefore = prevTargetIds.has(apiProduct.id);
+        // Use stale items for base fields (name/description/allergens not in ApiProduct)
+        const staleItem = items.find((p) => p.id === apiProduct.id);
+        const baseData = staleItem
+          ? buildProductUpdateBase(staleItem)
+          : {
+              name: apiProduct.name,
+              description: apiProduct.description?.trim() || 'N/A',
+              category: apiProduct.category || 'Menu',
+              price: apiProduct.price,
+              xp: apiProduct.xp ?? 0,
+              allergens: [] as string[],
+            };
+
+        if (shouldHave && !hasGroup) {
+          // Νέα ανάθεση → προσθήκη
+          productUpdates.push(
+            api.updateProduct(apiProduct.id, {
+              ...baseData,
+              optionGroups: [...currentGroups, groupPayload],
+            }),
+          );
+        } else if (shouldHave && hasGroup && editingGroupId) {
+          // Ήδη έχει → ενημέρωση (π.χ. άλλαξαν επιλογές)
+          productUpdates.push(
+            api.updateProduct(apiProduct.id, {
+              ...baseData,
+              optionGroups: currentGroups.map((g) =>
+                g.name.toLowerCase() === groupNameLower ? groupPayload : g,
+              ),
+            }),
+          );
+        } else if (!shouldHave && hasGroup && (hadBefore || !editingGroupId)) {
+          // Αφαίρεση: είτε de-assigned κατά edit, είτε backend auto-added για νέα ομάδα
+          productUpdates.push(
+            api.updateProduct(apiProduct.id, {
+              ...baseData,
+              optionGroups: currentGroups.filter((g) => g.name.toLowerCase() !== groupNameLower),
+            }),
+          );
+        }
+      }
+
+      if (productUpdates.length > 0) await Promise.all(productUpdates);
+      await loadProducts(true);
       cancelGroupEdit();
     } catch (e: unknown) {
       const msg = isAxiosError(e)
@@ -701,6 +842,7 @@ const Products: React.FC = () => {
   };
 
   const deleteGroup = async (groupId: string) => {
+    const groupToDelete = optionGroups.find((g) => g.id === groupId);
     const updated = optionGroups.filter((g) => g.id !== groupId);
     setOptionsTemplateError(null);
     setOptionsTemplateBusy(true);
@@ -710,6 +852,26 @@ const Products: React.FC = () => {
       const merged = mergeTemplateGroupsWithPreviousAssignments(updated, fresh);
       setOptionGroups(merged);
       writeOptionGroups(merged);
+
+      // Αφαίρεση ομάδας από όλα τα προϊόντα που την έχουν
+      if (groupToDelete) {
+        const groupNameLower = groupToDelete.name.trim().toLowerCase();
+        const affected = items.filter((p) =>
+          p.optionGroups?.some((og) => og.name.trim().toLowerCase() === groupNameLower),
+        );
+        if (affected.length > 0) {
+          await Promise.all(
+            affected.map((product) => {
+              const currentGroups = mapProductOptionGroupsToApiPayload(product.optionGroups);
+              return api.updateProduct(product.id, {
+                ...buildProductUpdateBase(product),
+                optionGroups: currentGroups.filter((g) => g.name.toLowerCase() !== groupNameLower),
+              });
+            }),
+          );
+          await loadProducts(true);
+        }
+      }
     } catch (e: unknown) {
       const msg = isAxiosError(e)
         ? String(e.response?.data ?? e.message)
@@ -720,10 +882,49 @@ const Products: React.FC = () => {
     }
   };
 
-  const toggleLibraryGroupName = (name: string) => {
-    setSelectedLibraryGroupNames((prev) =>
-      prev.includes(name) ? prev.filter((n) => n !== name) : [...prev, name],
-    );
+  /** Builds the base update fields from the current modal form values (may have unsaved edits). */
+  const buildModalProductUpdateBase = () => {
+    const price = Number(String(newProduct.price ?? '').replace(',', '.'));
+    const xp = Math.max(0, Math.trunc(Number(String(newProduct.pointsReward ?? '').replace(',', '.'))));
+    if (!newProduct.name?.trim() || Number.isNaN(price) || price <= 0) return null;
+    return {
+      name: newProduct.name.trim(),
+      description: newProduct.description?.trim() || 'N/A',
+      category: newProduct.category || 'Menu',
+      price,
+      xp,
+      allergens: newProduct.allergens ?? [],
+    };
+  };
+
+  /** Auto-save option groups immediately when editing a product (skips Save button). */
+  const autoSaveProductOptions = (newIds: string[], newExtraDrafts: GroupDraft[]) => {
+    if (!editingProductId) return;
+    const base = buildModalProductUpdateBase();
+    if (!base) return;
+    const libraryIdsForPayload = newIds.filter((lid) => optionGroups.some((g) => g.id === lid));
+    const optionPayload = buildProductOptionGroupsForApi(libraryIdsForPayload, newExtraDrafts, optionGroups);
+    setModalLibraryBusy(true);
+    api.updateProduct(editingProductId, { ...base, optionGroups: optionPayload })
+      .then(() => loadProducts(true))
+      .catch(() => setModalImageError('Αποτυχία αποθήκευσης options.'))
+      .finally(() => setModalLibraryBusy(false));
+  };
+
+  const toggleLibraryGroupId = (id: string) => {
+    const newIds = selectedLibraryGroupIds.includes(id)
+      ? selectedLibraryGroupIds.filter((x) => x !== id)
+      : [...selectedLibraryGroupIds, id];
+    setSelectedLibraryGroupIds(newIds);
+    autoSaveProductOptions(newIds, productExtraOptionDrafts);
+  };
+
+  /** Αδειάζει βιβλιοθήκη + product-only groups και αποθηκεύει αμέσως αν υπάρχει editingProductId. */
+  const clearAllProductModalOptions = () => {
+    setSelectedLibraryGroupIds([]);
+    setProductExtraOptionDrafts([]);
+    setExtraDraftChoiceLines([]);
+    autoSaveProductOptions([], []);
   };
 
   const addProductExtraDraft = () => {
@@ -778,60 +979,6 @@ const Products: React.FC = () => {
       };
       return n;
     });
-  };
-
-  // ── Detail modal ───────────────────────────────────────────────────────────
-  const openProductDetailModal = (product: Product) => {
-    setDetailProductId(product.id);
-    setDetailDraft({ name: product.name, description: product.description ?? '', category: product.category, price: String(product.price), pointsReward: String(product.pointsReward ?? 0), isActive: product.isActive });
-  };
-
-  const closeProductDetailModal = () => {
-    setDetailProductId(null); setDetailDraft(null);
-    setDetailImageError(null); setDetailImageBusy(false);
-    setDetailSaveError(null); setDetailSaveBusy(false);
-  };
-
-  const saveDetailChanges = async () => {
-    if (!detailProductId || !detailDraft) return;
-    setDetailSaveError(null);
-    const name = detailDraft.name.trim();
-    if (!name) { setDetailSaveError('Συμπλήρωσε όνομα.'); return; }
-    const price = Number(detailDraft.price.replace(',', '.'));
-    const xp = Math.max(0, Math.trunc(Number(detailDraft.pointsReward.replace(',', '.'))));
-    if (Number.isNaN(price) || price <= 0) { setDetailSaveError('Η τιμή πρέπει να είναι > 0.'); return; }
-    try {
-      setDetailSaveBusy(true);
-      await api.updateProduct(detailProductId, {
-        name,
-        description: detailDraft.description.trim() || 'N/A',
-        category: detailDraft.category.trim() || 'Menu',
-        price,
-        xp,
-        allergens: [],
-        optionGroups: mapProductOptionGroupsToApiPayload(detailProduct.optionGroups),
-      });
-      const list = await loadProducts();
-      const row = list.find((p) => p.id === detailProductId);
-      if (row) setDetailDraft({ name: row.name, description: row.description ?? '', category: row.category, price: String(row.price), pointsReward: String(row.pointsReward ?? 0), isActive: detailDraft.isActive });
-    } catch (e: unknown) {
-      const err = e as { response?: { data?: { error?: string; Error?: string; message?: string } } };
-      setDetailSaveError(err.response?.data?.error ?? err.response?.data?.Error ?? err.response?.data?.message ?? 'Αποτυχία αποθήκευσης.');
-    } finally { setDetailSaveBusy(false); }
-  };
-
-  const handleDetailImageSelected = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const rawFile = e.target.files?.[0];
-    if (!rawFile || !detailProductId) return;
-    setDetailImageError(null);
-    if (!rawFile.type.startsWith('image/')) { setDetailImageError('Επίλεξε έγκυρο αρχείο εικόνας.'); e.target.value = ''; return; }
-    if (rawFile.size > MAX_PRODUCT_IMAGE_BYTES) { setDetailImageError('Μέγιστο ~10MB.'); e.target.value = ''; return; }
-    let file = rawFile;
-    try { file = await convertAvifToWebp(rawFile); } catch (err) { setDetailImageError(err instanceof Error ? err.message : 'Αποτυχία.'); e.target.value = ''; return; }
-    setDetailImageBusy(true);
-    try { await api.uploadProductImage(detailProductId, file); await loadProducts(); }
-    catch (err) { setDetailImageError(formatImageApiError(err)); }
-    finally { setDetailImageBusy(false); e.target.value = ''; }
   };
 
   const primaryActionLabel = activeTab === 'listing' ? 'Add Product' : activeTab === 'options' ? 'New Option Group' : 'Add Category';
@@ -934,7 +1081,7 @@ const Products: React.FC = () => {
                 </div>
                 <div className="grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-3">
                   {group.items.map((product) => (
-                    <article key={product.id} onClick={() => openProductDetailModal(product)}
+                    <article key={product.id} onClick={() => { setOpenMenuProductId(null); startEditProduct(product); }}
                       className="relative flex cursor-pointer items-center gap-3.5 rounded-2xl border border-slate-100 bg-white p-4 shadow-sm transition-all hover:border-slate-200 hover:shadow-md">
                       <input type="checkbox" checked={selectedProductIds.has(product.id)}
                         onClick={(e) => e.stopPropagation()} onChange={() => toggleProductSelection(product.id)}
@@ -955,6 +1102,11 @@ const Products: React.FC = () => {
                             {product.isActive ? 'In Stock' : 'Sold Out'}
                           </span>
                         </div>
+                        {product.optionGroups && product.optionGroups.length > 0 && (
+                          <p className="mt-1 truncate text-[10px] leading-snug text-slate-500" title={product.optionGroups.map((g) => g.name).join(' · ')}>
+                            Επιλογές: {product.optionGroups.map((g) => g.name).join(' · ')}
+                          </p>
+                        )}
                       </div>
                       <button type="button" onClick={(e) => { e.stopPropagation(); setOpenMenuProductId((prev) => prev === product.id ? null : product.id); }}
                         className="shrink-0 rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
@@ -963,7 +1115,7 @@ const Products: React.FC = () => {
                       {openMenuProductId === product.id && (
                         <div className="absolute right-4 top-14 z-20 min-w-40 rounded-xl border border-slate-200 bg-white p-1.5 shadow-lg">
                           <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-slate-700 hover:bg-slate-100"
-                            onClick={() => { setDetailProductId(null); startEditProduct(product); setOpenMenuProductId(null); }}>
+                            onClick={() => { startEditProduct(product); setOpenMenuProductId(null); }}>
                             <Pencil className="h-4 w-4" /> Edit
                           </button>
                           <button type="button" className="flex w-full items-center gap-2 rounded-md px-2.5 py-2 text-sm text-amber-700 hover:bg-amber-50"
@@ -998,9 +1150,11 @@ const Products: React.FC = () => {
               </p>
             )}
             <p className="text-xs text-slate-500 max-w-2xl">
-              Οι ομάδες αποθηκεύονται στο backend ως <strong>template</strong> (GET/PUT{' '}
-              <code className="rounded bg-slate-100 px-1">/merchants/product-option-groups</code>). Για να τις
-              εφαρμόσεις σε συγκεκριμένο προϊόν, χρησιμοποίησε το παράθυρο Νέο / Επεξεργασία προϊόντος.
+              Οι ομάδες αποθηκεύονται ως template (GET/PUT{' '}
+              <code className="rounded bg-slate-100 px-1">/merchants/product-option-groups</code>). Όταν
+              επιλέγεις προϊόντα ή κατηγορίες παρακάτω και πατάς αποθήκευση, η ίδια ομάδα ενημερώνεται και στα
+              συγκεκριμένα προϊόντα (ώστε το PWA να τις δείχνει). Μπορείς επίσης να τις προσθέσεις από το παράθυρο
+              Νέο / Επεξεργασία προϊόντος (βιβλιοθήκη).
             </p>
 
             {/* Group editor panel */}
@@ -1029,9 +1183,12 @@ const Products: React.FC = () => {
                             groupDraft.type === 'radio' ? 'border-slate-900 bg-slate-50' : 'border-slate-200 hover:border-slate-300')}>
                           <div className="flex items-center gap-2">
                             <Circle className={cn('h-4 w-4', groupDraft.type === 'radio' ? 'text-slate-900' : 'text-slate-300')} />
-                            <span className="text-xs font-bold text-slate-800">Radio</span>
+                            <span className="text-xs font-bold text-slate-800">Μία επιλογή</span>
                           </div>
-                          <p className="text-[10px] text-slate-400 leading-relaxed">Μια επιλογή μόνο<br />(π.χ. Ζάχαρη: σκέτος / γλυκός)</p>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">
+                            Τύπος API: <strong className="text-slate-600">Single</strong>
+                            <br />Ο πελάτης διαλέγει υποχρεωτικά μία από τις επιλογές σου.
+                          </p>
                         </button>
                         <button type="button" onClick={() => setGroupDraft((p) => p ? { ...p, type: 'checkbox', required: false } : p)}
                           className={cn('flex flex-col items-start gap-1 rounded-xl border-2 p-3 text-left transition-all',
@@ -1040,25 +1197,14 @@ const Products: React.FC = () => {
                             <CheckSquare className={cn('h-4 w-4', groupDraft.type === 'checkbox' ? 'text-slate-900' : 'text-slate-300')} />
                             <span className="text-xs font-bold text-slate-800">Extras / Αφαίρεση</span>
                           </div>
-                          <p className="text-[10px] text-slate-400 leading-relaxed">Πολλαπλές επιλογές<br />(π.χ. Χωρίς ντομάτα)</p>
+                          <p className="text-[10px] text-slate-400 leading-relaxed">
+                            Τύπος API: <strong className="text-slate-600">Multiple</strong>
+                            <br />Ο πελάτης μπορεί να επιλέξει καμία ή πολλές επιλογές.
+                          </p>
                         </button>
                       </div>
                     </div>
                   </div>
-
-                  {/* Required toggle (radio only) */}
-                  {groupDraft.type === 'radio' && (
-                    <label className="flex cursor-pointer items-center gap-3">
-                      <div className={cn('relative h-5 w-9 rounded-full transition-colors', groupDraft.required ? 'bg-slate-900' : 'bg-slate-300')}
-                        onClick={() => setGroupDraft((p) => p ? { ...p, required: !p.required } : p)}>
-                        <div className={cn('absolute top-0.5 h-4 w-4 rounded-full bg-white shadow transition-transform', groupDraft.required ? 'translate-x-4' : 'translate-x-0.5')} />
-                      </div>
-                      <div>
-                        <span className="text-sm font-semibold text-slate-800">Υποχρεωτική επιλογή</span>
-                        <p className="text-xs text-slate-400">Ο πελάτης πρέπει να επιλέξει μία</p>
-                      </div>
-                    </label>
-                  )}
 
                   {/* Choices */}
                   <div className="space-y-2.5">
@@ -1195,10 +1341,14 @@ const Products: React.FC = () => {
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className={cn('inline-flex items-center gap-1 rounded-md px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide',
                             group.type === 'radio' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700')}>
-                            {group.type === 'radio' ? <><Circle className="h-2.5 w-2.5" /> Radio</> : <><CheckSquare className="h-2.5 w-2.5" /> Extras</>}
+                            {group.type === 'radio' ? (
+                              <><Circle className="h-2.5 w-2.5" /> Single</>
+                            ) : (
+                              <><CheckSquare className="h-2.5 w-2.5" /> Multiple</>
+                            )}
                           </span>
-                          {group.type === 'radio' && group.required && (
-                            <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">Required</span>
+                          {group.type === 'radio' && (
+                            <span className="rounded-md bg-amber-50 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-amber-700">Υποχρ. 1</span>
                           )}
                         </div>
                         <h3 className="mt-1.5 text-sm font-bold text-slate-900">{group.name}</h3>
@@ -1341,125 +1491,7 @@ const Products: React.FC = () => {
         )}
       </div>
 
-      {/* ── PRODUCT DETAIL MODAL ───────────────────────────────────── */}
-      {detailProduct && detailDraft && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-8">
-          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl max-h-[92vh] overflow-y-auto">
-            {/* Header */}
-            <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-6 py-4">
-              <h2 className="text-base font-bold text-slate-900">Product details</h2>
-              <button type="button" onClick={closeProductDetailModal}
-                className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
-            </div>
 
-            <div className="p-6 space-y-6">
-              {/* Image + fields */}
-              <div className="grid gap-5 md:grid-cols-[200px_1fr]">
-                <div className="space-y-2">
-                  <div className="overflow-hidden rounded-xl border border-slate-200 aspect-square">
-                    <img src={detailProduct.image} alt={detailProduct.name} className="h-full w-full object-cover" />
-                  </div>
-                  <button type="button" onClick={() => detailFileInputRef.current?.click()} disabled={detailImageBusy}
-                    className="w-full inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-50 disabled:opacity-50">
-                    {detailImageBusy ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <ImageIcon className="h-3.5 w-3.5" />}
-                    {detailImageBusy ? 'Uploading...' : 'Αλλαγή εικόνας'}
-                  </button>
-                  <input ref={detailFileInputRef} type="file" accept="image/*,.avif,image/avif" className="hidden"
-                    onChange={(e) => void handleDetailImageSelected(e)} />
-                  {detailImageError && <p className="text-xs text-red-600">{detailImageError}</p>}
-                </div>
-
-                <div className="space-y-3">
-                  {[
-                    { label: 'Όνομα', key: 'name' as const, type: 'text' },
-                  ].map(({ label, key }) => (
-                    <div key={key} className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-500">{label}</label>
-                      <input type="text" value={detailDraft[key] as string}
-                        onChange={(e) => setDetailDraft({ ...detailDraft, [key]: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
-                    </div>
-                  ))}
-                  <div className="space-y-1">
-                    <label className="text-xs font-semibold text-slate-500">Περιγραφή</label>
-                    <textarea value={detailDraft.description}
-                      onChange={(e) => setDetailDraft({ ...detailDraft, description: e.target.value })}
-                      className="w-full rounded-xl border border-slate-200 px-3.5 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10 min-h-[80px] resize-none" />
-                  </div>
-                  <div className="grid grid-cols-3 gap-3">
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-500">Κατηγορία</label>
-                      <select value={detailDraft.category}
-                        onChange={(e) => setDetailDraft({ ...detailDraft, category: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-900">
-                        {categories.filter((c) => c !== 'All').map((c) => <option key={c} value={c}>{c}</option>)}
-                      </select>
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-500">Τιμή (€)</label>
-                      <input type="number" step="0.01" min="0" value={detailDraft.price}
-                        onChange={(e) => setDetailDraft({ ...detailDraft, price: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
-                    </div>
-                    <div className="space-y-1">
-                      <label className="text-xs font-semibold text-slate-500">Points</label>
-                      <input type="number" step="1" min="0" value={detailDraft.pointsReward}
-                        onChange={(e) => setDetailDraft({ ...detailDraft, pointsReward: e.target.value })}
-                        className="w-full rounded-xl border border-slate-200 px-3 py-2.5 text-sm outline-none focus:border-slate-900 focus:ring-2 focus:ring-slate-900/10" />
-                    </div>
-                  </div>
-                  <label className="inline-flex items-center gap-2 text-sm font-medium">
-                    <input type="checkbox" checked={detailDraft.isActive}
-                      onChange={(e) => setDetailDraft({ ...detailDraft, isActive: e.target.checked })}
-                      className="rounded border-slate-300" />
-                    Active / In Stock
-                  </label>
-                </div>
-              </div>
-
-              {/* Applied option groups */}
-              {(() => {
-                const assigned = optionGroups.filter(
-                  (g) => g.assignedProductIds.includes(detailProduct.id) || g.assignedCategories.includes(detailProduct.category),
-                );
-                if (assigned.length === 0) return null;
-                return (
-                  <div className="rounded-xl border border-slate-200 p-4 space-y-3">
-                    <h3 className="text-sm font-semibold text-slate-900">Option Groups εφαρμοσμένες σε αυτό το προϊόν</h3>
-                    <div className="flex flex-wrap gap-2">
-                      {assigned.map((g) => (
-                        <div key={g.id} className="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2">
-                          <div className="flex items-center gap-2 mb-1">
-                            <span className={cn('rounded text-[10px] font-bold px-1.5 py-0.5', g.type === 'radio' ? 'bg-blue-50 text-blue-700' : 'bg-purple-50 text-purple-700')}>
-                              {g.type === 'radio' ? 'RADIO' : 'EXTRAS'}
-                            </span>
-                            <span className="text-xs font-semibold text-slate-800">{g.name}</span>
-                          </div>
-                          <p className="text-[10px] text-slate-400">{g.choices.map((c) => c.label).join(' · ')}</p>
-                        </div>
-                      ))}
-                    </div>
-                    <p className="text-xs text-slate-400">Για να αλλάξεις, πήγαινε στο tab Options.</p>
-                  </div>
-                );
-              })()}
-
-              {detailSaveError && <p className="text-sm text-red-600" role="alert">{detailSaveError}</p>}
-              <div className="flex justify-end gap-2 pt-2 border-t border-slate-100">
-                <button type="button" onClick={closeProductDetailModal} disabled={detailSaveBusy}
-                  className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-50">
-                  Κλείσιμο
-                </button>
-                <button type="button" onClick={() => void saveDetailChanges()} disabled={detailSaveBusy}
-                  className="inline-flex items-center gap-2 rounded-xl bg-slate-900 px-5 py-2 text-sm font-semibold text-white hover:bg-slate-800 disabled:opacity-50">
-                  {detailSaveBusy ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                  {detailSaveBusy ? 'Αποθήκευση...' : 'Αποθήκευση'}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── ADD / EDIT PRODUCT MODAL ───────────────────────────────── */}
       {isAddOpen && (
@@ -1468,7 +1500,7 @@ const Products: React.FC = () => {
             <div className="w-full h-[92vh] sm:h-auto sm:max-h-[90vh] sm:max-w-2xl rounded-t-2xl sm:rounded-2xl bg-white shadow-xl overflow-y-auto">
               <div className="sticky top-0 z-10 flex items-center justify-between border-b border-slate-100 bg-white px-5 py-4">
                 <h2 className="text-base font-bold text-slate-900">{editingProductId ? 'Επεξεργασία προϊόντος' : 'Νέο προϊόν'}</h2>
-                <button type="button" onClick={() => { setIsAddOpen(false); resetForm(); }}
+                <button type="button" onClick={() => { resetForm(); setIsAddOpen(false); }}
                   className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100"><X className="h-4 w-4" /></button>
               </div>
               <div className="space-y-4 p-5 pb-8">
@@ -1551,34 +1583,98 @@ const Products: React.FC = () => {
                 </div>
 
                 <div className="space-y-3 rounded-xl border border-slate-200 bg-slate-50/60 p-4">
-                  <div>
-                    <p className="text-xs font-semibold text-slate-700">Επιλογές προϊόντος (options)</p>
-                    <p className="mt-0.5 text-[11px] text-slate-500">
-                      Επίλεξε ομάδες από το tab <strong>Options</strong> (βιβλιοθήκη) και/ή πρόσθεσε ομάδες μόνο για αυτό το προϊόν.
-                    </p>
+                  <div className="flex flex-wrap items-start justify-between gap-2">
+                    <div className="min-w-0 flex-1">
+                      <p className="text-xs font-semibold text-slate-700">Επιλογές προϊόντος (options)</p>
+                      <p className="mt-0.5 text-[11px] text-slate-500">
+                        Επίλεξε ομάδες από το tab <strong>Options</strong> (βιβλιοθήκη) και/ή πρόσθεσε ομάδες μόνο για αυτό το προϊόν.
+                      </p>
+                      <p className="mt-1.5 text-[11px] text-slate-400 leading-snug">
+                        Με την αποθήκευση αποθηκεύεται στιγμιότυπο των τιμών· αν αλλάξεις αργότερα το template στο Options, άνοιξε ξανά το προϊόν και πάτα αποθήκευση για να ενημερωθεί.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={clearAllProductModalOptions}
+                      disabled={modalLibraryBusy || isSaving}
+                      className="shrink-0 rounded-lg border border-slate-200 bg-white px-2.5 py-1.5 text-[11px] font-semibold text-slate-600 shadow-sm hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-50"
+                    >
+                      Clear All Options
+                    </button>
                   </div>
+                  {modalLibraryBusy && (
+                    <div className="flex items-center gap-2 text-xs text-slate-500">
+                      <Loader2 className="h-3.5 w-3.5 animate-spin" /> Συγχρονισμός βιβλιοθήκης από server…
+                    </div>
+                  )}
+                  {optionGroups.length === 0 && !modalLibraryBusy && (
+                    <p className="text-[11px] text-amber-800 bg-amber-50/80 rounded-lg px-2.5 py-2">
+                      Δεν υπάρχουν ομάδες στο Options. Δημιούργησέ τες στο tab Options ή περίμενε το sync· μπορείς πάντα να προσθέσεις ομάδες «Μόνο για αυτό το προϊόν» παρακάτω.
+                    </p>
+                  )}
                   {optionGroups.length > 0 && (
-                    <div className="space-y-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-slate-400">Από βιβλιοθήκη</p>
-                      <div className="flex flex-col gap-2">
-                        {optionGroups.map((g) => (
-                          <label
-                            key={g.id}
-                            className="flex cursor-pointer items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm"
-                          >
-                            <input
-                              type="checkbox"
-                              checked={selectedLibraryGroupNames.includes(g.name)}
-                              onChange={() => toggleLibraryGroupName(g.name)}
-                              className="h-4 w-4 rounded border-slate-300"
-                            />
-                            <span className="font-medium text-slate-800">{g.name}</span>
-                            <span className="text-xs text-slate-400">
-                              {g.type === 'radio' ? 'Single' : 'Multiple'} · {g.choices.length} επιλογές
-                            </span>
-                          </label>
-                        ))}
+                    <div className="overflow-hidden rounded-xl border-2 border-slate-200 bg-white shadow-sm">
+                      <div className="border-b border-slate-100 bg-slate-100/90 px-3 py-2.5">
+                        <p className="text-sm font-semibold text-slate-900">Βιβλιοθήκη option groups</p>
+                        <p className="mt-0.5 text-[11px] text-slate-600">
+                          Τσέκαρε ομάδες από το tab Options — κάθε επιλογή κάτω αποθηκεύεται στο προϊόν (όνομα, τύπος, επιλογές + τιμές).
+                        </p>
                       </div>
+                      <ul className="divide-y divide-slate-100">
+                        {optionGroups.map((g) => {
+                          const chkId = `lib-opt-group-${g.id}`;
+                          const selected = selectedLibraryGroupIds.includes(g.id);
+                          return (
+                            <li key={g.id} className={cn('p-3 transition-colors', selected && 'bg-emerald-50/50')}>
+                              <div className="flex gap-3">
+                                <input
+                                  id={chkId}
+                                  type="checkbox"
+                                  checked={selected}
+                                  onChange={() => toggleLibraryGroupId(g.id)}
+                                  disabled={modalLibraryBusy}
+                                  className="mt-0.5 h-4 w-4 shrink-0 rounded border-slate-300"
+                                />
+                                <div className="min-w-0 flex-1 space-y-2">
+                                  <div className="flex flex-wrap items-center gap-2">
+                                    <label htmlFor={chkId} className="cursor-pointer text-sm font-semibold text-slate-900">
+                                      {g.name}
+                                    </label>
+                                    <span
+                                      className={cn(
+                                        'rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide',
+                                        g.type === 'radio'
+                                          ? 'bg-violet-100 text-violet-800'
+                                          : 'bg-amber-100 text-amber-900',
+                                      )}
+                                    >
+                                      {g.type === 'radio' ? 'Single (υποχρ.)' : 'Multiple'}
+                                    </span>
+                                    <span className="text-[11px] text-slate-500">{g.choices.length} επιλογές → στο προϊόν</span>
+                                  </div>
+                                  {g.choices.length > 0 ? (
+                                    <ul className="flex flex-wrap gap-1.5">
+                                      {g.choices.map((c) => (
+                                        <li
+                                          key={c.id}
+                                          className="max-w-full rounded-md border border-slate-200 bg-white px-2 py-1 text-[11px] text-slate-700"
+                                        >
+                                          <span className="font-medium">{c.label}</span>
+                                          <span className="text-slate-500">
+                                            {c.priceModifier > 0 ? `  +€${c.priceModifier.toFixed(2)}` : '  —'}
+                                          </span>
+                                        </li>
+                                      ))}
+                                    </ul>
+                                  ) : (
+                                    <p className="text-[11px] text-amber-700">Καμία επιλογή — πρόσθεσε επιλογές στο tab Options.</p>
+                                  )}
+                                </div>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
                     </div>
                   )}
                   <div className="space-y-3">
@@ -1702,7 +1798,7 @@ const Products: React.FC = () => {
                 </div>
 
                 <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row sm:justify-end">
-                  <button type="button" onClick={() => { setIsAddOpen(false); resetForm(); }}
+                  <button type="button" onClick={() => { resetForm(); setIsAddOpen(false); }}
                     className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-600 hover:bg-slate-50">
                     Ακύρωση
                   </button>

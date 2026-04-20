@@ -1,5 +1,5 @@
 import axios, { type AxiosInstance } from 'axios';
-import { DashboardData, UserData } from '../types';
+import { DashboardData, UserData, type ProductOptionGroupRow, type ProductOptionRow } from '../types';
 
 // Χρησιμοποιούμε Vite proxy: /api → http://localhost:5057
 const API_BASE_URL = '/api/v1';
@@ -152,6 +152,8 @@ export interface ApiProduct {
   merchantId: string;
   category: string;
   imageUrl?: string | null;
+  allergens?: string[];
+  optionGroups?: ProductOptionGroupRow[];
 }
 
 export interface QrCodeDetails {
@@ -189,12 +191,68 @@ export interface ApiMerchantUser {
   email: string;
 }
 
+function normalizeOptionRows(raw: unknown): ProductOptionRow[] {
+  if (!Array.isArray(raw)) return [];
+  const out: ProductOptionRow[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== 'object') continue;
+    const o = row as Record<string, unknown>;
+    const oid = String(o.id ?? o.Id ?? '').trim();
+    if (!oid) continue;
+    out.push({
+      id: oid,
+      name: String(o.name ?? o.Name ?? '').trim(),
+      price: Number(o.price ?? o.Price ?? 0),
+    });
+  }
+  return out;
+}
+
+function normalizeOptionGroups(raw: unknown): ProductOptionGroupRow[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out: ProductOptionGroupRow[] = [];
+  for (const row of raw) {
+    if (!row || typeof row !== 'object') continue;
+    const g = row as Record<string, unknown>;
+    const id = String(g.id ?? g.Id ?? '').trim();
+    if (!id) continue;
+    const typeRaw = String(g.type ?? g.Type ?? 'Single');
+    const type: 'Single' | 'Multiple' = typeRaw === 'Multiple' ? 'Multiple' : 'Single';
+    const options = normalizeOptionRows(g.options ?? g.Options);
+    if (options.length === 0) continue;
+    out.push({
+      id,
+      name: String(g.name ?? g.Name ?? '').trim(),
+      type,
+      options,
+    });
+  }
+  return out.length ? out : undefined;
+}
+
+function normalizeAllergens(raw: unknown): string[] | undefined {
+  if (!Array.isArray(raw) || raw.length === 0) return undefined;
+  const out = raw.filter((x): x is string => typeof x === 'string' && x.trim().length > 0).map((s) => s.trim());
+  return out.length ? out : undefined;
+}
+
 function normalizeApiProduct(raw: unknown): ApiProduct | null {
   if (!raw || typeof raw !== 'object') return null;
   const r = raw as Record<string, unknown>;
   const id = String(r.id ?? r.Id ?? '').trim();
   const merchantId = String(r.merchantId ?? r.MerchantId ?? '').trim();
   if (!id || !merchantId) return null;
+  let ogRaw: unknown =
+    r.optionGroups ?? r.OptionGroups ?? r.optionGroupsJson ?? r.OptionGroupsJson;
+  if (typeof ogRaw === 'string') {
+    try {
+      ogRaw = JSON.parse(ogRaw) as unknown;
+    } catch {
+      ogRaw = undefined;
+    }
+  }
+  const optionGroups = normalizeOptionGroups(ogRaw);
+  const allergens = normalizeAllergens(r.allergens ?? r.Allergens);
   return {
     id,
     name: String(r.name ?? r.Name ?? '').trim(),
@@ -204,6 +262,8 @@ function normalizeApiProduct(raw: unknown): ApiProduct | null {
     merchantId,
     category: String(r.category ?? r.Category ?? '').trim() || 'Menu',
     imageUrl: (r.imageUrl ?? r.ImageUrl ?? null) as string | null,
+    ...(allergens ? { allergens } : {}),
+    ...(optionGroups ? { optionGroups } : {}),
   };
 }
 

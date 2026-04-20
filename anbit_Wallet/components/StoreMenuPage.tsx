@@ -34,7 +34,7 @@ import {
   X,
 } from 'lucide-react';
 import { Partner, Product, type UserData } from '../types';
-import type { CartItemData, ProductCartOptions } from '../types';
+import type { CartItemData } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 import { useOrder } from '../context/OrderContext';
 import { useAuth } from '../context/AuthContext';
@@ -47,6 +47,8 @@ import OrderSentScreen from './OrderSentScreen';
 import OrderAcceptedScreen, { type OrderReceiptLine } from './OrderAcceptedScreen';
 import OrderDeliveredScreen from './OrderDeliveredScreen';
 import StoreXpWalletView from './StoreXpWalletView';
+import { getApiOptionGroupsSummary, getProductCategoryLabel } from '../lib/productMeta';
+import type { CustomizeAddPayload } from './ProductCustomizeModal';
 
 const STORE_SOFT_BG = '#F8F9FA';
 
@@ -137,9 +139,8 @@ function StoreBottomNav({
           if (onMenuPress) onMenuPress();
           else window.scrollTo({ top: 0, behavior: 'smooth' });
         }}
-        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-1 transition-all active:scale-95 ${
-          activeTab === 'menu' ? 'text-white' : 'text-zinc-400 hover:text-white'
-        }`}
+        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-1 transition-all active:scale-95 ${activeTab === 'menu' ? 'text-white' : 'text-zinc-400 hover:text-white'
+          }`}
       >
         <span className="text-2xl leading-none sm:text-[1.65rem]" aria-hidden>
           ✕
@@ -151,9 +152,8 @@ function StoreBottomNav({
       <button
         type="button"
         onClick={() => goXp?.()}
-        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-1 transition-all active:scale-95 ${
-          activeTab === 'xp' ? 'scale-110 text-white' : 'text-zinc-400 hover:text-white'
-        }`}
+        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-1 transition-all active:scale-95 ${activeTab === 'xp' ? 'scale-110 text-white' : 'text-zinc-400 hover:text-white'
+          }`}
       >
         <Star
           className={`h-7 w-7 sm:h-8 sm:w-8 ${activeTab === 'xp' ? 'fill-anbit-brand text-anbit-brand' : 'fill-none text-zinc-400'}`}
@@ -166,9 +166,8 @@ function StoreBottomNav({
       <button
         type="button"
         onClick={() => goProfile?.()}
-        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-1 transition-all active:scale-95 ${
-          activeTab === 'profile' ? 'text-white' : 'text-zinc-400 hover:text-white'
-        }`}
+        className={`flex flex-col items-center justify-center gap-1.5 px-3 py-1 transition-all active:scale-95 ${activeTab === 'profile' ? 'text-white' : 'text-zinc-400 hover:text-white'
+          }`}
       >
         <User className="h-7 w-7 sm:h-8 sm:w-8" strokeWidth={2} />
         <span className="text-base font-anbit font-normal not-italic normal-case tracking-tight leading-none [font-synthesis:none] sm:text-lg">
@@ -230,9 +229,9 @@ function StoreProfilePanel({
             createdAt: order.createdAt,
             items: Array.isArray(order.items)
               ? order.items.map((item) => ({
-                  productId: String(item?.productId ?? ''),
-                  quantity: Number(item?.quantity ?? 0),
-                }))
+                productId: String(item?.productId ?? ''),
+                quantity: Number(item?.quantity ?? 0),
+              }))
               : [],
           }));
         setOrderHistoryItems(filtered);
@@ -631,14 +630,12 @@ function StoreProfilePanel({
   if (profileView === 'settings') {
     const Toggle: React.FC<{ checked: boolean }> = ({ checked }) => (
       <div
-        className={`relative flex h-6 w-11 items-center rounded-full p-1 transition-colors ${
-          checked ? 'bg-anbit-brand' : 'bg-white/15 border border-white/10'
-        }`}
+        className={`relative flex h-6 w-11 items-center rounded-full p-1 transition-colors ${checked ? 'bg-anbit-brand' : 'bg-white/15 border border-white/10'
+          }`}
       >
         <div
-          className={`h-5 w-5 rounded-full bg-white transition-transform ${
-            checked ? 'translate-x-5' : 'translate-x-0'
-          }`}
+          className={`h-5 w-5 rounded-full bg-white transition-transform ${checked ? 'translate-x-5' : 'translate-x-0'
+            }`}
         />
       </div>
     );
@@ -979,7 +976,9 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
   const menu = useMemo(() => partner.menu || [], [partner]);
   const categories = useMemo(() => {
     const fromMenu = new Set(menu.map((p) => p.category).filter(Boolean));
-    const rest = Array.from(fromMenu).sort((a, b) => a.localeCompare(b, undefined, { sensitivity: 'base' }));
+    const rest = Array.from(fromMenu).sort((a, b) =>
+      String(a).localeCompare(String(b), undefined, { sensitivity: 'base' }),
+    );
     return ['All', ...rest];
   }, [menu]);
 
@@ -993,22 +992,27 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     );
   }, [menu, searchQuery]);
 
-  const cartTotal = cart.reduce((acc, item) => acc + item.price * item.quantity, 0);
+  const cartTotal = cart.reduce(
+    (acc, item) => acc + (item.price + (item.optionsExtraPerUnit ?? 0)) * item.quantity,
+    0,
+  );
   const xpTotal = cart.reduce((acc, item) => acc + item.xpReward * item.quantity, 0);
 
   const openCustomize = (product: Product) => {
     setProductToCustomize(product);
   };
 
-  const addToCartWithOptions = (
-    product: Product,
-    quantity: number,
-    options: ProductCartOptions | undefined,
-    comments: string | undefined
-  ) => {
+  const addToCartWithOptions = (product: Product, quantity: number, payload: CustomizeAddPayload) => {
     setCart((prev) => [
       ...prev,
-      { ...product, quantity, options, comments },
+      {
+        ...product,
+        quantity,
+        options: payload.legacyOptions,
+        comments: payload.comments,
+        selectedOptions: payload.selectedOptions,
+        optionsExtraPerUnit: payload.optionsExtraPerUnit ?? 0,
+      },
     ]);
     setProductToCustomize(null);
   };
@@ -1024,7 +1028,11 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
       return;
     }
     const orderItems = cart
-      .map((item) => ({ productId: String(item.id ?? '').trim(), quantity: item.quantity }))
+      .map((item) => ({
+        productId: String(item.id ?? '').trim(),
+        quantity: item.quantity,
+        ...(item.selectedOptions?.length ? { selectedOptions: item.selectedOptions } : {}),
+      }))
       .filter((item) => item.productId && item.quantity > 0);
     if (orderItems.length !== cart.length) {
       setCheckoutError('Κάποια προϊόντα δεν έχουν έγκυρο id. Κάνε refresh το μενού και ξαναπροσπάθησε.');
@@ -1038,6 +1046,8 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         merchantId: partner.id,
         tableNumber: session?.tableNumber ?? 1,
         orderItems,
+        paymentType: 'Cash',
+        appliedXpDiscount: 0,
       });
       setOrderReceiptLines(
         cart.map((item) => ({
@@ -1444,339 +1454,354 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
     <div className={storeTab === 'menu' ? 'min-h-screen bg-[#0a0a0a] text-white' : 'min-h-screen bg-[#ffffff]'}>
       {storeTab === 'menu' && (
         <>
-      <motion.header
-        className="fixed top-0 left-1/2 z-50 w-full max-w-[520px] -translate-x-1/2 border-b border-white/10 px-3 pb-2 pt-2"
-        style={{ backgroundColor: topBarBg }}
-      >
-        <div
-          className="mx-auto flex max-w-xl items-center justify-between gap-3"
-          style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.25rem)' }}
-        >
-          <button
-            type="button"
-            onClick={onBack}
-            className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-            aria-label={t('back')}
+          <motion.header
+            className="fixed top-0 left-1/2 z-50 w-full max-w-[520px] -translate-x-1/2 border-b border-white/10 px-3 pb-2 pt-2"
+            style={{ backgroundColor: topBarBg }}
           >
-            <ArrowLeft className="h-4.5 w-4.5" strokeWidth={2.2} />
-          </button>
-          <div className="flex h-10 flex-1 items-center gap-2 rounded-full bg-[#262626] px-4">
-            <Search className="h-4 w-4 text-[#858585]" />
-            <input
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Αναζήτηση ανά κατηγορία"
-              className="w-full bg-transparent text-[14px] font-semibold tracking-tight text-white placeholder:text-[#858585] outline-none"
-              aria-label={t('searchProduct')}
-            />
-          </div>
-          <button
-            type="button"
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowQuickActionsMenu((v) => !v);
-            }}
-            className="relative z-[80] flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
-            aria-label={showQuickActionsMenu ? 'Close menu' : 'More'}
-            aria-haspopup="menu"
-            aria-expanded={showQuickActionsMenu}
-          >
-            {showQuickActionsMenu ? <X className="h-4.5 w-4.5" strokeWidth={2.2} /> : <Ellipsis className="h-5 w-5" strokeWidth={2.2} />}
-          </button>
-        </div>
-        <motion.nav
-          initial={false}
-          animate={{
-            opacity: showStickyCategories ? 1 : 0,
-            y: showStickyCategories ? 0 : -8,
-            height: showStickyCategories ? 44 : 0,
-            marginTop: showStickyCategories ? 8 : 0,
-          }}
-          transition={{ duration: 0.2, ease: 'easeOut' }}
-          className={`mx-auto mt-2 flex h-11 max-w-xl items-center gap-6 overflow-x-auto border-t border-white/5 no-scrollbar ${showStickyCategories ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        >
-          {navCategories.map((cat) => {
-            const isActive = activeCategory === cat;
-            const label = String(categoryLabel(cat)).toUpperCase();
-            return (
-              <button
-                key={cat}
-                type="button"
-                onClick={() => {
-                  setActiveCategory(cat);
-                  const targetEl =
-                    cat === 'All' ? offersSectionRef.current : categorySectionRefs.current[cat];
-                  if (!targetEl) return;
-                  const y = window.scrollY + targetEl.getBoundingClientRect().top - 124;
-                  window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
-                }}
-                className="relative h-full shrink-0 whitespace-nowrap"
-              >
-                <span className={`text-[13px] font-extrabold tracking-widest ${isActive ? 'text-white' : 'text-[#858585]'}`}>
-                  {label}
-                </span>
-                {isActive ? <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-t-sm bg-[#2563eb]" /> : null}
-              </button>
-            );
-          })}
-        </motion.nav>
-      </motion.header>
-
-      {showQuickActionsMenu ? (
-        <div
-          className="fixed inset-0 z-[70] bg-black/15 backdrop-blur-[2px]"
-          onClick={() => setShowQuickActionsMenu(false)}
-          role="presentation"
-        >
-          <div className="mx-auto w-full max-w-[520px] px-3">
             <div
-              className="ml-auto mt-[calc(env(safe-area-inset-top)+3.75rem)] w-[min(88vw,290px)] overflow-hidden rounded-[24px] border border-white/15 bg-[#141414]/95 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
-              onClick={(e) => e.stopPropagation()}
-              role="menu"
-              aria-label="Quick store actions"
+              className="mx-auto flex max-w-xl items-center justify-between gap-3"
+              style={{ paddingTop: 'calc(env(safe-area-inset-top) + 0.25rem)' }}
             >
-              {[
-                { label: 'More info', icon: <Info className="h-5 w-5" strokeWidth={2.1} />, onPress: openMoreInfo },
-                { label: 'Translate', icon: <Languages className="h-5 w-5" strokeWidth={2.1} />, onPress: openTranslate },
-                { label: 'Order together', icon: <UserPlus className="h-5 w-5" strokeWidth={2.1} />, onPress: orderTogether },
-              ].map((item, idx) => (
-                <button
-                  key={item.label}
-                  type="button"
-                  onClick={item.onPress}
-                  className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-[16px] font-medium text-white transition-colors hover:bg-white/10 ${
-                    idx < 2 ? 'border-b border-white/15' : ''
-                  }`}
-                  role="menuitem"
-                >
-                  <span className="inline-flex items-center justify-center text-white/95">
-                    {item.icon}
-                  </span>
-                  <span>{item.label}</span>
-                </button>
-              ))}
-            </div>
-          </div>
-        </div>
-      ) : null}
-
-      <main className={`mx-auto w-full max-w-[520px] pb-36 ${cart.length > 0 ? 'pb-56' : 'pb-40'}`}>
-        <motion.section style={{ y: bannerY }} className="sticky top-0 z-0 h-[250px] w-full overflow-hidden">
-          <img src={featuredProduct?.image || partner.image} alt={partner.name} className="h-full w-full object-cover" />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
-        </motion.section>
-
-        <motion.section
-          ref={infoSectionRef}
-          style={{ borderRadius: contentRadius }}
-          className="relative z-10 -mt-12 mb-4 bg-[#0a0a0a] px-4 pb-4 pt-16 text-center"
-        >
-          <h1 className="mb-1.5 text-[28px] font-extrabold tracking-tight text-white">{partner.name}</h1>
-          <div className="mb-1 flex items-center justify-center gap-1.5 text-[11px] font-medium">
-            <span>⭐ {(partner.rating ?? 4.9).toFixed(1)}</span>
-            <span className="text-[#adaaaa]">•</span>
-            <span>🔥 2x XP Multiplier</span>
-            <span className="text-[#adaaaa]">•</span>
-            <span>📍 300m</span>
-          </div>
-          <div className="flex items-center justify-center gap-2.5 text-[11px] text-[#adaaaa]">
-            <span>💎 Premium Anbit Partner</span>
-            <button type="button" className="font-bold text-[#2563eb]">More</button>
-          </div>
-        </motion.section>
-
-        <section className="mb-5 px-4">
-          <div className="flex items-center justify-between rounded-xl bg-[#131313] p-3 shadow-lg ring-1 ring-white/10">
-            <div className="flex items-center gap-4">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563eb]/15 text-[#2563eb]">
-                <span className="material-symbols-outlined text-[17px]">trophy</span>
+              <button
+                type="button"
+                onClick={onBack}
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                aria-label={t('back')}
+              >
+                <ArrowLeft className="h-4.5 w-4.5" strokeWidth={2.2} />
+              </button>
+              <div className="flex h-10 flex-1 items-center gap-2 rounded-full bg-[#262626] px-4">
+                <Search className="h-4 w-4 text-[#858585]" />
+                <input
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder="Αναζήτηση ανά κατηγορία"
+                  className="w-full bg-transparent text-[14px] font-semibold tracking-tight text-white placeholder:text-[#858585] outline-none"
+                  aria-label={t('searchProduct')}
+                />
               </div>
-              <div className="flex items-center gap-1">
-                <p className="text-[13px] font-bold text-white">xp wallet</p>
-                <span className="material-symbols-outlined text-sm text-[#adaaaa]">keyboard_arrow_down</span>
-              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setShowQuickActionsMenu((v) => !v);
+                }}
+                className="relative z-[80] flex h-8 w-8 items-center justify-center rounded-full bg-white/10 text-white transition-colors hover:bg-white/20"
+                aria-label={showQuickActionsMenu ? 'Close menu' : 'More'}
+                aria-haspopup="menu"
+                aria-expanded={showQuickActionsMenu}
+              >
+                {showQuickActionsMenu ? <X className="h-4.5 w-4.5" strokeWidth={2.2} /> : <Ellipsis className="h-5 w-5" strokeWidth={2.2} />}
+              </button>
             </div>
-            <button type="button" className="text-[#adaaaa]">
-              <span className="material-symbols-outlined">share</span>
-            </button>
-          </div>
-        </section>
-
-        <section className="mb-5">
-          <div className="mb-3 px-4">
-            <h2 className="text-xl font-bold tracking-tight text-white">Specials for you</h2>
-          </div>
-          <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-4">
-            {(specials.length ? specials : filteredMenu.slice(0, 2)).map((product, idx) => (
-              <article key={product.id} className={`relative w-56 flex-none overflow-hidden rounded-xl p-3 ${idx === 0 ? 'bg-[#1e3a8a]/40' : 'bg-[#c188f2]/10'}`}>
-                {idx === 0 ? (
-                  <div className="absolute right-3 top-3">
-                    <span className="material-symbols-outlined text-2xl text-[#2563eb]" style={{ fontVariationSettings: "'FILL' 1" }}>
-                      local_fire_department
+            <motion.nav
+              initial={false}
+              animate={{
+                opacity: showStickyCategories ? 1 : 0,
+                y: showStickyCategories ? 0 : -8,
+                height: showStickyCategories ? 44 : 0,
+                marginTop: showStickyCategories ? 8 : 0,
+              }}
+              transition={{ duration: 0.2, ease: 'easeOut' }}
+              className={`mx-auto mt-2 flex h-11 max-w-xl items-center gap-6 overflow-x-auto border-t border-white/5 no-scrollbar ${showStickyCategories ? 'pointer-events-auto' : 'pointer-events-none'}`}
+            >
+              {navCategories.map((cat) => {
+                const isActive = activeCategory === cat;
+                const label = String(categoryLabel(cat)).toUpperCase();
+                return (
+                  <button
+                    key={cat}
+                    type="button"
+                    onClick={() => {
+                      setActiveCategory(cat);
+                      const targetEl =
+                        cat === 'All' ? offersSectionRef.current : categorySectionRefs.current[cat];
+                      if (!targetEl) return;
+                      const y = window.scrollY + targetEl.getBoundingClientRect().top - 124;
+                      window.scrollTo({ top: Math.max(0, y), behavior: 'smooth' });
+                    }}
+                    className="relative h-full shrink-0 whitespace-nowrap"
+                  >
+                    <span className={`text-[13px] font-extrabold tracking-widest ${isActive ? 'text-white' : 'text-[#858585]'}`}>
+                      {label}
                     </span>
-                  </div>
-                ) : null}
-                <p className={`mb-1 text-xs font-bold uppercase tracking-widest ${idx === 0 ? 'text-[#2563eb]' : 'text-[#ce96ff]'}`}>
-                  {idx === 0 ? 'Best Deal' : 'Gift'}
-                </p>
-                <h3 className="mb-1.5 text-lg font-bold leading-tight text-white">{product.name}</h3>
-                <p className="mb-3 text-[11px] text-[#adaaaa]">{product.description || 'Perfect for sharing or big appetites'}</p>
-                <p className="mb-3 text-[12px] font-bold text-[#2563eb]">
-                  €{product.price.toFixed(2)} <span className="text-white/80">• +{product.xpReward} XP</span>
-                </p>
-                <button
-                  type="button"
-                  onClick={() => openCustomize(product)}
-                  className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${idx === 0 ? 'bg-[#2563eb] text-white' : 'bg-[#d09aff] text-[#280047]'}`}
+                    {isActive ? <span className="absolute inset-x-0 bottom-0 h-[3px] rounded-t-sm bg-[#2563eb]" /> : null}
+                  </button>
+                );
+              })}
+            </motion.nav>
+          </motion.header>
+
+          {showQuickActionsMenu ? (
+            <div
+              className="fixed inset-0 z-[70] bg-black/15 backdrop-blur-[2px]"
+              onClick={() => setShowQuickActionsMenu(false)}
+              role="presentation"
+            >
+              <div className="mx-auto w-full max-w-[520px] px-3">
+                <div
+                  className="ml-auto mt-[calc(env(safe-area-inset-top)+3.75rem)] w-[min(88vw,290px)] overflow-hidden rounded-[24px] border border-white/15 bg-[#141414]/95 shadow-[0_20px_50px_-24px_rgba(0,0,0,0.75)] backdrop-blur-xl"
+                  onClick={(e) => e.stopPropagation()}
+                  role="menu"
+                  aria-label="Quick store actions"
                 >
-                  {idx === 0 ? 'Add to cart' : 'Claim offer'}
-                </button>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <section className="mb-5">
-          <div className="mb-3 flex items-center justify-between px-4">
-            <h2 className="text-lg font-bold tracking-tight text-white">Deals of the day</h2>
-            <button type="button" className="text-xs font-bold text-[#2563eb]">See all</button>
-          </div>
-          <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-4">
-            {dealTiles.map((product, idx) => (
-              <article
-                key={product.id}
-                role="button"
-                tabIndex={0}
-                  onClick={() => openCustomize(product)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter' || e.key === ' ') {
-                    e.preventDefault();
-                      openCustomize(product);
-                  }
-                }}
-                className="group relative aspect-[4/5] w-44 flex-none overflow-hidden rounded-xl"
-              >
-                <img src={product.image} alt={product.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
-                <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
-                <div className="absolute bottom-0 left-0 w-full p-3">
-                  <span className={`mb-1.5 inline-block rounded px-1.5 py-1 text-[9px] font-black uppercase tracking-widest ${idx % 3 === 0 ? 'bg-[#2563eb] text-white' : idx % 3 === 1 ? 'bg-[#fd7e94] text-[#56001c]' : 'bg-[#ce96ff] text-[#470875]'}`}>
-                    {idx % 3 === 0 ? '50% Off' : idx % 3 === 1 ? 'Buy 1 Get 1' : 'Free Delivery'}
-                  </span>
-                  <h3 className="mb-1 text-base font-extrabold leading-tight text-white">{product.name}</h3>
-                  <p className="text-[9px] font-medium uppercase tracking-tighter text-white/70">{partner.name}</p>
-                  <p className="mt-1 text-[10px] font-bold text-[#60a5fa]">+{product.xpReward} XP</p>
-                </div>
-              </article>
-            ))}
-          </div>
-        </section>
-
-        <motion.section
-          ref={offersSectionRef}
-          style={{ opacity: offersHeaderOpacity }}
-          className="mb-5 px-4 pt-2"
-        >
-          <div className="mb-5 flex items-center justify-between">
-            <h2 className="text-[28px] font-extrabold tracking-tight text-white">{String(categoryLabel(activeCategory)).toUpperCase()}</h2>
-            <button className="flex items-center gap-1.5 rounded-full bg-[#262626] px-3 py-1.5 transition-colors hover:bg-[#2f2f2f]">
-              <span className="material-symbols-outlined text-[14px] text-white">translate</span>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-white">Translate</span>
-            </button>
-          </div>
-          <div className="space-y-4">
-            {groupedProducts.map((group) => (
-              <section
-                key={group.category}
-                ref={(el) => {
-                  categorySectionRefs.current[group.category] = el;
-                }}
-                className="space-y-4"
-              >
-                <h3 className="px-1 text-base font-extrabold uppercase tracking-wider text-white">
-                  {group.category}
-                </h3>
-                {group.items.map((product, idx) => {
-                  const oldPrice = product.price * 1.25;
-                  const tag = idx % 2 === 0 ? 'DEAL' : idx % 3 === 0 ? 'POPULAR' : null;
-                  return (
-                    <article
-                      key={product.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => openCustomize(product)}
-                      onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
-                          e.preventDefault();
-                          openCustomize(product);
-                        }
-                      }}
-                      className="flex gap-4 rounded-2xl bg-[#191919]/70 p-4 transition-transform active:scale-[0.98]"
+                  {[
+                    { label: 'More info', icon: <Info className="h-5 w-5" strokeWidth={2.1} />, onPress: openMoreInfo },
+                    { label: 'Translate', icon: <Languages className="h-5 w-5" strokeWidth={2.1} />, onPress: openTranslate },
+                    { label: 'Order together', icon: <UserPlus className="h-5 w-5" strokeWidth={2.1} />, onPress: orderTogether },
+                  ].map((item, idx) => (
+                    <button
+                      key={item.label}
+                      type="button"
+                      onClick={item.onPress}
+                      className={`flex w-full items-center gap-3 px-4 py-3.5 text-left text-[16px] font-medium text-white transition-colors hover:bg-white/10 ${idx < 2 ? 'border-b border-white/15' : ''
+                        }`}
+                      role="menuitem"
                     >
-                      <div className="flex flex-1 flex-col">
-                        {tag ? (
-                          <div>
-                            <span className="rounded bg-[#262626] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-tighter text-[#2563eb]/80">
-                              {tag}
-                            </span>
-                          </div>
-                        ) : null}
-                        <h3 className="mt-1 text-[17px] font-extrabold leading-snug text-white">{product.name}</h3>
-                        <p className="mb-3 mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#858585]">
-                          {product.description || 'Signature recipe, fresh ingredients and premium flavor profile.'}
-                        </p>
-                        <div className="mt-auto flex items-center gap-2">
-                          <span className="text-[16px] font-extrabold text-[#2563eb]">€{product.price.toFixed(2)}</span>
-                          <span className="text-[14px] text-[#858585] line-through">€{oldPrice.toFixed(2)}</span>
-                          <span className="text-[12px] font-bold text-[#60a5fa]">+{product.xpReward} XP</span>
-                        </div>
-                      </div>
-                      <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#262626]">
-                        <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
-                      </div>
-                    </article>
-                  );
-                })}
-              </section>
-            ))}
-          </div>
-        </motion.section>
-      </main>
+                      <span className="inline-flex items-center justify-center text-white/95">
+                        {item.icon}
+                      </span>
+                      <span>{item.label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </div>
+          ) : null}
 
-      {cart.length > 0 && (
-        <div
-          className="fixed left-1/2 z-[60] flex w-[calc(100%-2rem)] max-w-[488px] -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white shadow-2xl"
-          style={{
-            bottom: 'calc(4rem + env(safe-area-inset-bottom))',
-          }}
-        >
-          <div className="min-w-0">
-            <p className="text-sm">
-              {cart.reduce((s, i) => s + i.quantity, 0)} προϊόντα · €{cartTotal.toFixed(2)}
-            </p>
-            <p className="text-[11px] text-white/80">
-              {xpTotal > 0 ? `+${xpTotal} XP` : t('placeOrder')}
-            </p>
+          <main className={`mx-auto w-full max-w-[520px] pb-36 ${cart.length > 0 ? 'pb-56' : 'pb-40'}`}>
+            <motion.section style={{ y: bannerY }} className="sticky top-0 z-0 h-[250px] w-full overflow-hidden">
+              <img src={featuredProduct?.image || partner.image} alt={partner.name} className="h-full w-full object-cover" />
+              <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent" />
+            </motion.section>
+
+            <motion.section
+              ref={infoSectionRef}
+              style={{ borderRadius: contentRadius }}
+              className="relative z-10 -mt-12 mb-4 bg-[#0a0a0a] px-4 pb-4 pt-16 text-center"
+            >
+              <h1 className="mb-1.5 text-[28px] font-extrabold tracking-tight text-white">{partner.name}</h1>
+              <div className="mb-1 flex items-center justify-center gap-1.5 text-[11px] font-medium">
+                <span>⭐ {(partner.rating ?? 4.9).toFixed(1)}</span>
+                <span className="text-[#adaaaa]">•</span>
+                <span>🔥 2x XP Multiplier</span>
+                <span className="text-[#adaaaa]">•</span>
+                <span>📍 300m</span>
+              </div>
+              <div className="flex items-center justify-center gap-2.5 text-[11px] text-[#adaaaa]">
+                <span>💎 Premium Anbit Partner</span>
+                <button type="button" className="font-bold text-[#2563eb]">More</button>
+              </div>
+            </motion.section>
+
+            <section className="mb-5 px-4">
+              <div className="flex items-center justify-between rounded-xl bg-[#131313] p-3 shadow-lg ring-1 ring-white/10">
+                <div className="flex items-center gap-4">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#2563eb]/15 text-[#2563eb]">
+                    <span className="material-symbols-outlined text-[17px]">trophy</span>
+                  </div>
+                  <div className="flex items-center gap-1">
+                    <p className="text-[13px] font-bold text-white">xp wallet</p>
+                    <span className="material-symbols-outlined text-sm text-[#adaaaa]">keyboard_arrow_down</span>
+                  </div>
+                </div>
+                <button type="button" className="text-[#adaaaa]">
+                  <span className="material-symbols-outlined">share</span>
+                </button>
+              </div>
+            </section>
+
+            <section className="mb-5">
+              <div className="mb-3 px-4">
+                <h2 className="text-xl font-bold tracking-tight text-white">Specials for you</h2>
+              </div>
+              <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-4">
+                {(specials.length ? specials : filteredMenu.slice(0, 2)).map((product, idx) => (
+                  <article key={product.id} className={`relative w-56 flex-none overflow-hidden rounded-xl p-3 ${idx === 0 ? 'bg-[#1e3a8a]/40' : 'bg-[#c188f2]/10'}`}>
+                    {idx === 0 ? (
+                      <div className="absolute right-3 top-3">
+                        <span className="material-symbols-outlined text-2xl text-[#2563eb]" style={{ fontVariationSettings: "'FILL' 1" }}>
+                          local_fire_department
+                        </span>
+                      </div>
+                    ) : null}
+                    <p className={`mb-1 text-xs font-bold uppercase tracking-widest ${idx === 0 ? 'text-[#2563eb]' : 'text-[#ce96ff]'}`}>
+                      {idx === 0 ? 'Best Deal' : 'Gift'}
+                    </p>
+                    <h3 className="mb-1.5 text-lg font-bold leading-tight text-white">{product.name}</h3>
+                    <p className="mb-3 text-[11px] text-[#adaaaa]">{product.description || 'Perfect for sharing or big appetites'}</p>
+                    <p className="mb-3 text-[12px] font-bold text-[#2563eb]">
+                      €{product.price.toFixed(2)} <span className="text-white/80">• +{product.xpReward} XP</span>
+                    </p>
+                    <button
+                      type="button"
+                      onClick={() => openCustomize(product)}
+                      className={`rounded-full px-3 py-1.5 text-[10px] font-bold ${idx === 0 ? 'bg-[#2563eb] text-white' : 'bg-[#d09aff] text-[#280047]'}`}
+                    >
+                      {idx === 0 ? 'Add to cart' : 'Claim offer'}
+                    </button>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <section className="mb-5">
+              <div className="mb-3 flex items-center justify-between px-4">
+                <h2 className="text-lg font-bold tracking-tight text-white">Deals of the day</h2>
+                <button type="button" className="text-xs font-bold text-[#2563eb]">See all</button>
+              </div>
+              <div className="no-scrollbar flex gap-3.5 overflow-x-auto px-4">
+                {dealTiles.map((product, idx) => (
+                  <article
+                    key={product.id}
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openCustomize(product)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        openCustomize(product);
+                      }
+                    }}
+                    className="group relative aspect-[4/5] w-44 flex-none overflow-hidden rounded-xl"
+                  >
+                    <img src={product.image} alt={product.name} className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black via-black/20 to-transparent" />
+                    <div className="absolute bottom-0 left-0 w-full p-3">
+                      <span className={`mb-1.5 inline-block rounded px-1.5 py-1 text-[9px] font-black uppercase tracking-widest ${idx % 3 === 0 ? 'bg-[#2563eb] text-white' : idx % 3 === 1 ? 'bg-[#fd7e94] text-[#56001c]' : 'bg-[#ce96ff] text-[#470875]'}`}>
+                        {idx % 3 === 0 ? '50% Off' : idx % 3 === 1 ? 'Buy 1 Get 1' : 'Free Delivery'}
+                      </span>
+                      <h3 className="mb-1 text-base font-extrabold leading-tight text-white">{product.name}</h3>
+                      <p className="text-[9px] font-medium uppercase tracking-tighter text-white/70">{partner.name}</p>
+                      <p className="mt-1 text-[10px] font-bold text-[#60a5fa]">+{product.xpReward} XP</p>
+                    </div>
+                  </article>
+                ))}
+              </div>
+            </section>
+
+            <motion.section
+              ref={offersSectionRef}
+              style={{ opacity: offersHeaderOpacity }}
+              className="mb-5 px-4 pt-2"
+            >
+              <div className="mb-5 flex items-center justify-between">
+                <h2 className="text-[28px] font-extrabold tracking-tight text-white">{String(categoryLabel(activeCategory)).toUpperCase()}</h2>
+                <button className="flex items-center gap-1.5 rounded-full bg-[#262626] px-3 py-1.5 transition-colors hover:bg-[#2f2f2f]">
+                  <span className="material-symbols-outlined text-[14px] text-white">translate</span>
+                  <span className="text-[11px] font-bold uppercase tracking-wider text-white">Translate</span>
+                </button>
+              </div>
+              <div className="space-y-4">
+                {groupedProducts.map((group) => (
+                  <section
+                    key={group.category}
+                    ref={(el) => {
+                      categorySectionRefs.current[group.category] = el;
+                    }}
+                    className="space-y-4"
+                  >
+                    <h3 className="px-1 text-base font-extrabold uppercase tracking-wider text-white">
+                      {group.category}
+                    </h3>
+                    {group.items.map((product, idx) => {
+                      const oldPrice = product.price * 1.25;
+                      const tag = idx % 2 === 0 ? 'DEAL' : idx % 3 === 0 ? 'POPULAR' : null;
+                      const pCat = getProductCategoryLabel(product);
+                      const pOptSum = getApiOptionGroupsSummary(product);
+                      return (
+                        <article
+                          key={product.id}
+                          role="button"
+                          tabIndex={0}
+                          onClick={() => openCustomize(product)}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              openCustomize(product);
+                            }
+                          }}
+                          className="flex gap-4 rounded-2xl bg-[#191919]/70 p-4 transition-transform active:scale-[0.98]"
+                        >
+                          <div className="flex flex-1 flex-col">
+                            {tag ? (
+                              <div>
+                                <span className="rounded bg-[#262626] px-1.5 py-0.5 text-[10px] font-extrabold uppercase tracking-tighter text-[#2563eb]/80">
+                                  {tag}
+                                </span>
+                              </div>
+                            ) : null}
+                            <h3 className="mt-1 text-[17px] font-extrabold leading-snug text-white">{product.name}</h3>
+                            {(pCat || pOptSum) && (
+                              <div className="mb-1 mt-1 flex flex-wrap items-center gap-2">
+                                {pCat ? (
+                                  <span className="inline-flex rounded-md border border-white/15 bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#a3a3a3]">
+                                    {pCat}
+                                  </span>
+                                ) : null}
+                                {pOptSum ? (
+                                  <span className="text-[11px] leading-snug text-[#737373]">
+                                    Επιλογές · {pOptSum}
+                                  </span>
+                                ) : null}
+                              </div>
+                            )}
+                            <p className="mb-3 mt-1 line-clamp-2 text-[13px] leading-relaxed text-[#858585]">
+                              {product.description || 'Signature recipe, fresh ingredients and premium flavor profile.'}
+                            </p>
+                            <div className="mt-auto flex items-center gap-2">
+                              <span className="text-[16px] font-extrabold text-[#2563eb]">€{product.price.toFixed(2)}</span>
+                              <span className="text-[14px] text-[#858585] line-through">€{oldPrice.toFixed(2)}</span>
+                              <span className="text-[12px] font-bold text-[#60a5fa]">+{product.xpReward} XP</span>
+                            </div>
+                          </div>
+                          <div className="h-24 w-24 shrink-0 overflow-hidden rounded-xl bg-[#262626]">
+                            <img src={product.image} alt={product.name} className="h-full w-full object-cover" />
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </section>
+                ))}
+              </div>
+            </motion.section>
+          </main>
+
+          {cart.length > 0 && (
+            <div
+              className="fixed left-1/2 z-[60] flex w-[calc(100%-2rem)] max-w-[488px] -translate-x-1/2 items-center justify-between gap-3 rounded-xl border border-white/10 bg-[#0a0a0a] px-4 py-3 text-white shadow-2xl"
+              style={{
+                bottom: 'calc(4rem + env(safe-area-inset-bottom))',
+              }}
+            >
+              <div className="min-w-0">
+                <p className="text-sm">
+                  {cart.reduce((s, i) => s + i.quantity, 0)} προϊόντα · €{cartTotal.toFixed(2)}
+                </p>
+                <p className="text-[11px] text-white/80">
+                  {xpTotal > 0 ? `+${xpTotal} XP` : t('placeOrder')}
+                </p>
+              </div>
+              <button
+                onClick={openCheckout}
+                className="shrink-0 rounded-full bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1d4ed8]"
+              >
+                Checkout
+              </button>
+            </div>
+          )}
+          <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[520px] -translate-x-1/2">
+            <div
+              className="flex items-center justify-between bg-[#2563eb] px-6 py-4 shadow-[0_-8px_32px_rgba(37,99,235,0.4)]"
+              style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
+            >
+              <div className="flex items-center gap-3">
+                <span className="material-symbols-outlined text-white">local_offer</span>
+                <span className="font-bold text-white">{Math.max(12, filteredMenu.length)} offers available</span>
+              </div>
+              <span className="material-symbols-outlined text-white">expand_less</span>
+            </div>
           </div>
-          <button
-            onClick={openCheckout}
-            className="shrink-0 rounded-full bg-[#2563eb] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#1d4ed8]"
-          >
-            Checkout
-          </button>
-        </div>
-      )}
-      <div className="fixed bottom-0 left-1/2 z-50 w-full max-w-[520px] -translate-x-1/2">
-        <div
-          className="flex items-center justify-between bg-[#2563eb] px-6 py-4 shadow-[0_-8px_32px_rgba(37,99,235,0.4)]"
-          style={{ paddingBottom: 'calc(1rem + env(safe-area-inset-bottom))' }}
-        >
-          <div className="flex items-center gap-3">
-            <span className="material-symbols-outlined text-white">local_offer</span>
-            <span className="font-bold text-white">{Math.max(12, filteredMenu.length)} offers available</span>
-          </div>
-          <span className="material-symbols-outlined text-white">expand_less</span>
-        </div>
-      </div>
         </>
       )}
 
@@ -1824,6 +1849,7 @@ const StoreMenuPage: React.FC<StoreMenuPageProps> = ({
         error={checkoutError}
       />
       <ProductCustomizeModal
+        key={productToCustomize?.id ?? 'closed'}
         product={productToCustomize}
         onClose={() => setProductToCustomize(null)}
         onAdd={addToCartWithOptions}

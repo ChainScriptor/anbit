@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import { useLanguage } from '../context/LanguageContext';
 import type { CartItemData } from '../types';
+import { formatCartItemSelectedOptions } from '../lib/productMeta';
 import AnbitWordmark, { ANBIT_DISPLAY_FONT } from './AnbitWordmark';
 
 const BRAND_RED = 'var(--anbit-brand)';
@@ -213,11 +214,16 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                             <div className="flex items-start justify-between gap-2">
                               <h3 className="line-clamp-2 text-lg font-bold leading-snug text-white">{item.name}</h3>
                               <span className="shrink-0 text-lg font-bold text-white">
-                                €{(item.price * item.quantity).toFixed(2)}
+                                €{(
+                                  (item.price + (item.optionsExtraPerUnit ?? 0)) *
+                                  item.quantity
+                                ).toFixed(2)}
                               </span>
                             </div>
                             <p className="mt-1 line-clamp-2 text-sm text-white/55">
-                              {[item.options?.extras, item.comments].filter(Boolean).join(', ') || item.description}
+                              {formatCartItemSelectedOptions(item) ??
+                                ([item.options?.extras, item.comments].filter(Boolean).join(', ') ||
+                                  item.description)}
                             </p>
                           </div>
                           <div className="mt-3 flex items-center justify-between">
@@ -339,7 +345,12 @@ const CartCheckoutModal: React.FC<CartCheckoutModalProps> = ({
                           <span>
                             {item.name} x {item.quantity}
                           </span>
-                          <span>€{(item.price * item.quantity).toFixed(2)}</span>
+                          <span>
+                            €{(
+                              (item.price + (item.optionsExtraPerUnit ?? 0)) *
+                              item.quantity
+                            ).toFixed(2)}
+                          </span>
                         </div>
                       ))}
                     </div>

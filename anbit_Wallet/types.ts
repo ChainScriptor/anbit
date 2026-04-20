@@ -89,6 +89,20 @@ export interface Reward {
   image: string;
 }
 
+/** Ομάδα επιλογών όπως στο dashboard / GET Products (ανά merchant) */
+export interface ProductOptionRow {
+  id: string;
+  name: string;
+  price: number;
+}
+
+export interface ProductOptionGroupRow {
+  id: string;
+  name: string;
+  type: 'Single' | 'Multiple';
+  options: ProductOptionRow[];
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -99,7 +113,11 @@ export interface Product {
   category: string;
   ingredients?: string[];
   allergens?: string[];
+  optionGroups?: ProductOptionGroupRow[];
 }
+
+/** Επιλογές για το σώμα παραγγελίας — SelectedOptionRequest στο API */
+export type SelectedOptionPayload = { groupId: string; optionId: string };
 
 /** Επιλογές προϊόντος πριν την προσθήκη στο καλάθι (π.χ. ζάχαρη για καφέ) */
 export interface ProductCartOptions {
@@ -112,6 +130,12 @@ export interface ProductCartOptions {
 export interface CartItemData extends Product {
   quantity: number;
   options?: ProductCartOptions;
+  /** Επιλογές από το API (ομάδες/επιλογές με id) για POST /Orders */
+  selectedOptions?: SelectedOptionPayload[];
+  /** Έξτρα τιμή ανα τεμάχιο από τις επιλογές (για εμφάνιση συνόλου στο PWA) */
+  optionsExtraPerUnit?: number;
+  /** Διακριτή γραμμή καλαθιού όταν το ίδιο προϊόν έχει διαφορετικές επιλογές */
+  lineKey?: string;
   comments?: string;
 }
 

@@ -4,17 +4,12 @@ import {
   LayoutDashboard,
   Receipt,
   Table,
-  ListTodo,
-  LayoutGrid,
-  History,
   UtensilsCrossed,
   Users,
   HelpCircle,
   Settings,
   Sparkles,
   Images,
-  ChevronDown,
-  ChevronRight,
   Menu,
   MoreVertical,
   X,
@@ -25,12 +20,6 @@ import { useAuth } from '@/AuthContext';
 const SIDEBAR_BG_ADMIN = '#0C0C0C';
 const SIDEBAR_BG_MERCHANT = '#0a0a0a';
 
-const manageTableSubItems = [
-  { to: '/reservation-list', icon: ListTodo, label: 'Reservation List' },
-  { to: '/view-tables', icon: LayoutGrid, label: 'View Tables' },
-  { to: '/table-history', icon: History, label: 'Table History' },
-];
-
 interface SidebarProps {
   mobileOpen?: boolean;
   onMobileClose?: () => void;
@@ -38,10 +27,6 @@ interface SidebarProps {
 
 const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileClose }) => {
   const location = useLocation();
-  const isManageTableActive = manageTableSubItems.some((item) =>
-    location.pathname.startsWith(item.to),
-  );
-  const [manageTableOpen, setManageTableOpen] = useState(isManageTableActive);
   const [collapsed, setCollapsed] = useState(false);
   const [profileMenuOpen, setProfileMenuOpen] = useState(false);
   const { logout, user } = useAuth();
@@ -52,25 +37,11 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileClose }) 
   const isMerchant = roles.includes('Merchant');
   const sidebarBg = isAdmin ? SIDEBAR_BG_ADMIN : SIDEBAR_BG_MERCHANT;
 
-  // Keep expanded when a sub-route is active
-  React.useEffect(() => {
-    if (isManageTableActive) setManageTableOpen(true);
-  }, [isManageTableActive]);
-
   // Close mobile nav on route change
   React.useEffect(() => {
     onMobileClose?.();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location.pathname]);
-
-  const handleManageTableClick = () => {
-    if (collapsed) {
-      setCollapsed(false);
-      setManageTableOpen(true);
-    } else {
-      setManageTableOpen((o) => !o);
-    }
-  };
 
   // On mobile the sidebar is always "expanded" (never icon-only)
   const effectiveCollapsed = collapsed;
@@ -260,45 +231,6 @@ const Sidebar: React.FC<SidebarProps> = ({ mobileOpen = false, onMobileClose }) 
                   <Receipt className="h-5 w-5 shrink-0" />
                   <span className="min-w-0 truncate">Orders Line</span>
                 </NavLink>
-              </li>
-
-              <li className="w-full">
-                <button
-                  type="button"
-                  onClick={handleManageTableClick}
-                  className={cn(
-                    'flex w-full items-center rounded-lg text-sm font-extrabold transition-colors gap-3 px-3.5 py-3',
-                    isManageTableActive ? 'bg-white/15 text-white' : 'text-white/95 hover:bg-white/10',
-                  )}
-                >
-                  <Table className="h-5 w-5 shrink-0" />
-                  <span className="min-w-0 truncate">Manage Table</span>
-                  {manageTableOpen ? (
-                    <ChevronDown className="ml-auto h-4 w-4 shrink-0" />
-                  ) : (
-                    <ChevronRight className="ml-auto h-4 w-4 shrink-0" />
-                  )}
-                </button>
-                {manageTableOpen && (
-                  <ul className="mt-0.5 space-y-0.5 pl-4">
-                    {manageTableSubItems.map((item) => (
-                      <li key={item.to}>
-                        <NavLink
-                          to={item.to}
-                          className={({ isActive }) =>
-                            cn(
-                              'flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-extrabold transition-colors',
-                              isActive ? 'bg-white text-[#0a0a0a]' : 'text-white/90 hover:bg-white/10',
-                            )
-                          }
-                        >
-                          <item.icon className="h-4 w-4 shrink-0" />
-                          <span>{item.label}</span>
-                        </NavLink>
-                      </li>
-                    ))}
-                  </ul>
-                )}
               </li>
 
               <li className="w-full">

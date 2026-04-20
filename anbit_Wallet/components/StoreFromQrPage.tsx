@@ -116,6 +116,8 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
             p.imageUrl ||
             'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
           category: p.category ?? 'Menu',
+          ...(p.allergens?.length ? { allergens: p.allergens } : {}),
+          ...(p.optionGroups?.length ? { optionGroups: p.optionGroups } : {}),
         }));
 
         if (found) {
@@ -206,6 +208,8 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
           p.imageUrl ||
           'https://images.pexels.com/photos/70497/pexels-photo-70497.jpeg?auto=compress&cs=tinysrgb&w=400',
         category: p.category ?? 'Menu',
+        ...(p.allergens?.length ? { allergens: p.allergens } : {}),
+        ...(p.optionGroups?.length ? { optionGroups: p.optionGroups } : {}),
       }));
 
       setPartner((prev) => (prev ? { ...prev, menu } : prev));
@@ -289,6 +293,7 @@ const StoreFromQrPage: React.FC<StoreFromQrPageProps> = ({
       partner={partner}
       tableNumber={tableNumber}
       entryMethod="qr"
+      menuOptionGroupSource="apiOnly"
       onBack={() => navigate('/dashboard')}
       onOrderComplete={onOrderComplete}
       isAuthenticated={isAuthenticated}

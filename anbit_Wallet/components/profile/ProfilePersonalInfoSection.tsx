@@ -1,5 +1,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
+import { Loader2, Star } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { CtaCard } from '../ui/cta-card';
 import type { UserData } from '../../types';
@@ -20,13 +21,17 @@ function tierLabel(user: UserData): string {
   return raw.toUpperCase();
 }
 
+type MerchantXpEntry = { merchantId: string; merchantName: string; totalXp: number };
+
 type Props = {
   user: UserData;
   isLight: boolean;
+  xpPerMerchant?: MerchantXpEntry[];
+  xpPerMerchantLoading?: boolean;
 };
 
-/** Πάνω μπλοκ προφίλ + δύο κάρτες (στυλ παρόμοιο με Wolt / mockup). */
-export function ProfilePersonalInfoSection({ user, isLight }: Props) {
+/** Πάνω μπλοκ προφίλ + δύο κάρτες + πόντοι ανά κατάστημα. */
+export function ProfilePersonalInfoSection({ user, isLight, xpPerMerchant = [], xpPerMerchantLoading = false }: Props) {
   const initials = initialsFromName(user.name);
   const email = user.email?.trim() || '—';
   const phone = user.phone?.trim() || '—';
@@ -137,6 +142,60 @@ export function ProfilePersonalInfoSection({ user, isLight }: Props) {
           </p>
         </section>
       </div>
+
+      {/* Πόντοι ανά κατάστημα */}
+      <section className={cn(shell, 'p-5 sm:p-6')}>
+        <div className="mb-4 flex items-center gap-2">
+          <Star className="h-5 w-5 fill-amber-400 text-amber-400" />
+          <h3 className={cn('text-base font-bold', strong)}>Πόντοι XP ανά κατάστημα</h3>
+        </div>
+
+        {xpPerMerchantLoading && (
+          <div className="flex items-center gap-2 py-4 text-sm">
+            <Loader2 className={cn('h-4 w-4 animate-spin', muted)} />
+            <span className={muted}>Φόρτωση πόντων…</span>
+          </div>
+        )}
+
+        {!xpPerMerchantLoading && xpPerMerchant.length === 0 && (
+          <p className={cn('py-4 text-sm', muted)}>
+            Δεν υπάρχουν ακόμα πόντοι σε καταστήματα.
+          </p>
+        )}
+
+        {!xpPerMerchantLoading && xpPerMerchant.length > 0 && (
+          <ul className="space-y-2">
+            {xpPerMerchant.map((entry) => {
+              const maxXp = xpPerMerchant[0].totalXp || 1;
+              const pct = Math.round((entry.totalXp / maxXp) * 100);
+              return (
+                <li
+                  key={entry.merchantId}
+                  className={cn(
+                    'rounded-xl p-3 sm:p-4',
+                    isLight ? 'border border-zinc-200 bg-zinc-50' : 'border border-white/[0.06] bg-[#141414]',
+                  )}
+                >
+                  <div className="mb-2 flex items-center justify-between gap-2">
+                    <span className={cn('text-sm font-semibold truncate', strong)}>
+                      {entry.merchantName}
+                    </span>
+                    <span className="shrink-0 tabular-nums text-sm font-bold text-amber-500">
+                      {entry.totalXp} XP
+                    </span>
+                  </div>
+                  <div className={cn('h-1.5 w-full overflow-hidden rounded-full', isLight ? 'bg-zinc-200' : 'bg-white/10')}>
+                    <div
+                      className="h-full rounded-full bg-amber-400 transition-all"
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </section>
     </div>
   );
 }

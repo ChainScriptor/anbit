@@ -58,18 +58,79 @@ import {
   Heart,
 } from 'lucide-react';
 import type { Quest } from '../types';
-import type { Partner, UserData } from '../types';
+import type { Partner, Product, SelectedOptionPayload, UserData } from '../types';
 import type { CartItemData } from '../types';
 import { useAuth } from '../context/AuthContext';
 import { useLanguage } from '../context/LanguageContext';
 import { api } from '../services/api';
 import { cn } from '@/lib/utils';
+import {
+  formatCartItemSelectedOptions,
+  getProductCategoryLabel,
+} from '@/lib/productMeta';
+import {
+  buildSelectedOptionsPayload,
+  getMenuOptionsSummaryLine,
+  getProductOptions,
+  type ProductOptionsMode,
+} from '@/lib/productOptions';
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 const XP_GOLD = '#F5C518';
 const ACCENT = '#2563eb';
 const XP_PER_EUR = 100; // 100 XP = €1 → 1 XP = €0.01 (1 λεπτό)
 const FAVORITES_CATEGORY_LABEL = 'Αγαπημένα πιάτα';
+
+type CartLineCore = {
+  productId: string;
+  quantity: number;
+  selectedOptions?: SelectedOptionPayload[];
+  optionsExtraPerUnit: number;
+};
+
+/** Κλειδί γραμμής καλαθιού — ίδιο προϊόν + ίδιες επιλογές API συγχωνεύονται */
+function makeCartLineKey(productId: string, selected?: SelectedOptionPayload[]): string {
+  const sig =
+    selected && selected.length > 0
+      ? selected.map((s) => `${s.groupId}:${s.optionId}`).sort().join('|')
+      : 'base';
+  return `${productId}::${sig}`;
+}
+
+function addOrMergeCartLine(
+  prev: Map<string, CartLineCore>,
+  productId: string,
+  qtyDelta: number,
+  selectedOptions?: SelectedOptionPayload[],
+  optionsExtraPerUnit = 0,
+): Map<string, CartLineCore> {
+  const key = makeCartLineKey(productId, selectedOptions);
+  const n = new Map(prev);
+  const cur = n.get(key);
+  const effSelected =
+    cur?.selectedOptions ?? (selectedOptions && selectedOptions.length > 0 ? selectedOptions : undefined);
+  const effExtra = cur != null ? cur.optionsExtraPerUnit : optionsExtraPerUnit;
+  const nextQty = (cur?.quantity ?? 0) + qtyDelta;
+  if (nextQty <= 0) {
+    n.delete(key);
+    return n;
+  }
+  n.set(key, {
+    productId,
+    quantity: nextQty,
+    ...(effSelected && effSelected.length > 0 ? { selectedOptions: effSelected } : {}),
+    optionsExtraPerUnit: effExtra,
+  });
+  return n;
+}
+
+function sumQtyForProduct(cartMap: Map<string, CartLineCore>, productId: string): number {
+  let sum = 0;
+  for (const [, line] of cartMap) {
+    if (line.productId === productId) sum += line.quantity;
+  }
+  return sum;
+}
 const LOOT_REWARDS = [
   { emoji: '☕', title: 'Δωρεάν Καφές', subtitle: 'Ισχύει στην επόμενη επίσκεψή σου' },
   { emoji: '🍕', title: 'Pizza 1+1', subtitle: '15% έκπτωση στην επόμενη παραγγελία' },
@@ -77,65 +138,6 @@ const LOOT_REWARDS = [
   { emoji: '🎯', title: 'Mystery Discount', subtitle: '5–20% έκπτωση — ξεκλείδωσε το!' },
   { emoji: '🏆', title: 'VIP Status', subtitle: 'Πρόσβαση VIP για μία εβδομάδα' },
 ];
-
-// ─── Product Customization ────────────────────────────────────────────────────
-interface ProductChoice { id: string; label: string; priceAdd?: number }
-interface ProductCustomizationOption {
-  id: string; label: string; required?: boolean;
-  type: 'single' | 'multi';
-  choices: ProductChoice[];
-}
-
-function getProductOptions(product: { name: string; category: string; description: string }): ProductCustomizationOption[] {
-  const txt = `${product.name} ${product.description} ${product.category}`.toLowerCase();
-  const opts: ProductCustomizationOption[] = [];
-
-  if (/καφ|coffee|espresso|cappuccino|latte|freddo|frappe/.test(txt)) {
-    opts.push({ id: 'sugar', label: 'Ζάχαρη', required: true, type: 'single', choices: [
-      { id: 'plain', label: 'Σκέτος' }, { id: 'medium', label: 'Μέτριος' },
-      { id: 'sweet', label: 'Γλυκός' }, { id: 'very', label: 'Πολύγλυκος' },
-    ]});
-    opts.push({ id: 'milk', label: 'Γάλα', type: 'single', choices: [
-      { id: 'normal', label: 'Κανονικό' }, { id: 'oat', label: 'Βρώμης +0.50€', priceAdd: 0.5 },
-      { id: 'almond', label: 'Αμυγδάλου +0.50€', priceAdd: 0.5 }, { id: 'none', label: 'Χωρίς' },
-    ]});
-    opts.push({ id: 'size', label: 'Μέγεθος', type: 'single', choices: [
-      { id: 'small', label: 'Small' }, { id: 'medium', label: 'Medium' },
-      { id: 'large', label: 'Large +0.50€', priceAdd: 0.5 },
-    ]});
-  } else if (/burger|smash|μπέικ|bbq|chees/.test(txt)) {
-    opts.push({ id: 'cooking', label: 'Ψήσιμο', required: true, type: 'single', choices: [
-      { id: 'medium', label: 'Medium' }, { id: 'well', label: 'Well Done' },
-    ]});
-    opts.push({ id: 'extras', label: 'Extras', type: 'multi', choices: [
-      { id: 'xcheese', label: 'Έξτρα τυρί +0.50€', priceAdd: 0.5 },
-      { id: 'bacon', label: 'Μπέικον +1.00€', priceAdd: 1 },
-      { id: 'noOnion', label: 'Χωρίς κρεμμύδι' },
-      { id: 'noSauce', label: 'Χωρίς σάλτσα' },
-    ]});
-  } else if (/pizza|πίτσ/.test(txt)) {
-    opts.push({ id: 'crust', label: 'Ζύμη', required: true, type: 'single', choices: [
-      { id: 'thin', label: 'Λεπτή' }, { id: 'thick', label: 'Χοντρή' },
-    ]});
-    opts.push({ id: 'extras', label: 'Extras', type: 'multi', choices: [
-      { id: 'xcheese', label: 'Έξτρα τυρί +0.80€', priceAdd: 0.8 },
-      { id: 'pepperoni', label: 'Πεπερόνι +1.00€', priceAdd: 1 },
-      { id: 'mushrooms', label: 'Μανιτάρια +0.50€', priceAdd: 0.5 },
-    ]});
-  } else if (/σαλάτ|salad/.test(txt)) {
-    opts.push({ id: 'dressing', label: 'Dressing', type: 'single', choices: [
-      { id: 'none', label: 'Χωρίς' }, { id: 'oil', label: 'Λαδόξιδο' },
-      { id: 'mustard', label: 'Μουστάρδα' }, { id: 'caesar', label: 'Caesar' },
-    ]});
-  } else if (/panuozzo|σάντουιτς|toast|wrap/.test(txt)) {
-    opts.push({ id: 'extras', label: 'Extras', type: 'multi', choices: [
-      { id: 'xcheese', label: 'Έξτρα τυρί +0.50€', priceAdd: 0.5 },
-      { id: 'noSauce', label: 'Χωρίς σάλτσα' },
-      { id: 'noVeg', label: 'Χωρίς λαχανικά' },
-    ]});
-  }
-  return opts;
-}
 
 // ─── Category emoji mapping ───────────────────────────────────────────────────
 function getCategoryEmoji(cat: string): string {
@@ -422,27 +424,27 @@ function CategoryPills({
 function ProductCard({
   product,
   quantity,
-  onAdd,
-  onRemove,
   onOpen,
   isFavorite,
   onToggleFavorite,
   mode,
   storeXpBalance,
+  optionGroupSource = 'full',
 }: {
-  product: { id: string; name: string; description: string; price: number; xpReward: number; image: string; category: string };
+  product: Product;
   quantity: number;
-  onAdd: () => void;
-  onRemove: () => void;
   onOpen: () => void;
   isFavorite: boolean;
   onToggleFavorite: () => void;
   mode: 'eur' | 'xp';
   storeXpBalance: number;
+  optionGroupSource?: ProductOptionsMode;
 }) {
   const xpCost = Math.round(product.price * XP_PER_EUR);
   const canRedeem = storeXpBalance >= xpCost;
   const shortfall = xpCost - storeXpBalance;
+  const categoryLabel = getProductCategoryLabel(product);
+  const optionsSummary = getMenuOptionsSummaryLine(product, optionGroupSource);
 
   return (
     <motion.div
@@ -455,6 +457,22 @@ function ProductCard({
       {/* ── Left: text ── */}
       <div className="flex min-w-0 flex-1 flex-col gap-1">
         <h3 className="text-sm font-bold leading-snug text-white line-clamp-2">{product.name}</h3>
+
+        {(categoryLabel || optionsSummary) && (
+          <div className="mt-1 flex flex-wrap items-center gap-1.5">
+            {categoryLabel ? (
+              <span className="inline-flex max-w-full truncate rounded-md border border-white/[0.12] bg-white/[0.06] px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-white/60">
+                {categoryLabel}
+              </span>
+            ) : null}
+            {optionsSummary ? (
+              <span className="text-[10px] leading-snug text-white/38 line-clamp-2">
+                <span className="text-white/28">Επιλογές · </span>
+                {optionsSummary}
+              </span>
+            ) : null}
+          </div>
+        )}
 
         {product.description ? (
           <p className="text-[12px] leading-snug text-white/45 line-clamp-2">{product.description}</p>
@@ -551,16 +569,40 @@ function ProductModal({
   onAddToCart,
   mode,
   storeXpBalance,
+  optionGroupSource = 'full',
 }: {
-  product: { id: string; name: string; description: string; price: number; xpReward: number; image: string; category: string };
+  product: Product;
   onClose: () => void;
-  onAddToCart: (qty: number, extraPrice: number) => void;
+  onAddToCart: (
+    qty: number,
+    payload: { selectedOptions?: SelectedOptionPayload[]; optionsExtraPerUnit: number },
+  ) => void;
   mode: 'eur' | 'xp' | 'shop';
   storeXpBalance: number;
+  optionGroupSource?: ProductOptionsMode;
 }) {
   const [quantity, setQuantity] = useState(1);
+  const options = useMemo(
+    () => getProductOptions(product, optionGroupSource),
+    [product, optionGroupSource],
+  );
+
+  const defaultSelections = useMemo(() => {
+    const initial: Record<string, string | string[]> = {};
+    for (const opt of options) {
+      if (opt.apiGroupId && opt.type === 'single' && opt.choices[0]?.id) {
+        initial[opt.id] = opt.choices[0].id;
+      }
+    }
+    return initial;
+  }, [product.id, options]);
+
   const [selections, setSelections] = useState<Record<string, string | string[]>>({});
-  const options = useMemo(() => getProductOptions(product), [product]);
+
+  useEffect(() => {
+    setSelections(defaultSelections);
+    setQuantity(1);
+  }, [product.id, defaultSelections]);
 
   const extraPrice = useMemo(() => {
     let total = 0;
@@ -573,12 +615,23 @@ function ProductModal({
     return total;
   }, [selections, options]);
 
+  const selectionsComplete = useMemo(() => {
+    for (const opt of options) {
+      if (!opt.required) continue;
+      const sel = selections[opt.id];
+      const has = Array.isArray(sel) ? sel.some(Boolean) : !!sel;
+      if (!has) return false;
+    }
+    return true;
+  }, [options, selections]);
+
   const totalPrice = (product.price + extraPrice) * quantity;
   const totalXp = product.xpReward * quantity;
   const xpCost = Math.round(product.price * XP_PER_EUR);
-  const canRedeem = storeXpBalance >= xpCost;
-  // In shop mode: max qty the user can afford with available XP
-  const maxShopQty = mode === 'shop' && xpCost > 0 ? Math.floor(storeXpBalance / xpCost) : Infinity;
+  const unitXpCost = Math.round((product.price + extraPrice) * XP_PER_EUR);
+  const canRedeem = mode === 'shop' ? storeXpBalance >= unitXpCost : storeXpBalance >= xpCost;
+  const maxShopQty =
+    mode === 'shop' && unitXpCost > 0 ? Math.floor(storeXpBalance / unitXpCost) : Infinity;
 
   const toggleSingle = (optId: string, choiceId: string) =>
     setSelections((p) => ({ ...p, [optId]: p[optId] === choiceId ? '' : choiceId }));
@@ -587,6 +640,9 @@ function ProductModal({
       const cur = (p[optId] as string[]) ?? [];
       return { ...p, [optId]: cur.includes(choiceId) ? cur.filter((x) => x !== choiceId) : [...cur, choiceId] };
     });
+
+  const modalCategory = getProductCategoryLabel(product);
+  const modalOptionsSummary = getMenuOptionsSummaryLine(product, optionGroupSource);
 
   return (
     <>
@@ -654,14 +710,34 @@ function ProductModal({
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0 flex-1">
               <h2 className="text-xl font-black leading-tight text-white">{product.name}</h2>
+              {(modalCategory || modalOptionsSummary) && (
+                <div className="mt-2 flex flex-wrap items-center gap-2">
+                  {modalCategory ? (
+                    <span className="inline-flex rounded-md border border-white/[0.14] bg-white/[0.06] px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white/65">
+                      {modalCategory}
+                    </span>
+                  ) : null}
+                  {modalOptionsSummary ? (
+                    <p className="text-[11px] leading-snug text-white/45">
+                      <span className="text-white/35">Επιλογές · </span>
+                      {modalOptionsSummary}
+                    </p>
+                  ) : null}
+                </div>
+              )}
               {product.description && (
                 <p className="mt-1 text-sm leading-snug text-white/50">{product.description}</p>
               )}
+              {product.allergens && product.allergens.length > 0 ? (
+                <p className="mt-2 text-[11px] leading-snug text-amber-200/75">
+                  Αλλεργιογόνα: {product.allergens.join(', ')}
+                </p>
+              ) : null}
             </div>
             <div className="shrink-0 text-right">
               {mode === 'shop' ? (
                 <>
-                  <p className="text-2xl font-black" style={{ color: XP_GOLD }}>{xpCost} XP</p>
+                  <p className="text-2xl font-black" style={{ color: XP_GOLD }}>{unitXpCost} XP</p>
                   <p className="text-xs text-white/35">€0.00</p>
                 </>
               ) : (
@@ -688,8 +764,8 @@ function ProductModal({
               <Star className="h-4 w-4 shrink-0 fill-[#F5C518] text-[#F5C518]" strokeWidth={0} />
               <span className="text-sm font-bold" style={{ color: canRedeem ? XP_GOLD : 'rgba(255,255,255,0.35)' }}>
                 {canRedeem
-                  ? `${(xpCost * quantity).toLocaleString('el-GR')} XP · Διαθέσιμα: ${storeXpBalance.toLocaleString('el-GR')} XP`
-                  : `Χρειάζεσαι ${(xpCost - storeXpBalance).toLocaleString('el-GR')} XP ακόμα`}
+                  ? `${(unitXpCost * quantity).toLocaleString('el-GR')} XP · Διαθέσιμα: ${storeXpBalance.toLocaleString('el-GR')} XP`
+                  : `Χρειάζεσαι ${Math.max(0, unitXpCost - storeXpBalance).toLocaleString('el-GR')} XP ακόμα`}
               </span>
             </motion.div>
           )}
@@ -741,6 +817,17 @@ function ProductModal({
             </motion.div>
           ))}
 
+          {options.length === 0 && optionGroupSource === 'apiOnly' && (
+            <div className="mt-5 rounded-2xl border border-amber-400/35 bg-amber-500/[0.12] px-4 py-3.5">
+              <p className="text-[12px] font-bold text-amber-100">Επιλογές από το κατάστημα</p>
+              <p className="mt-2 text-[11px] leading-relaxed text-white/55">
+                Εδώ εμφανίζονται μόνο οι ομάδες που έρχονται από το API στο προϊόν (<span className="font-mono text-white/70">optionGroups</span>). Αν στο Network
+                είναι <span className="font-mono text-white/70">null</span>, το PWA δεν έχει δεδομένα — από το merchant dashboard αποθήκευσε την ομάδα επιλογών (με επιλεγμένα προϊόντα ή κατηγορία) ή επεξεργάσου το προϊόν και επίλεξε ομάδες από τη βιβλιοθήκη, ώστε το GET προϊόντος να επιστρέφει γεμάτο{' '}
+                <span className="font-mono text-white/70">optionGroups</span>.
+              </p>
+            </div>
+          )}
+
           <div className="h-4" />
         </div>
 
@@ -786,8 +873,13 @@ function ProductModal({
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 whileHover={{ scale: 1.01 }}
-                onClick={() => { onAddToCart(quantity, 0); onClose(); }}
-                className="flex flex-1 items-center justify-between rounded-xl px-4 py-3 text-black"
+                disabled={!selectionsComplete}
+                onClick={() => {
+                  const selectedOptions = buildSelectedOptionsPayload(options, selections);
+                  onAddToCart(quantity, { selectedOptions, optionsExtraPerUnit: extraPrice });
+                  onClose();
+                }}
+                className="flex flex-1 items-center justify-between rounded-xl px-4 py-3 text-black disabled:opacity-45"
                 style={{ background: XP_GOLD, boxShadow: `0 8px 24px -4px ${XP_GOLD}55` }}
               >
                 <span className="flex items-center gap-1.5 text-sm font-black">
@@ -795,7 +887,7 @@ function ProductModal({
                   Αγορά με XP
                 </span>
                 <div className="text-right">
-                  <p className="text-sm font-black">{Math.round(product.price * XP_PER_EUR) * quantity} XP</p>
+                  <p className="text-sm font-black">{unitXpCost * quantity} XP</p>
                   <p className="text-[10px] font-bold text-black/50">€0.00</p>
                 </div>
               </motion.button>
@@ -804,8 +896,13 @@ function ProductModal({
                 type="button"
                 whileTap={{ scale: 0.97 }}
                 whileHover={{ scale: 1.01 }}
-                onClick={() => { onAddToCart(quantity, extraPrice); onClose(); }}
-                className="flex flex-1 items-center justify-between rounded-xl px-4 py-3 text-white"
+                disabled={!selectionsComplete}
+                onClick={() => {
+                  const selectedOptions = buildSelectedOptionsPayload(options, selections);
+                  onAddToCart(quantity, { selectedOptions, optionsExtraPerUnit: extraPrice });
+                  onClose();
+                }}
+                className="flex flex-1 items-center justify-between rounded-xl px-4 py-3 text-white disabled:opacity-45"
                 style={{ background: ACCENT, boxShadow: `0 8px 24px -4px ${ACCENT}55` }}
               >
                 <span className="text-sm font-black">Προσθήκη στο καλάθι</span>
@@ -936,8 +1033,10 @@ function OrderConfirmScreen({
   onCancel,
   onAddItem,
   onRemoveItem,
+  onClearItem,
   onAddXpItem,
   onRemoveXpItem,
+  onClearXpItem,
   isSubmitting,
   error,
 }: {
@@ -950,10 +1049,12 @@ function OrderConfirmScreen({
   storeXpBalance: number;
   onConfirm: (paymentMethod: PaymentMethod, xpDiscountXP: number) => void;
   onCancel: () => void;
-  onAddItem: (id: string) => void;
-  onRemoveItem: (id: string) => void;
-  onAddXpItem: (id: string) => void;
-  onRemoveXpItem: (id: string) => void;
+  onAddItem: (lineKey: string) => void;
+  onRemoveItem: (lineKey: string) => void;
+  onClearItem: (lineKey: string) => void;
+  onAddXpItem: (lineKey: string) => void;
+  onRemoveXpItem: (lineKey: string) => void;
+  onClearXpItem: (lineKey: string) => void;
   isSubmitting: boolean;
   error: string | null;
 }) {
@@ -1040,7 +1141,7 @@ function OrderConfirmScreen({
         <AnimatePresence>
           {cart.map((item, i) => (
             <motion.div
-              key={item.id}
+              key={item.lineKey ?? item.id}
               layout
               initial={{ x: -16, opacity: 0 }}
               animate={{ x: 0, opacity: 1 }}
@@ -1052,11 +1153,23 @@ function OrderConfirmScreen({
               <div className="flex items-center gap-3 p-3">
                 <img src={item.image} alt={item.name} className="h-14 w-14 shrink-0 rounded-xl object-cover" />
                 <div className="min-w-0 flex-1">
+                  {getProductCategoryLabel(item) ? (
+                    <p className="text-[9px] font-bold uppercase tracking-wider text-white/35">
+                      {getProductCategoryLabel(item)}
+                    </p>
+                  ) : null}
                   <p className="truncate text-sm font-bold text-white">{item.name}</p>
-                  <p className="text-[11px] text-white/40">€{item.price.toFixed(2)} / τεμ.</p>
+                  {formatCartItemSelectedOptions(item) ? (
+                    <p className="mt-0.5 line-clamp-2 text-[10px] text-white/45">{formatCartItemSelectedOptions(item)}</p>
+                  ) : null}
+                  <p className="text-[11px] text-white/40">
+                    €{(item.price + (item.optionsExtraPerUnit ?? 0)).toFixed(2)} / τεμ.
+                  </p>
                 </div>
                 <div className="text-right">
-                  <p className="text-sm font-black text-white">€{(item.price * item.quantity).toFixed(2)}</p>
+                  <p className="text-sm font-black text-white">
+                    €{((item.price + (item.optionsExtraPerUnit ?? 0)) * item.quantity).toFixed(2)}
+                  </p>
                   {item.xpReward > 0 && (
                     <p className="text-[10px] font-bold" style={{ color: XP_GOLD }}>+{item.xpReward * item.quantity} XP</p>
                   )}
@@ -1071,7 +1184,7 @@ function OrderConfirmScreen({
                     type="button"
                     whileTap={{ scale: 0.82 }}
                     disabled={isSubmitting}
-                    onClick={() => onRemoveItem(item.id)}
+                    onClick={() => item.lineKey && onRemoveItem(item.lineKey)}
                     className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-white"
                   >
                     <Minus className="h-3.5 w-3.5" strokeWidth={2.8} />
@@ -1094,7 +1207,7 @@ function OrderConfirmScreen({
                     type="button"
                     whileTap={{ scale: 0.82 }}
                     disabled={isSubmitting}
-                    onClick={() => onAddItem(item.id)}
+                    onClick={() => item.lineKey && onAddItem(item.lineKey)}
                     className="flex h-7 w-7 items-center justify-center rounded-lg text-white"
                     style={{ background: ACCENT }}
                   >
@@ -1109,7 +1222,7 @@ function OrderConfirmScreen({
                   type="button"
                   whileTap={{ scale: 0.82 }}
                   disabled={isSubmitting}
-                  onClick={() => { for (let q = item.quantity; q > 0; q--) onRemoveItem(item.id); }}
+                  onClick={() => item.lineKey && onClearItem(item.lineKey)}
                   className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-2.5 py-1.5 text-[11px] font-bold text-red-400"
                 >
                   <X className="h-3 w-3" strokeWidth={2.5} />
@@ -1139,7 +1252,7 @@ function OrderConfirmScreen({
             <AnimatePresence>
               {xpCartItems.map((item) => (
                 <motion.div
-                  key={item.id}
+                  key={item.lineKey ?? item.id}
                   layout
                   exit={{ opacity: 0, height: 0 }}
                   transition={{ layout: { type: 'spring', stiffness: 320, damping: 28 } }}
@@ -1150,12 +1263,22 @@ function OrderConfirmScreen({
                   <div className="flex items-center gap-3 p-2.5">
                     <img src={item.image} alt={item.name} className="h-12 w-12 shrink-0 rounded-lg object-cover" />
                     <div className="min-w-0 flex-1">
+                      {getProductCategoryLabel(item) ? (
+                        <p className="text-[8px] font-bold uppercase tracking-wider text-white/30">
+                          {getProductCategoryLabel(item)}
+                        </p>
+                      ) : null}
                       <p className="truncate text-sm font-bold text-white">{item.name}</p>
-                      <p className="text-[10px] text-white/40">{Math.round(item.price * XP_PER_EUR).toLocaleString('el-GR')} XP / τεμ.</p>
+                      {formatCartItemSelectedOptions(item) ? (
+                        <p className="mt-0.5 line-clamp-2 text-[9px] text-white/40">{formatCartItemSelectedOptions(item)}</p>
+                      ) : null}
+                      <p className="text-[10px] text-white/40">
+                        {Math.round((item.price + (item.optionsExtraPerUnit ?? 0)) * XP_PER_EUR).toLocaleString('el-GR')} XP / τεμ.
+                      </p>
                     </div>
                     <div className="text-right">
                       <p className="text-xs font-black" style={{ color: XP_GOLD }}>
-                        {(Math.round(item.price * XP_PER_EUR) * item.quantity).toLocaleString('el-GR')} XP
+                        {(Math.round((item.price + (item.optionsExtraPerUnit ?? 0)) * XP_PER_EUR) * item.quantity).toLocaleString('el-GR')} XP
                       </p>
                       <p className="text-[10px] text-white/30">€0.00</p>
                     </div>
@@ -1163,7 +1286,7 @@ function OrderConfirmScreen({
                   {/* Controls */}
                   <div className="flex items-center gap-2 border-t px-2.5 py-2" style={{ borderColor: `${XP_GOLD}18` }}>
                     <motion.button type="button" whileTap={{ scale: 0.82 }} disabled={isSubmitting}
-                      onClick={() => onRemoveXpItem(item.id)}
+                      onClick={() => item.lineKey && onRemoveXpItem(item.lineKey)}
                       className="flex h-7 w-7 items-center justify-center rounded-lg border border-white/10 bg-white/[0.05] text-white">
                       <Minus className="h-3.5 w-3.5" strokeWidth={2.8} />
                     </motion.button>
@@ -1176,14 +1299,14 @@ function OrderConfirmScreen({
                       </motion.span>
                     </AnimatePresence>
                     <motion.button type="button" whileTap={{ scale: 0.82 }} disabled={isSubmitting}
-                      onClick={() => onAddXpItem(item.id)}
+                      onClick={() => item.lineKey && onAddXpItem(item.lineKey)}
                       className="flex h-7 w-7 items-center justify-center rounded-lg text-black font-black"
                       style={{ background: XP_GOLD }}>
                       <Plus className="h-3.5 w-3.5" strokeWidth={2.8} />
                     </motion.button>
                     <div className="flex-1" />
                     <motion.button type="button" whileTap={{ scale: 0.82 }} disabled={isSubmitting}
-                      onClick={() => { for (let q = item.quantity; q > 0; q--) onRemoveXpItem(item.id); }}
+                      onClick={() => item.lineKey && onClearXpItem(item.lineKey)}
                       className="flex items-center gap-1.5 rounded-lg border border-red-500/20 bg-red-500/10 px-2.5 py-1.5 text-[11px] font-bold text-red-400">
                       <X className="h-3 w-3" strokeWidth={2.5} />
                       Διαγραφή
@@ -1958,6 +2081,8 @@ interface AnbitScanMenuPageProps {
   partner: Partner;
   tableNumber: number;
   entryMethod?: 'nfc' | 'qr';
+  /** Για το ηλεκτρονικό μενού `/store/:code`: μόνο πραγματικά `optionGroups` από το API — όχι heuristic πίτσα/καφέ. */
+  menuOptionGroupSource?: ProductOptionsMode;
   onBack: () => void;
   onOrderComplete?: (xpEarned: number) => void;
   onOpenLogin?: (onSuccess?: () => void) => void;
@@ -1969,6 +2094,7 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
   partner,
   tableNumber,
   entryMethod = 'qr',
+  menuOptionGroupSource = 'full',
   onBack,
   onOrderComplete,
   onOpenLogin,
@@ -1993,8 +2119,8 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
   const [mode, setMode] = useState<AppMode>('eur');
   const [activeCategory, setActiveCategory] = useState('Όλα');
   const [shopCategory, setShopCategory] = useState('Όλα');
-  const [cart, setCart] = useState<Map<string, number>>(new Map());
-  const [xpCart, setXpCart] = useState<Map<string, number>>(new Map()); // XP-shop items (paid with XP, no € charge, no XP reward)
+  const [cart, setCart] = useState<Map<string, CartLineCore>>(new Map());
+  const [xpCart, setXpCart] = useState<Map<string, CartLineCore>>(new Map()); // XP-shop items (paid with XP, no € charge, no XP reward)
   const [screen, setScreen] = useState<'menu' | 'confirm' | 'pending' | 'accepted'>('menu');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<string | null>(null);
@@ -2161,53 +2287,135 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
     });
   }, []);
 
-  // Cart operations
-  const addToCart = useCallback((productId: string) => {
-    setCart((prev) => { const n = new Map(prev); n.set(productId, (n.get(productId) ?? 0) + 1); return n; });
+  // Cart operations (γραμμές με ξεχωριστό κλειδί ανά προϊόν + συνδυασμό επιλογών)
+  const addToCartLine = useCallback(
+    (
+      productId: string,
+      qty: number,
+      selectedOptions?: SelectedOptionPayload[],
+      optionsExtraPerUnit = 0,
+    ) => {
+      setCart((prev) => addOrMergeCartLine(prev, productId, qty, selectedOptions, optionsExtraPerUnit));
+    },
+    [],
+  );
+  const removeFromCartLine = useCallback((lineKey: string) => {
+    setCart((prev) => {
+      const line = prev.get(lineKey);
+      if (!line) return prev;
+      return addOrMergeCartLine(prev, line.productId, -1, line.selectedOptions, line.optionsExtraPerUnit);
+    });
   }, []);
-  const removeFromCart = useCallback((productId: string) => {
+
+  const addOneEurLine = useCallback((lineKey: string) => {
+    setCart((prev) => {
+      const line = prev.get(lineKey);
+      if (!line) return prev;
+      return addOrMergeCartLine(prev, line.productId, 1, line.selectedOptions, line.optionsExtraPerUnit);
+    });
+  }, []);
+
+  const addToXpCartLine = useCallback(
+    (
+      productId: string,
+      qty: number,
+      selectedOptions?: SelectedOptionPayload[],
+      optionsExtraPerUnit = 0,
+    ) => {
+      setXpCart((prev) => addOrMergeCartLine(prev, productId, qty, selectedOptions, optionsExtraPerUnit));
+    },
+    [],
+  );
+  const removeFromXpCartLine = useCallback((lineKey: string) => {
+    setXpCart((prev) => {
+      const line = prev.get(lineKey);
+      if (!line) return prev;
+      return addOrMergeCartLine(prev, line.productId, -1, line.selectedOptions, line.optionsExtraPerUnit);
+    });
+  }, []);
+
+  const addOneXpLine = useCallback((lineKey: string) => {
+    setXpCart((prev) => {
+      const line = prev.get(lineKey);
+      if (!line) return prev;
+      return addOrMergeCartLine(prev, line.productId, 1, line.selectedOptions, line.optionsExtraPerUnit);
+    });
+  }, []);
+
+  const clearCartLine = useCallback((lineKey: string) => {
     setCart((prev) => {
       const n = new Map(prev);
-      const q = n.get(productId) ?? 0;
-      if (q <= 1) n.delete(productId); else n.set(productId, q - 1);
+      n.delete(lineKey);
       return n;
     });
   }, []);
 
-  const addToXpCart = useCallback((productId: string) => {
-    setXpCart((prev) => { const n = new Map(prev); n.set(productId, (n.get(productId) ?? 0) + 1); return n; });
-  }, []);
-  const removeFromXpCart = useCallback((productId: string) => {
+  const clearXpCartLine = useCallback((lineKey: string) => {
     setXpCart((prev) => {
       const n = new Map(prev);
-      const q = n.get(productId) ?? 0;
-      if (q <= 1) n.delete(productId); else n.set(productId, q - 1);
+      n.delete(lineKey);
       return n;
     });
   }, []);
 
   const cartItems: CartItemData[] = useMemo(
-    () => Array.from(cart.entries())
-      .map(([id, qty]) => { const p = menu.find((x) => x.id === id); return p && qty > 0 ? { ...p, quantity: qty } as CartItemData : null; })
-      .filter((x): x is CartItemData => x !== null),
+    () =>
+      Array.from(cart.entries())
+        .map(([lineKey, line]) => {
+          const p = menu.find((x) => x.id === line.productId);
+          if (!p || line.quantity <= 0) return null;
+          const extra = line.optionsExtraPerUnit ?? 0;
+          return {
+            ...p,
+            quantity: line.quantity,
+            selectedOptions: line.selectedOptions,
+            optionsExtraPerUnit: extra,
+            lineKey,
+          } as CartItemData;
+        })
+        .filter((x): x is CartItemData => x !== null),
     [cart, menu],
   );
   const cartTotal = useMemo(() => {
-    let eur = 0, xp = 0, count = 0;
-    for (const item of cartItems) { eur += item.price * item.quantity; xp += item.xpReward * item.quantity; count += item.quantity; }
+    let eur = 0;
+    let xp = 0;
+    let count = 0;
+    for (const item of cartItems) {
+      const unit = item.price + (item.optionsExtraPerUnit ?? 0);
+      eur += unit * item.quantity;
+      xp += item.xpReward * item.quantity;
+      count += item.quantity;
+    }
     return { eur, xp, count };
   }, [cartItems]);
 
   // XP-shop cart: items paid with XP — no € charge, no XP reward
   const xpCartItems = useMemo(
-    () => Array.from(xpCart.entries())
-      .map(([id, qty]) => { const p = menu.find((x) => x.id === id); return p && qty > 0 ? { ...p, quantity: qty } as CartItemData : null; })
-      .filter((x): x is CartItemData => x !== null),
+    () =>
+      Array.from(xpCart.entries())
+        .map(([lineKey, line]) => {
+          const p = menu.find((x) => x.id === line.productId);
+          if (!p || line.quantity <= 0) return null;
+          const extra = line.optionsExtraPerUnit ?? 0;
+          return {
+            ...p,
+            quantity: line.quantity,
+            selectedOptions: line.selectedOptions,
+            optionsExtraPerUnit: extra,
+            lineKey,
+          } as CartItemData;
+        })
+        .filter((x): x is CartItemData => x !== null),
     [xpCart, menu],
   );
   const xpCartTotal = useMemo(() => {
-    let xpCost = 0, count = 0;
-    for (const item of xpCartItems) { xpCost += Math.round(item.price * XP_PER_EUR) * item.quantity; count += item.quantity; }
+    let xpCost = 0;
+    let count = 0;
+    for (const item of xpCartItems) {
+      const unitXp = Math.round((item.price + (item.optionsExtraPerUnit ?? 0)) * XP_PER_EUR);
+      xpCost += unitXp * item.quantity;
+      count += item.quantity;
+    }
     return { xpCost, count };
   }, [xpCartItems]);
 
@@ -2226,28 +2434,31 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
     setIsSubmitting(true);
     setSubmitError(null);
     try {
-      const orderItems = [
-        ...cartItems.map((item) => ({
-          productId: String(item.id),
-          quantity: item.quantity,
-        })),
-        ...xpCartItems.map((item) => ({
-          productId: String(item.id),
-          quantity: item.quantity,
-        })),
-      ].filter((item) => item.productId && item.quantity > 0);
+      const mapLine = (item: CartItemData) => ({
+        productId: String(item.id),
+        quantity: item.quantity,
+        ...(item.selectedOptions?.length ? { selectedOptions: item.selectedOptions } : {}),
+      });
+
+      const orderItems = [...cartItems.map(mapLine), ...xpCartItems.map(mapLine)].filter(
+        (item) => item.productId && item.quantity > 0,
+      );
 
       if (orderItems.length === 0) {
         setSubmitError('Δεν υπάρχουν προϊόντα για αποστολή.');
         return;
       }
 
-      // Backend /Orders expects CreateOrderRequest: userId, merchantId, tableNumber, orderItems.
+      const paymentApi =
+        paymentMethod === 'cash' ? 'Cash' : paymentMethod === 'card' ? 'Card' : 'Xp';
+
       await api.submitOrder({
         userId: user.id,
         merchantId: partner.id,
         tableNumber,
         orderItems,
+        paymentType: paymentApi,
+        appliedXpDiscount: paymentMethod === 'xp' ? 0 : xpDiscountXP,
       });
       setScreen('pending');
     } catch {
@@ -2692,7 +2903,10 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
                             <motion.button
                               type="button"
                               whileTap={{ scale: 0.93 }}
-                              onClick={(e) => { e.stopPropagation(); addToXpCart(product.id); }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                addToXpCartLine(product.id, 1, undefined, 0);
+                              }}
                               className="flex w-full items-center justify-center gap-1.5 rounded-xl py-2 text-[11px] font-black text-black"
                               style={{ background: XP_GOLD }}
                             >
@@ -2882,14 +3096,13 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
                     <ProductCard
                       key={product.id}
                       product={product}
-                      quantity={cart.get(product.id) ?? 0}
-                      onAdd={() => addToCart(product.id)}
-                      onRemove={() => removeFromCart(product.id)}
+                      quantity={sumQtyForProduct(cart, product.id)}
                       onOpen={() => setSelectedProduct(product)}
                       isFavorite={favoriteProductIds.has(product.id)}
                       onToggleFavorite={() => toggleFavoriteProduct(product.id)}
-                      mode={mode}
+                      mode={mode === 'xp' ? 'xp' : 'eur'}
                       storeXpBalance={storeXpBalance}
+                      optionGroupSource={menuOptionGroupSource}
                     />
                   ))}
                 </motion.div>
@@ -3026,15 +3239,16 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
             key={selectedProduct.id}
             product={selectedProduct}
             onClose={() => setSelectedProduct(null)}
-            onAddToCart={(qty) => {
+            onAddToCart={(qty, payload) => {
               if (mode === 'shop') {
-                for (let i = 0; i < qty; i++) addToXpCart(selectedProduct.id);
+                addToXpCartLine(selectedProduct.id, qty, payload.selectedOptions, payload.optionsExtraPerUnit);
               } else {
-                for (let i = 0; i < qty; i++) addToCart(selectedProduct.id);
+                addToCartLine(selectedProduct.id, qty, payload.selectedOptions, payload.optionsExtraPerUnit);
               }
             }}
             mode={mode}
             storeXpBalance={mode === 'shop' ? availableXP : storeXpBalance}
+            optionGroupSource={menuOptionGroupSource}
           />
         )}
       </AnimatePresence>
@@ -3053,10 +3267,12 @@ const AnbitScanMenuPage: React.FC<AnbitScanMenuPageProps> = ({
             storeXpBalance={availableXP}
             onConfirm={handleConfirmOrder}
             onCancel={() => setScreen('menu')}
-            onAddItem={addToCart}
-            onRemoveItem={removeFromCart}
-            onAddXpItem={addToXpCart}
-            onRemoveXpItem={removeFromXpCart}
+            onAddItem={addOneEurLine}
+            onRemoveItem={removeFromCartLine}
+            onClearItem={clearCartLine}
+            onAddXpItem={addOneXpLine}
+            onRemoveXpItem={removeFromXpCartLine}
+            onClearXpItem={clearXpCartLine}
             isSubmitting={isSubmitting}
             error={submitError}
           />

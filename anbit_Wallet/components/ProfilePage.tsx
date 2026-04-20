@@ -573,6 +573,11 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
     [partners, storeXP]
   );
 
+  // ── Per-merchant XP ────────────────────────────────────────────────────────
+  type MerchantXpEntry = { merchantId: string; merchantName: string; totalXp: number };
+  const [xpPerMerchant, setXpPerMerchant] = useState<MerchantXpEntry[]>([]);
+  const [xpPerMerchantLoading, setXpPerMerchantLoading] = useState(false);
+
   const [orderHistoryCategoryFilter, setOrderHistoryCategoryFilter] = useState<string>('all');
   const [orderHistoryStoreSearch, setOrderHistoryStoreSearch] = useState('');
   const [orderHistoryRaw, setOrderHistoryRaw] = useState<ApiOrderListItem[]>([]);
@@ -819,6 +824,40 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
 
   const activeTabId =
     profileTabs.find((tab) => location.pathname.startsWith(tab.path))?.id ?? 'history';
+
+  useEffect(() => {
+    if (activeTabId !== 'informations') return;
+    let cancelled = false;
+    void (async () => {
+      setXpPerMerchantLoading(true);
+      try {
+        const [xpItems, merchants] = await Promise.all([
+          api.getUserXP({ limit: 100, offset: 0 }),
+          api.getMerchantsDirectory(),
+        ]);
+        if (cancelled) return;
+        const sumMap = new Map<string, number>();
+        for (const item of xpItems) {
+          const mid = item.merchantId.trim().toLowerCase();
+          sumMap.set(mid, (sumMap.get(mid) ?? 0) + item.xp);
+        }
+        const nameMap = new Map(merchants.map((m) => [m.id.trim().toLowerCase(), m.username]));
+        const entries: MerchantXpEntry[] = Array.from(sumMap.entries())
+          .map(([mid, totalXp]) => ({
+            merchantId: mid,
+            merchantName: nameMap.get(mid) ?? `Κατάστημα ${mid.slice(0, 8)}`,
+            totalXp,
+          }))
+          .sort((a, b) => b.totalXp - a.totalXp);
+        setXpPerMerchant(entries);
+      } catch {
+        /* silent */
+      } finally {
+        if (!cancelled) setXpPerMerchantLoading(false);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [activeTabId]);
 
   return (
     <div
@@ -2026,7 +2065,12 @@ const ProfilePage: React.FC<{ user: UserData; partners?: Partner[] }> = ({
             className="mx-auto w-full max-w-[1180px] space-y-6 px-1 pb-8 pt-2 sm:space-y-8 sm:px-2"
             style={{ fontFamily: 'Manrope, ui-sans-serif, system-ui, sans-serif' }}
           >
-            <ProfilePersonalInfoSection user={user} isLight={theme === 'light'} />
+            <ProfilePersonalInfoSection
+              user={user}
+              isLight={theme === 'light'}
+              xpPerMerchant={xpPerMerchant}
+              xpPerMerchantLoading={xpPerMerchantLoading}
+            />
             <ProfileInsightsSection partnersWithPoints={partnersWithPoints} />
           </div>
         )}

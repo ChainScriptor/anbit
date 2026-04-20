@@ -20,11 +20,13 @@ apiClient.interceptors.response.use(
   (error) => {
     if (error.response?.status === 401) {
       const requestUrl = String(error.config?.url ?? '');
-      const isProductsRequest = requestUrl.includes('/Products');
+      const requestMethod = String(error.config?.method ?? 'get').toLowerCase();
+      // Only suppress redirect for GET /Products (some roles can't read the list).
+      // Mutating requests (PUT/POST/DELETE) on an expired token must redirect to login.
+      const isProductsListGet = requestUrl.includes('/Products') && requestMethod === 'get';
       const isAuthLoginRequest = requestUrl.includes('/Auth/login');
 
-      // Product list can be unauthorized for some roles; do not hard-redirect from orders flow.
-      if (!isProductsRequest && !isAuthLoginRequest) {
+      if (!isProductsListGet && !isAuthLoginRequest) {
         localStorage.removeItem('anbit_dashboard_token');
         localStorage.removeItem('anbit_dashboard_user');
         window.location.href = '/#/auth';
@@ -62,7 +64,8 @@ export interface CreateProductPayload {
   price: number;
   xp: number;
   allergens?: string[] | null;
-  optionGroupsJson?: ProductOptionGroupApiPayload[] | null;
+  /** Πίνακας όπως στο JSON body ή serialized string αν το backend δέχεται κυριολεκτικό JSON string. */
+  optionGroupsJson?: ProductOptionGroupApiPayload[] | string | null;
 }
 
 export interface ApiProduct {
@@ -88,6 +91,14 @@ export interface ApiOrder {
   createdAt: string;
   updatedAt?: string;
   status?: string;
+}
+
+export interface CustomerAnalyticsItem {
+  userId: string;
+  username: string;
+  totalSpent: number;
+  totalOrders: number;
+  totalXpEarned: number;
 }
 
 export interface ApiMerchantUser {
@@ -485,6 +496,9 @@ export const api = {
       optionGroups: ProductOptionGroupApiPayload[];
     },
   ): Promise<void> {
+    // Send both fields: the backend PUT may read either optionGroups (array) or
+    // optionGroupsJson (serialized string). Sending both ensures the clear goes through.
+    const optionGroupsJson = JSON.stringify(payload.optionGroups);
     await apiClient.put(`/Products/${encodeURIComponent(productId)}`, {
       name: payload.name,
       description: payload.description,
@@ -493,6 +507,7 @@ export const api = {
       xp: payload.xp,
       allergens: payload.allergens ?? null,
       optionGroups: payload.optionGroups,
+      optionGroupsJson,
     });
   },
 
@@ -652,6 +667,13 @@ export const api = {
       params: { limit: 100, offset: 0 },
     });
     return data;
+  },
+
+  async getCustomerAnalytics(params?: { limit?: number; offset?: number }): Promise<CustomerAnalyticsItem[]> {
+    const { data } = await apiClient.get<CustomerAnalyticsItem[]>('/Orders/customer-analytics', {
+      params: { limit: Math.min(params?.limit ?? 50, 50), offset: params?.offset ?? 0 },
+    });
+    return Array.isArray(data) ? data : [];
   },
 
   async acceptOrder(orderId: string): Promise<void> {

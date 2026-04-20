@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   X,
@@ -15,7 +15,9 @@ import {
   Sparkles,
 } from 'lucide-react';
 import { Product } from '../types';
-import type { ProductCartOptions } from '../types';
+import { getProductCategoryLabel } from '../lib/productMeta';
+import { buildSelectedOptionsPayload, getMenuOptionsSummaryLine, getProductOptions } from '../lib/productOptions';
+import type { ProductCartOptions, SelectedOptionPayload } from '../types';
 import { useLanguage } from '../context/LanguageContext';
 
 const SUGAR_AMOUNT_KEYS = ['sugarNone', 'sugarLight', 'sugarMedium', 'sugarSweet', 'sugarExtra'] as const;
@@ -35,15 +37,18 @@ function isCoffeeProduct(product: Product): boolean {
   );
 }
 
+/** Φορτίο προσθήκης στο καλάθι — legacy UI ή ομάδες από API (dashboard). */
+export type CustomizeAddPayload = {
+  legacyOptions?: ProductCartOptions;
+  comments?: string;
+  selectedOptions?: SelectedOptionPayload[];
+  optionsExtraPerUnit?: number;
+};
+
 interface ProductCustomizeModalProps {
   product: Product | null;
   onClose: () => void;
-  onAdd: (
-    product: Product,
-    quantity: number,
-    options: ProductCartOptions | undefined,
-    comments: string | undefined
-  ) => void;
+  onAdd: (product: Product, quantity: number, payload: CustomizeAddPayload) => void;
 }
 
 const SUGAR_AMOUNT_VALUES = ['none', 'light', 'medium', 'sweet', 'extra'] as const;
@@ -133,7 +138,59 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
   };
 
   const { t } = useLanguage();
+
+  const usesApiOptions = Boolean(product?.optionGroups?.length);
+  const apiOptions = useMemo(
+    () => (product ? getProductOptions(product) : []),
+    [product],
+  );
+
+  const defaultApiSelections = useMemo(() => {
+    const initial: Record<string, string | string[]> = {};
+    if (!product?.optionGroups?.length) return initial;
+    for (const opt of apiOptions) {
+      if (opt.apiGroupId && opt.type === 'single' && opt.choices[0]?.id) {
+        initial[opt.id] = opt.choices[0].id;
+      }
+    }
+    return initial;
+  }, [product?.optionGroups?.length, product?.id, apiOptions]);
+
+  const [selections, setSelections] = useState<Record<string, string | string[]>>({});
   const [quantity, setQuantity] = useState(1);
+
+  useEffect(() => {
+    if (usesApiOptions) {
+      setSelections(defaultApiSelections);
+      setQuantity(1);
+    }
+  }, [usesApiOptions, defaultApiSelections, product?.id]);
+
+  const apiExtraPrice = useMemo(() => {
+    if (!usesApiOptions) return 0;
+    let total = 0;
+    for (const [optId, sel] of Object.entries(selections)) {
+      const opt = apiOptions.find((o) => o.id === optId);
+      if (!opt) continue;
+      const ids = Array.isArray(sel) ? sel : sel ? [sel] : [];
+      for (const cid of ids) {
+        total += opt.choices.find((c) => c.id === cid)?.priceAdd ?? 0;
+      }
+    }
+    return total;
+  }, [usesApiOptions, selections, apiOptions]);
+
+  const selectionsComplete = useMemo(() => {
+    if (!usesApiOptions) return true;
+    for (const opt of apiOptions) {
+      if (!opt.required) continue;
+      const sel = selections[opt.id];
+      const has = Array.isArray(sel) ? sel.some(Boolean) : !!sel;
+      if (!has) return false;
+    }
+    return true;
+  }, [usesApiOptions, apiOptions, selections]);
+
   const [sugarAmount, setSugarAmount] = useState<string>('none');
   const [sugarType, setSugarType] = useState<string>('white');
   const [selectedSize, setSelectedSize] = useState<string>('');
@@ -195,22 +252,38 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
     [extraOptions, selectedExtras],
   );
 
-  const extraPrice = selectedSizePrice + selectedExtrasPrice;
-  const totalPrice = safeProduct.price * quantity + extraPrice;
+  const legacyExtraPrice = selectedSizePrice + selectedExtrasPrice;
+  const totalPrice = usesApiOptions
+    ? (safeProduct.price + apiExtraPrice) * quantity
+    : safeProduct.price * quantity + legacyExtraPrice;
   const totalXp = safeProduct.xpReward * quantity;
 
   const handleAdd = () => {
     if (!product) return;
+    if (usesApiOptions) {
+      if (!selectionsComplete) return;
+      const selectedOpts = buildSelectedOptionsPayload(apiOptions, selections);
+      onAdd(product, quantity, {
+        comments: comments.trim() || undefined,
+        selectedOptions: selectedOpts,
+        optionsExtraPerUnit: apiExtraPrice,
+      });
+      onClose();
+      return;
+    }
     if (!selectedSize) return;
-    const options: ProductCartOptions = {
+    const legacyOptions: ProductCartOptions = {
       extras: selectedExtras.join(','),
     };
-    if (selectedSize) options.size = selectedSize;
+    if (selectedSize) legacyOptions.size = selectedSize;
     if (showCoffeeOptions) {
-      options.sugarAmount = sugarAmount;
-      options.sugarType = sugarType;
+      legacyOptions.sugarAmount = sugarAmount;
+      legacyOptions.sugarType = sugarType;
     }
-    onAdd(product, quantity, options, comments.trim() || undefined);
+    onAdd(product, quantity, {
+      legacyOptions,
+      comments: comments.trim() || undefined,
+    });
     onClose();
   };
 
@@ -221,6 +294,9 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
   };
 
   if (!product) return null;
+
+  const pCategory = getProductCategoryLabel(safeProduct);
+  const pOptions = getMenuOptionsSummaryLine(safeProduct);
 
   return (
     <AnimatePresence>
@@ -267,13 +343,99 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
                   </h1>
                   <div className="flex items-end gap-3">
                     <div className="text-4xl font-bold text-white">€{safeProduct.price.toFixed(2)}</div>
+                    {usesApiOptions && apiExtraPrice > 0 ? (
+                      <div className="pb-1 text-sm font-semibold text-white/50">+€{apiExtraPrice.toFixed(2)} επιλογές</div>
+                    ) : null}
                     <div className="pb-1 text-sm font-bold text-[#60a5fa]">+{safeProduct.xpReward} XP</div>
                   </div>
                   {safeProduct.description ? (
                     <p className="mt-2 text-base leading-relaxed text-white/80">{safeProduct.description}</p>
                   ) : null}
+                  {(pCategory || pOptions || (safeProduct.allergens?.length ?? 0) > 0) && (
+                    <div className="mt-4 space-y-2 border-t border-white/[0.08] pt-4">
+                      {(pCategory || pOptions) && (
+                        <div className="flex flex-wrap items-center gap-2">
+                          {pCategory ? (
+                            <span className="inline-flex rounded-md border border-white/20 bg-white/[0.07] px-2.5 py-1 text-[11px] font-bold uppercase tracking-wide text-white/70">
+                              {pCategory}
+                            </span>
+                          ) : null}
+                          {pOptions ? (
+                            <p className="text-sm text-white/50">
+                              <span className="text-white/40">Επιλογές · </span>
+                              {pOptions}
+                            </p>
+                          ) : null}
+                        </div>
+                      )}
+                      {safeProduct.allergens && safeProduct.allergens.length > 0 ? (
+                        <p className="text-sm text-amber-200/85">
+                          Αλλεργιογόνα: {safeProduct.allergens.join(', ')}
+                        </p>
+                      ) : null}
+                    </div>
+                  )}
                 </div>
 
+                {usesApiOptions && apiOptions.length > 0 && (
+                  <div className="mt-8 space-y-6">
+                    {apiOptions.map((opt) => (
+                      <section key={opt.id} className="mt-2">
+                        <div className="mb-3 flex flex-wrap items-center gap-2">
+                          <h3 className="text-xl font-bold text-white">{opt.label}</h3>
+                          {opt.required ? (
+                            <span className="rounded-full bg-white/10 px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider text-amber-200/90">
+                              Υποχρεωτικό
+                            </span>
+                          ) : null}
+                          {opt.type === 'multi' ? (
+                            <span className="text-[10px] text-white/35">Πολλαπλή · 0+</span>
+                          ) : null}
+                        </div>
+                        <div className="flex flex-wrap gap-2">
+                          {opt.choices.map((choice) => {
+                            const isSelected =
+                              opt.type === 'single'
+                                ? selections[opt.id] === choice.id
+                                : ((selections[opt.id] as string[]) ?? []).includes(choice.id);
+                            return (
+                              <button
+                                key={choice.id}
+                                type="button"
+                                onClick={() =>
+                                  opt.type === 'single'
+                                    ? setSelections((p) => ({
+                                        ...p,
+                                        [opt.id]: p[opt.id] === choice.id ? '' : choice.id,
+                                      }))
+                                    : setSelections((p) => {
+                                        const cur = (p[opt.id] as string[]) ?? [];
+                                        return {
+                                          ...p,
+                                          [opt.id]: cur.includes(choice.id)
+                                            ? cur.filter((x) => x !== choice.id)
+                                            : [...cur, choice.id],
+                                        };
+                                      })
+                                }
+                                className={`rounded-xl border px-3 py-2.5 text-sm font-semibold transition-colors ${
+                                  isSelected
+                                    ? 'border-[#2563eb] bg-[#2563eb] text-white'
+                                    : 'border-white/12 bg-[#131313] text-white/55 hover:border-white/25'
+                                }`}
+                              >
+                                {choice.label}
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </section>
+                    ))}
+                  </div>
+                )}
+
+                {!usesApiOptions && (
+                  <>
                 <section className="mt-10">
                   <div className="mb-4 flex items-end justify-between">
                     <h3 className="text-2xl font-bold text-white">{t('pickSize')}</h3>
@@ -423,6 +585,8 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
                     })}
                 </div>
               </section>
+                  </>
+                )}
               </article>
             </main>
           </div>
@@ -452,7 +616,7 @@ const ProductCustomizeModal: React.FC<ProductCustomizeModalProps> = ({
               <button
                 type="button"
                 onClick={handleAdd}
-                disabled={!selectedSize}
+                disabled={usesApiOptions ? !selectionsComplete : !selectedSize}
                 className="flex h-14 flex-1 items-center justify-between rounded-xl bg-[#2563eb] px-4 text-white shadow-[0_10px_28px_-8px_rgba(37,99,235,0.55)] transition-all active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-55"
               >
                 <span className="text-[15px] font-black tracking-wide">ΠΡΟΣΘΗΚΗ</span>
